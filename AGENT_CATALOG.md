@@ -12,7 +12,7 @@ The README keeps only a short public-facing list of agents. This document provid
 | Supplier Discovery Agent | Planned | `services/supplier-discovery-agent` | Identifies candidate suppliers for a procurement request. |
 | Bid Invitation Agent | Planned | `services/bid-invitation-agent` | Sends bid invitations to selected suppliers. |
 | Bid Collection Agent | Planned | `services/bid-collection-agent` | Collects supplier bids and prepares them for evaluation. |
-| Offer Evaluation Agent | Draft specification | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
+| Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
 | Purchase Order Agent | Planned | `services/purchase-order-agent` | Generates or prepares purchase order data after an approved supplier decision. |
 
@@ -52,11 +52,13 @@ Future specifications will define bid ingestion, validation, deadline handling, 
 
 ## Offer Evaluation Agent
 
-Status: Draft specification
+Status: Initial A2A server implementation
 
 Specification: [specs/agents/offer-evaluation-agent.md](specs/agents/offer-evaluation-agent.md)
 
 Default policy: [services/offer-evaluation-agent/policies/standard-urgent-procurement-v1.md](services/offer-evaluation-agent/policies/standard-urgent-procurement-v1.md)
+
+Server entry point: [services/offer-evaluation-agent/src/offer_evaluation_agent/server.py](services/offer-evaluation-agent/src/offer_evaluation_agent/server.py)
 
 The Offer Evaluation Agent receives supplier offers for a procurement request and determines the best offer according to configurable procurement policy.
 

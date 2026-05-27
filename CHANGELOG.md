@@ -4,6 +4,10 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-27
 
+- Added the first Offer Evaluation Agent A2A server implementation using Locus.
+- Added local environment loading and required OCI/A2A runtime configuration.
+- Documented the `locus` conda environment and server startup flow.
+- Updated the agent catalog to reflect the initial Offer Evaluation Agent implementation.
 - Specified that offer evaluation policies are interpreted by an LLM at runtime and policy changes must not require code changes.
 - Added the first draft full agent network to the README and agent catalog.
 - Clarified that the Offer Evaluation Agent applies policy selection logic rather than generic scoring logic.

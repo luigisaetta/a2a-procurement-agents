@@ -183,6 +183,24 @@ Description:    Brief description of the module.
 
 ---
 
+## Python Runtime Environment
+
+Python development and execution for Locus-based agents must use the `locus` conda environment.
+
+Use:
+
+```bash
+conda activate locus
+```
+
+or:
+
+```bash
+conda run -n locus <command>
+```
+
+---
+
 ## Formatting
 
 Code formatting uses:
