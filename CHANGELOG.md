@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-27
 
+- Aligned the Offer Evaluation Agent specification with the simplified decision and explanation response model.
 - Added the initial JSON Schema for the Offer Evaluation Agent response payload.
 - Added the initial JSON Schema for the Offer Evaluation Agent request payload.
 - Moved detailed agent descriptions from README and AGENTS.md into a root-level agent catalog.

@@ -14,10 +14,9 @@ The evaluation logic is driven by a Markdown policy document.
 
 The agent produces:
 
-- supplier ranking
-- scoring details
-- explainable evaluation output
+- selected supplier offer details
 - winning supplier selection
+- concise explanation of the decision
 
 ---
 
@@ -29,7 +28,7 @@ The agent must:
 - validate input payloads
 - load evaluation policies
 - apply scoring logic
-- rank offers
+- select the best offer according to the configured policy
 - generate explainable reasoning
 - return evaluation results
 
