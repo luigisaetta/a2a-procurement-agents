@@ -1,5 +1,11 @@
 # A2A Procurement Agents
 
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Pylint](https://img.shields.io/badge/lint-pylint-yellowgreen.svg)](https://github.com/pylint-dev/pylint)
+[![Pytest](https://img.shields.io/badge/tests-pytest-blueviolet.svg)](https://github.com/pytest-dev/pytest)
+[![A2A](https://img.shields.io/badge/protocol-A2A%20v1-orange.svg)](https://github.com/a2aproject/A2A)
+
 Enterprise procurement is becoming too fast, too distributed, and too policy-heavy for a single monolithic assistant.
 
 This project explores a different shape: a network of independently deployable AI agents that collaborate over open A2A contracts to handle urgent procurement workflows.
