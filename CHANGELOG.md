@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-27
 
+- Specified that offer evaluation policies are interpreted by an LLM at runtime and policy changes must not require code changes.
 - Added the first draft full agent network to the README and agent catalog.
 - Clarified that the Offer Evaluation Agent applies policy selection logic rather than generic scoring logic.
 - Clarified the urgent procurement policy cost priority and tie-breaker behavior.

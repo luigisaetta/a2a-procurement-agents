@@ -10,7 +10,9 @@ Status: Draft
 
 The Offer Evaluation Agent evaluates supplier offers received during a procurement workflow and determines the best offer according to configurable procurement rules.
 
-The evaluation logic is driven by a Markdown policy document.
+The evaluation logic is driven by a Markdown policy document interpreted at runtime by an LLM.
+
+Policy changes must not require code changes.
 
 The agent produces:
 
@@ -27,9 +29,10 @@ The agent must:
 - receive a list of supplier offers
 - validate input payloads
 - load evaluation policies
-- apply policy selection logic
+- send the request, policy, and expected output schema to an LLM
 - select the best offer according to the configured policy
 - generate explainable reasoning
+- validate the LLM output before returning it
 - return evaluation results
 
 ---
@@ -38,6 +41,7 @@ The agent must:
 
 The agent does NOT:
 
+- hardcode procurement policy rules in application code
 - contact suppliers
 - negotiate offers
 - generate purchase orders
@@ -123,6 +127,32 @@ Policy version:
 The policy excludes offers with a currency different from the request currency and offers with a delivery date later than the requested delivery date.
 
 Eligible offers are selected primarily by lowest cost, with supplier reliability and earlier delivery date used as tie-breakers.
+
+---
+
+# LLM-Driven Policy Evaluation
+
+The agent implementation must not encode procurement selection rules directly in Python code.
+
+At runtime, the agent must:
+
+1. validate the input request against the canonical input schema
+2. load the configured local Markdown policy
+3. provide the request payload, policy text, and canonical output schema to an LLM
+4. ask the LLM to return an `EvaluateOffersResponse`
+5. parse the LLM response as JSON
+6. validate the parsed response against the canonical output schema
+7. perform technical consistency checks before returning the result
+
+Technical consistency checks include:
+
+- a selected offer must match one of the offers received in the request
+- a `no_valid_offers` decision must not contain a selected offer
+- the response `request_id` must match the input `request_id`
+
+Changing the procurement policy must be done by updating the Markdown policy file, not by changing the agent code.
+
+The code may change only when protocol handling, schema contracts, validation behavior, runtime integration, or non-policy technical behavior changes.
 
 ---
 

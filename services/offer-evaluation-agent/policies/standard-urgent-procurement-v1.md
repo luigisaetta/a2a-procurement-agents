@@ -16,6 +16,10 @@ This policy defines how the Offer Evaluation Agent selects the best supplier off
 
 The policy is intentionally simple and deterministic. It prioritizes offers that can meet the required delivery date, use the expected currency, and minimize procurement cost.
 
+This policy is interpreted by an LLM at runtime. Procurement rule changes must be made by updating this policy document, not by changing the agent code.
+
+The agent code is responsible for loading this policy, calling the LLM, validating the structured response, and enforcing technical consistency checks.
+
 ---
 
 ## Required Input Fields
