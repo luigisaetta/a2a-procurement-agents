@@ -72,11 +72,17 @@ Reference link:
 
 ## Agents
 
-Development proceeds agent by agent. The current roadmap starts with one concrete agent and will expand as the procurement workflow grows.
+Development proceeds agent by agent. This first draft roadmap defines the initial procurement agent network.
 
 | Agent | Description |
 | --- | --- |
-| Offer Evaluation Agent | Evaluates supplier offers, applies procurement rules, ranks offers, selects the winning supplier, and returns explainable evaluation output. |
+| Procurement Orchestrator | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
+| Supplier Discovery Agent | Identifies candidate suppliers for a procurement request. |
+| Bid Invitation Agent | Sends bid invitations to selected suppliers. |
+| Bid Collection Agent | Collects supplier bids and prepares them for evaluation. |
+| Offer Evaluation Agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
+| Compliance Agent | Checks procurement decisions and supplier data against compliance rules. |
+| Purchase Order Agent | Generates or prepares purchase order data after an approved supplier decision. |
 
 Detailed agent descriptions are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
 

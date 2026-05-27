@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-27
 
+- Added the first draft full agent network to the README and agent catalog.
 - Clarified that the Offer Evaluation Agent applies policy selection logic rather than generic scoring logic.
 - Clarified the urgent procurement policy cost priority and tie-breaker behavior.
 - Added the initial local Markdown policy for urgent procurement offer evaluation.
