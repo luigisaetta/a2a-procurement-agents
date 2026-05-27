@@ -110,18 +110,9 @@ Security features will be introduced incrementally in later phases.
 
 Development proceeds incrementally agent-by-agent.
 
-The first implemented agent is:
+The agent catalog grows as new agents are specified and implemented.
 
-## Offer Evaluation Agent
-
-Responsibilities:
-
-- receive supplier offers
-- load procurement evaluation rules from Markdown
-- evaluate offers
-- compute ranking/scoring
-- determine winning supplier
-- generate explainable evaluation output
+Detailed descriptions of current and planned agents are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
 
 ---
 
@@ -141,6 +132,22 @@ This includes:
 
 ---
 
+## Code Design
+
+Generated and maintained code must stay simple, readable, and modular.
+
+Prefer straightforward implementations over unnecessary abstraction.
+
+Design choices should:
+
+- avoid over-engineering
+- favor readability over cleverness
+- keep modules focused on clear responsibilities
+- introduce abstractions only when they reduce meaningful complexity
+- make the code easy to test, review, and evolve
+
+---
+
 ## Python Documentation
 
 All Python docstrings must be accurate, complete, and written in Google docstring format.
@@ -157,20 +164,20 @@ Docstrings should clearly describe:
 
 Every Python file must start with a module-level multiline string header containing:
 
-- a brief description of the file
 - `Author: L. Saetta`
 - `Date Last Modified: YYYY-MM-DD`
 - `License: MIT`
+- a brief description of the file
 
 Example:
 
 ```python
 """
-Brief description of the module.
-
 Author: L. Saetta
 Date Last Modified: 2026-05-27
 License: MIT
+Description:    Brief description of the module.
+                xxxxx
 """
 ```
 

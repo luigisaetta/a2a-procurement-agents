@@ -74,27 +74,11 @@ Reference link:
 
 Development proceeds agent by agent. The current roadmap starts with one concrete agent and will expand as the procurement workflow grows.
 
-| Agent | Status | Purpose |
-| --- | --- | --- |
-| Offer Evaluation Agent | Draft specification | Evaluates supplier offers, applies Markdown-defined procurement rules, computes rankings, selects the winning supplier, and returns explainable evaluation output. |
+| Agent | Description |
+| --- | --- |
+| Offer Evaluation Agent | Evaluates supplier offers, applies procurement rules, ranks offers, selects the winning supplier, and returns explainable evaluation output. |
 
-Future agents will be added here as their specifications are introduced.
-
-## First Agent: Offer Evaluation
-
-The Offer Evaluation Agent receives supplier offers for a procurement request and determines the best offer according to configurable policy.
-
-It is responsible for:
-
-- validating offer payloads
-- loading evaluation rules from Markdown policy files
-- applying scoring logic
-- ranking supplier offers
-- selecting the winning supplier
-- producing explainable scoring details
-- returning structured validation or processing errors
-
-The current draft specification is available at [specs/agents/offer-evaluation-agent.md](specs/agents/offer-evaluation-agent.md).
+Detailed agent descriptions are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
 
 ## Spec-First Development
 
