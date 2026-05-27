@@ -106,25 +106,23 @@ Canonical schema: [specs/schemas/evaluate-offers-request.schema.json](../schemas
 
 # Policy Input
 
-The agent receives a Markdown policy file.
+The agent reads a local Markdown policy file.
 
-Example:
+Default local policy:
 
-```markdown
-# Evaluation Rules
+- [services/offer-evaluation-agent/policies/standard-urgent-procurement-v1.md](../../services/offer-evaluation-agent/policies/standard-urgent-procurement-v1.md)
 
-## Delivery Time
-Weight: 40
+Policy ID:
 
-## Price
-Weight: 30
+- `standard-urgent-procurement-v1`
 
-## Reliability
-Weight: 20
+Policy version:
 
-## Quality
-Weight: 10
-```
+- `0.1.0`
+
+The policy excludes offers with a currency different from the request currency and offers with a delivery date later than the requested delivery date.
+
+Eligible offers are selected primarily by lowest cost, with supplier reliability and earlier delivery date used as tie-breakers.
 
 ---
 
@@ -138,6 +136,7 @@ Canonical schema: [specs/schemas/evaluate-offers-response.schema.json](../schema
 {
   "request_id": "REQ-2026-0001",
   "decision": {
+    "status": "selected_offer",
     "selected_offer": {
       "offer_id": "OFF-002",
       "supplier_id": "SUP-002",
@@ -150,7 +149,22 @@ Canonical schema: [specs/schemas/evaluate-offers-response.schema.json](../schema
       "valid_until": "2026-06-01"
     }
   },
-  "explanation": "Supplier B was selected because it offers the best balance of delivery date, price, quality, and reliability according to the configured procurement policy."
+  "explanation": "Supplier B was selected because it provides the lowest eligible cost and meets the required delivery date."
+}
+```
+
+When no offers remain valid after policy exclusions, the agent returns:
+
+```json
+{
+  "request_id": "REQ-2026-0001",
+  "decision": {
+    "status": "no_valid_offers",
+    "reasons": [
+      "All offers were excluded because their delivery dates are later than the requested delivery date."
+    ]
+  },
+  "explanation": "No supplier offer was selected because every offer was excluded by the evaluation policy."
 }
 ```
 
@@ -175,6 +189,7 @@ Invalid payloads must generate structured validation errors.
 The evaluation result must include:
 
 - the selected offer details
+- a no-valid-offers decision when all offers are excluded
 - a concise rationale for the decision
 - the relevant policy criteria considered during evaluation
 
