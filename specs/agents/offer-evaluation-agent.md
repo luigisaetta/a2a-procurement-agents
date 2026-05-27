@@ -177,7 +177,8 @@ Canonical schema: [specs/schemas/evaluate-offers-response.schema.json](../schema
       "quality_score": 90,
       "reliability_score": 94,
       "valid_until": "2026-06-01"
-    }
+    },
+    "reasons": []
   },
   "explanation": "Supplier B was selected because it provides the lowest eligible cost and meets the required delivery date."
 }
@@ -190,6 +191,7 @@ When no offers remain valid after policy exclusions, the agent returns:
   "request_id": "REQ-2026-0001",
   "decision": {
     "status": "no_valid_offers",
+    "selected_offer": {},
     "reasons": [
       "All offers were excluded because their delivery dates are later than the requested delivery date."
     ]

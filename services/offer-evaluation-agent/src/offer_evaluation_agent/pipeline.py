@@ -23,8 +23,7 @@ from offer_evaluation_agent.model_factory import build_model
 from offer_evaluation_agent.models import (
     EvaluateOffersRequest,
     EvaluateOffersResponse,
-    NoValidOffersDecision,
-    SelectedOfferDecision,
+    SupplierOffer,
 )
 
 SYSTEM_PROMPT = """You are the Offer Evaluation Agent.
@@ -164,19 +163,31 @@ class OfferEvaluationWorkflowAgent:
             raise ValueError("Response request_id does not match input request_id.")
 
         decision = response.decision
-        if isinstance(decision, NoValidOffersDecision):
+        if decision.status == "no_valid_offers":
+            if decision.selected_offer:
+                raise ValueError(
+                    "No-valid-offers decision must not include selected_offer."
+                )
+            if not decision.reasons:
+                raise ValueError(
+                    "No-valid-offers decision must include at least one reason."
+                )
             return
 
-        if not isinstance(decision, SelectedOfferDecision):
-            raise ValueError("Unsupported decision type.")
+        if not decision.selected_offer:
+            raise ValueError("Selected-offer decision must include selected_offer.")
+        if decision.reasons:
+            raise ValueError("Selected-offer decision must not include reasons.")
+
+        selected_offer = SupplierOffer.model_validate(decision.selected_offer)
 
         offers_by_id = {offer.offer_id: offer for offer in request.offers}
-        source_offer = offers_by_id.get(decision.selected_offer.offer_id)
+        source_offer = offers_by_id.get(selected_offer.offer_id)
         if source_offer is None:
             raise ValueError("Selected offer_id is not present in the input request.")
 
         source = source_offer.model_dump(mode="json")
-        selected = decision.selected_offer.model_dump(mode="json")
+        selected = selected_offer.model_dump(mode="json")
         if selected != source:
             raise ValueError("Selected offer details do not match the input offer.")
 

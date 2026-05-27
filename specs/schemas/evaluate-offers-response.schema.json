@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/evaluate-offers-response.schema.json",
   "title": "EvaluateOffersResponse",
-  "description": "Response payload returned by the Offer Evaluation Agent after evaluating supplier offers for a procurement request.",
+  "description": "Response payload returned by the Offer Evaluation Agent after evaluating supplier offers for a procurement request. The schema avoids JSON Schema composition keywords so it can be used with OCI/OpenAI-compatible structured output.",
   "type": "object",
   "additionalProperties": false,
   "required": ["request_id", "decision", "explanation"],
@@ -14,15 +14,7 @@
       "examples": ["REQ-2026-0001"]
     },
     "decision": {
-      "description": "Structured decision produced by the evaluation agent.",
-      "oneOf": [
-        {
-          "$ref": "#/$defs/SelectedOfferDecision"
-        },
-        {
-          "$ref": "#/$defs/NoValidOffersDecision"
-        }
-      ]
+      "$ref": "#/$defs/EvaluationDecision"
     },
     "explanation": {
       "type": "string",
@@ -35,37 +27,25 @@
     }
   },
   "$defs": {
-    "SelectedOfferDecision": {
+    "EvaluationDecision": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Decision used when one valid supplier offer is selected.",
-      "required": ["status", "selected_offer"],
+      "description": "Structured decision produced by the evaluation agent. When status is selected_offer, selected_offer must contain the complete selected offer and reasons must be empty. When status is no_valid_offers, selected_offer must be an empty object and reasons must contain at least one reason. These cross-field rules are enforced by agent consistency checks.",
+      "required": ["status", "selected_offer", "reasons"],
       "properties": {
         "status": {
           "type": "string",
-          "const": "selected_offer",
-          "description": "Decision status indicating that a valid offer was selected."
+          "enum": ["selected_offer", "no_valid_offers"],
+          "description": "Decision status."
         },
         "selected_offer": {
-          "$ref": "#/$defs/SelectedOffer"
-        }
-      }
-    },
-    "NoValidOffersDecision": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Decision used when no supplier offer remains valid after policy exclusions.",
-      "required": ["status", "reasons"],
-      "properties": {
-        "status": {
-          "type": "string",
-          "const": "no_valid_offers",
-          "description": "Decision status indicating that no offer could be selected."
+          "type": "object",
+          "description": "Complete selected offer details when status is selected_offer. Use an empty object when status is no_valid_offers.",
+          "additionalProperties": true
         },
         "reasons": {
           "type": "array",
-          "minItems": 1,
-          "description": "Policy exclusion reasons that explain why no offer was selected.",
+          "description": "Policy exclusion reasons when status is no_valid_offers. Use an empty array when status is selected_offer.",
           "items": {
             "type": "string",
             "minLength": 1
@@ -76,80 +56,6 @@
               "Some offers use a currency different from the request currency."
             ]
           ]
-        }
-      }
-    },
-    "SelectedOffer": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Complete details of the supplier offer selected by the evaluation agent.",
-      "required": [
-        "offer_id",
-        "supplier_id",
-        "supplier_name",
-        "price",
-        "currency",
-        "delivery_date",
-        "quality_score",
-        "reliability_score",
-        "valid_until"
-      ],
-      "properties": {
-        "offer_id": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Unique identifier of the selected supplier offer.",
-          "examples": ["OFF-002"]
-        },
-        "supplier_id": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Unique identifier of the selected supplier.",
-          "examples": ["SUP-002"]
-        },
-        "supplier_name": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Human-readable name of the selected supplier.",
-          "examples": ["Supplier B"]
-        },
-        "price": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Total price of the selected offer for the requested quantity.",
-          "examples": [11800.0]
-        },
-        "currency": {
-          "type": "string",
-          "pattern": "^[A-Z]{3}$",
-          "description": "ISO 4217 currency code of the selected offer price.",
-          "examples": ["EUR"]
-        },
-        "delivery_date": {
-          "type": "string",
-          "format": "date",
-          "description": "Committed delivery date of the selected offer, expressed as an ISO 8601 date.",
-          "examples": ["2026-06-09"]
-        },
-        "quality_score": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Quality score of the selected offer on a 0 to 100 scale.",
-          "examples": [90]
-        },
-        "reliability_score": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Reliability score of the selected supplier on a 0 to 100 scale.",
-          "examples": [94]
-        },
-        "valid_until": {
-          "type": "string",
-          "format": "date",
-          "description": "Date until which the selected supplier offer remains valid, expressed as an ISO 8601 date.",
-          "examples": ["2026-06-01"]
         }
       }
     }
@@ -169,7 +75,8 @@
           "quality_score": 90,
           "reliability_score": 94,
           "valid_until": "2026-06-01"
-        }
+        },
+        "reasons": []
       },
       "explanation": "Supplier B was selected because it provides the lowest eligible cost and meets the required delivery date."
     },
@@ -177,6 +84,7 @@
       "request_id": "REQ-2026-0001",
       "decision": {
         "status": "no_valid_offers",
+        "selected_offer": {},
         "reasons": [
           "All offers were excluded because their delivery dates are later than the requested delivery date."
         ]

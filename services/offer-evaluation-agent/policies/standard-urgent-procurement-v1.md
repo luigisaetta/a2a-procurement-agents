@@ -86,6 +86,7 @@ If no offers remain after applying the exclusion rules, the agent must return a 
 The response must include:
 
 - `decision.status` set to `no_valid_offers`
+- `decision.selected_offer` set to an empty object
 - one or more reasons explaining why no offer was eligible
 - a concise human-readable `explanation`
 

@@ -11,7 +11,7 @@ Description:    Pydantic models mirroring the canonical JSON Schemas used
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -49,22 +49,22 @@ class EvaluateOffersRequest(BaseModel):
     offers: list[SupplierOffer] = Field(min_length=1)
 
 
-class SelectedOfferDecision(BaseModel):
-    """Decision returned when a valid offer is selected."""
+class EvaluationDecision(BaseModel):
+    """Decision returned by the Offer Evaluation Agent.
+
+    ``selected_offer`` is populated when ``status`` is ``selected_offer`` and
+    is an empty object when ``status`` is ``no_valid_offers``.
+    ``reasons`` is populated when ``status`` is ``no_valid_offers``.
+    Cross-field requirements are enforced by the agent consistency checks
+    instead of JSON Schema composition keywords so the schema remains
+    compatible with OCI/OpenAI structured output.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    status: Literal["selected_offer"]
-    selected_offer: SupplierOffer
-
-
-class NoValidOffersDecision(BaseModel):
-    """Decision returned when policy exclusions remove every offer."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    status: Literal["no_valid_offers"]
-    reasons: list[str] = Field(min_length=1)
+    status: Literal["selected_offer", "no_valid_offers"]
+    selected_offer: dict[str, Any] = Field(default_factory=dict)
+    reasons: list[str] = Field(default_factory=list)
 
 
 class EvaluateOffersResponse(BaseModel):
@@ -73,7 +73,5 @@ class EvaluateOffersResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: str = Field(min_length=1)
-    decision: SelectedOfferDecision | NoValidOffersDecision = Field(
-        discriminator="status"
-    )
+    decision: EvaluationDecision
     explanation: str = Field(min_length=1)

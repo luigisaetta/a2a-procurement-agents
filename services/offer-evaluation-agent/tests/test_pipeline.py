@@ -16,9 +16,9 @@ import pytest
 from test_client import load_jsonc
 
 from offer_evaluation_agent.models import (
+    EvaluationDecision,
     EvaluateOffersRequest,
     EvaluateOffersResponse,
-    SelectedOfferDecision,
     SupplierOffer,
 )
 from offer_evaluation_agent.pipeline import (
@@ -91,9 +91,9 @@ def test_consistency_accepts_source_offer() -> None:
     request = _request()
     response = EvaluateOffersResponse(
         request_id=request.request_id,
-        decision=SelectedOfferDecision(
+        decision=EvaluationDecision(
             status="selected_offer",
-            selected_offer=request.offers[0],
+            selected_offer=request.offers[0].model_dump(mode="json"),
         ),
         explanation="Supplier A was selected.",
     )
@@ -109,12 +109,28 @@ def test_consistency_rejects_modified_selected_offer() -> None:
     modified = request.offers[0].model_copy(update={"price": 1.0})
     response = EvaluateOffersResponse(
         request_id=request.request_id,
-        decision=SelectedOfferDecision(
-            status="selected_offer", selected_offer=modified
+        decision=EvaluationDecision(
+            status="selected_offer",
+            selected_offer=modified.model_dump(mode="json"),
         ),
         explanation="Supplier A was selected.",
     )
     agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
 
     with pytest.raises(ValueError, match="Selected offer details do not match"):
+        agent.validate_consistency(request, response)
+
+
+def test_consistency_rejects_no_valid_without_reasons() -> None:
+    """Reject no-valid-offers decisions that omit reasons."""
+
+    request = _request()
+    response = EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision=EvaluationDecision(status="no_valid_offers"),
+        explanation="No supplier offer was selected.",
+    )
+    agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
+
+    with pytest.raises(ValueError, match="must include at least one reason"):
         agent.validate_consistency(request, response)
