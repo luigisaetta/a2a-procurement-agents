@@ -127,6 +127,55 @@ Responsibilities:
 
 # Engineering Standards
 
+## Documentation Language
+
+All project documentation must be written in English.
+
+This includes:
+
+- specifications
+- Markdown documentation
+- changelog entries
+- inline explanatory comments intended for maintainers
+- user-facing examples committed to the repository
+
+---
+
+## Python Documentation
+
+All Python docstrings must be accurate, complete, and written in Google docstring format.
+
+Docstrings should clearly describe:
+
+- module responsibilities
+- public classes
+- public functions and methods
+- arguments
+- return values
+- raised exceptions when relevant
+- behavior that is not obvious from the implementation
+
+Every Python file must start with a module-level multiline string header containing:
+
+- a brief description of the file
+- `Author: L. Saetta`
+- `Date Last Modified: YYYY-MM-DD`
+- `License: MIT`
+
+Example:
+
+```python
+"""
+Brief description of the module.
+
+Author: L. Saetta
+Date Last Modified: 2026-05-27
+License: MIT
+"""
+```
+
+---
+
 ## Formatting
 
 Code formatting uses:
