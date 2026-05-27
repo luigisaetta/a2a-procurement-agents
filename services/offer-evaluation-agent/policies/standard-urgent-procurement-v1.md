@@ -58,7 +58,9 @@ After applying the exclusion rules, the agent must evaluate only the remaining o
 
 ### Primary Criterion: Cost
 
-Cost has an 80% policy weight and is the primary selection criterion.
+Cost is the primary criterion and represents the dominant 80% policy priority.
+
+Reliability and delivery date are used only as tie-breakers.
 
 The agent must select the offer with the lowest `price` among eligible offers.
 

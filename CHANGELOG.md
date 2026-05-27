@@ -4,6 +4,8 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-27
 
+- Clarified that the Offer Evaluation Agent applies policy selection logic rather than generic scoring logic.
+- Clarified the urgent procurement policy cost priority and tie-breaker behavior.
 - Added the initial local Markdown policy for urgent procurement offer evaluation.
 - Updated the Offer Evaluation Agent response schema to support no-valid-offers decisions.
 - Aligned the Offer Evaluation Agent specification with the simplified decision and explanation response model.

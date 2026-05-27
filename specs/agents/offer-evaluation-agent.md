@@ -27,7 +27,7 @@ The agent must:
 - receive a list of supplier offers
 - validate input payloads
 - load evaluation policies
-- apply scoring logic
+- apply policy selection logic
 - select the best offer according to the configured policy
 - generate explainable reasoning
 - return evaluation results
