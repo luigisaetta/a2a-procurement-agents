@@ -1,2 +1,159 @@
-# a2a-procurement-agents
-This repo will contains all the code for a multi-agents solution for express orders
+# A2A Procurement Agents
+
+Enterprise procurement is becoming too fast, too distributed, and too policy-heavy for a single monolithic assistant.
+
+This project explores a different shape: a network of independently deployable AI agents that collaborate over open A2A contracts to handle urgent procurement workflows.
+
+The first scenario is rapid material sourcing. Multiple suppliers submit offers for an urgent request, autonomous agents evaluate those offers against procurement policy, and the system produces a ranked, explainable decision that can later feed orchestration, approval, purchasing, auditing, and fulfillment flows.
+
+## Why This Project Exists
+
+Most multi-agent demos are tightly coupled: agents share runtime objects, hidden memory, framework internals, or direct function calls. That is convenient for a demo, but it is not how enterprise systems usually evolve.
+
+This repository is intentionally different.
+
+Each agent is treated as a black box:
+
+- independently deployable
+- independently testable
+- independently versioned
+- discoverable through an Agent Card
+- reachable over HTTP
+- integrated only through A2A protocol contracts
+
+The goal is to demonstrate agent interoperability, not framework coupling.
+
+## The A2A Model
+
+The platform uses the Agent2Agent protocol, also known as A2A, as the communication boundary between agents.
+
+A2A is the contract layer that lets one agent discover what another agent can do, send it a task, exchange structured messages, and receive task results without knowing how the remote agent is implemented.
+
+In this project, A2A communication means:
+
+- **Protocol:** A2A v1
+- **Transport:** HTTP
+- **Message format:** JSON-RPC 2.0
+- **Discovery:** Agent Cards
+- **Integration rule:** no agent depends on another agent's internal code
+
+This matters because procurement workflows are naturally cross-domain. Evaluation, supplier communication, compliance, purchase order generation, audit, and orchestration can each evolve at different speeds. A2A gives those agents a common language while preserving independent ownership.
+
+Reference links:
+
+- [Agent2Agent A2A specification on GitHub](https://github.com/a2aproject/A2A/blob/main/docs/specification.md)
+- [Agent2Agent A2A project on GitHub](https://github.com/a2aproject/A2A)
+
+## Runtime Foundation
+
+Agents are implemented with Oracle Locus, used as the runtime layer for agent execution and A2A infrastructure.
+
+Locus provides the mechanics this project needs:
+
+- A2A server and client support
+- Agent Card support
+- task lifecycle handling
+- protocol plumbing
+- orchestration primitives
+- model-provider abstraction
+- observability and checkpointing foundations
+
+Business behavior remains owned by each agent. Locus is used for runtime support, not as a shared business-code dependency between agents.
+
+Reference link:
+
+- [Oracle Locus on GitHub](https://github.com/oracle-samples/locus)
+
+## Agents
+
+Development proceeds agent by agent. The current roadmap starts with one concrete agent and will expand as the procurement workflow grows.
+
+| Agent | Status | Purpose |
+| --- | --- | --- |
+| Offer Evaluation Agent | Draft specification | Evaluates supplier offers, applies Markdown-defined procurement rules, computes rankings, selects the winning supplier, and returns explainable evaluation output. |
+
+Future agents will be added here as their specifications are introduced.
+
+## First Agent: Offer Evaluation
+
+The Offer Evaluation Agent receives supplier offers for a procurement request and determines the best offer according to configurable policy.
+
+It is responsible for:
+
+- validating offer payloads
+- loading evaluation rules from Markdown policy files
+- applying scoring logic
+- ranking supplier offers
+- selecting the winning supplier
+- producing explainable scoring details
+- returning structured validation or processing errors
+
+The current draft specification is available at [specs/agents/offer-evaluation-agent.md](specs/agents/offer-evaluation-agent.md).
+
+## Spec-First Development
+
+This repository follows a spec-first development model.
+
+Specifications define the contract before implementation:
+
+- schemas
+- workflows
+- events
+- policies
+- agent capabilities
+- task semantics
+- error behavior
+
+Implementation must follow the specifications. When behavior changes, the specification changes first or in the same development step.
+
+## Repository Layout
+
+```text
+specs/
+  agents/
+  schemas/
+  events/
+  workflows/
+  policies/
+  examples/
+
+services/
+  offer-evaluation-agent/
+
+docs/
+tests/
+deploy/
+```
+
+## Engineering Principles
+
+The project is designed with enterprise-grade concerns in mind:
+
+- auditability
+- deterministic contracts
+- explainable decisions
+- structured validation
+- distributed tracing
+- secure communication
+- resumable workflows
+- checkpointing persistence
+- policy enforcement
+
+The first implementation steps focus on the Offer Evaluation Agent. Security, checkpointing, orchestration, and observability features will be introduced incrementally as the agent network expands.
+
+## Development Standards
+
+Code and documentation follow the repository rules in [AGENTS.md](AGENTS.md).
+
+Core standards include:
+
+- all documentation is written in English
+- Python code is formatted with `black`
+- Python code is linted with `pylint`
+- tests are written with `pytest`
+- Python docstrings use Google docstring format
+- every meaningful change is documented in the changelog
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
