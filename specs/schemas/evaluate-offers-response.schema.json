@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/evaluate-offers-response.schema.json",
+  "title": "EvaluateOffersResponse",
+  "description": "Response payload returned by the Offer Evaluation Agent after selecting the best supplier offer for a procurement request.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_id", "decision", "explanation"],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement request that was evaluated.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Structured decision produced by the evaluation agent.",
+      "required": ["selected_offer"],
+      "properties": {
+        "selected_offer": {
+          "$ref": "#/$defs/SelectedOffer"
+        }
+      }
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable explanation of why the selected offer was chosen.",
+      "examples": [
+        "Supplier B was selected because it offers the best balance of delivery date, price, quality, and reliability according to the configured procurement policy."
+      ]
+    }
+  },
+  "$defs": {
+    "SelectedOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Complete details of the supplier offer selected by the evaluation agent.",
+      "required": [
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "price",
+        "currency",
+        "delivery_date",
+        "quality_score",
+        "reliability_score",
+        "valid_until"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the selected supplier offer.",
+          "examples": ["OFF-002"]
+        },
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the selected supplier.",
+          "examples": ["SUP-002"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable name of the selected supplier.",
+          "examples": ["Supplier B"]
+        },
+        "price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total price of the selected offer for the requested quantity.",
+          "examples": [11800.0]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code of the selected offer price.",
+          "examples": ["EUR"]
+        },
+        "delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Committed delivery date of the selected offer, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-09"]
+        },
+        "quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Quality score of the selected offer on a 0 to 100 scale.",
+          "examples": [90]
+        },
+        "reliability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Reliability score of the selected supplier on a 0 to 100 scale.",
+          "examples": [94]
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date",
+          "description": "Date until which the selected supplier offer remains valid, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-01"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "request_id": "REQ-2026-0001",
+      "decision": {
+        "selected_offer": {
+          "offer_id": "OFF-002",
+          "supplier_id": "SUP-002",
+          "supplier_name": "Supplier B",
+          "price": 11800.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-09",
+          "quality_score": 90,
+          "reliability_score": 94,
+          "valid_until": "2026-06-01"
+        }
+      },
+      "explanation": "Supplier B was selected because it offers the best balance of delivery date, price, quality, and reliability according to the configured procurement policy."
+    }
+  ]
+}

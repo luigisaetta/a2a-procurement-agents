@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/evaluate-offers-request.schema.json",
+  "title": "EvaluateOffersRequest",
+  "description": "Request payload used by the Offer Evaluation Agent to evaluate and rank supplier offers for a procurement request.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "plant_code",
+    "material_code",
+    "material_description",
+    "quantity",
+    "unit_of_measure",
+    "currency",
+    "required_delivery_date",
+    "evaluation_policy_id",
+    "offers"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement request being evaluated.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "plant_code": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Code of the plant, site, or business unit requesting the material.",
+      "examples": ["PLANT-01"]
+    },
+    "material_code": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Internal code of the requested material or item.",
+      "examples": ["MAT-12345"]
+    },
+    "material_description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable description of the requested material.",
+      "examples": ["Industrial pump replacement kit"]
+    },
+    "quantity": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Requested quantity of the material.",
+      "examples": [10]
+    },
+    "unit_of_measure": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unit of measure for the requested quantity.",
+      "examples": ["EA"]
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "Expected ISO 4217 currency code used for offer comparison.",
+      "examples": ["EUR"]
+    },
+    "required_delivery_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Requested delivery date for the material, expressed as an ISO 8601 date.",
+      "examples": ["2026-06-15"]
+    },
+    "evaluation_policy_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the procurement evaluation policy that should be applied.",
+      "examples": ["standard-urgent-procurement-v1"]
+    },
+    "offers": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Supplier offers to be evaluated and ranked.",
+      "items": {
+        "$ref": "#/$defs/SupplierOffer"
+      }
+    }
+  },
+  "$defs": {
+    "SupplierOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "price",
+        "currency",
+        "delivery_date",
+        "quality_score",
+        "reliability_score",
+        "valid_until"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the supplier offer.",
+          "examples": ["OFF-001"]
+        },
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the supplier submitting the offer.",
+          "examples": ["SUP-001"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable name of the supplier.",
+          "examples": ["Supplier A"]
+        },
+        "price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total offer price for the requested quantity.",
+          "examples": [12000.0]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code of the offer price.",
+          "examples": ["EUR"]
+        },
+        "delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Supplier committed delivery date, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-10"]
+        },
+        "quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Supplier or offer quality score on a 0 to 100 scale.",
+          "examples": [92]
+        },
+        "reliability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Supplier reliability score on a 0 to 100 scale.",
+          "examples": [88]
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date",
+          "description": "Date until which the supplier offer remains valid, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-01"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "request_id": "REQ-2026-0001",
+      "plant_code": "PLANT-01",
+      "material_code": "MAT-12345",
+      "material_description": "Industrial pump replacement kit",
+      "quantity": 10,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-15",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "OFF-001",
+          "supplier_id": "SUP-001",
+          "supplier_name": "Supplier A",
+          "price": 12000.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-10",
+          "quality_score": 92,
+          "reliability_score": 88,
+          "valid_until": "2026-06-01"
+        }
+      ]
+    }
+  ]
+}

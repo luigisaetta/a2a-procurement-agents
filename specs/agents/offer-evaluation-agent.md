@@ -74,21 +74,30 @@ Evaluates supplier offers according to procurement policies.
 
 ## EvaluateOffersRequest
 
+Canonical schema: [specs/schemas/evaluate-offers-request.schema.json](../schemas/evaluate-offers-request.schema.json)
+
 ```json
 {
-  "request_id": "REQ-001",
+  "request_id": "REQ-2026-0001",
   "plant_code": "PLANT-01",
+  "material_code": "MAT-12345",
+  "material_description": "Industrial pump replacement kit",
+  "quantity": 10,
+  "unit_of_measure": "EA",
   "currency": "EUR",
-  "required_delivery_date": "2026-06-01",
+  "required_delivery_date": "2026-06-15",
+  "evaluation_policy_id": "standard-urgent-procurement-v1",
   "offers": [
     {
+      "offer_id": "OFF-001",
       "supplier_id": "SUP-001",
       "supplier_name": "Supplier A",
-      "price": 12000,
+      "price": 12000.0,
       "currency": "EUR",
-      "delivery_date": "2026-05-29",
+      "delivery_date": "2026-06-10",
       "quality_score": 92,
-      "reliability_score": 88
+      "reliability_score": 88,
+      "valid_until": "2026-06-01"
     }
   ]
 }
@@ -124,23 +133,25 @@ Weight: 10
 
 ## EvaluateOffersResponse
 
+Canonical schema: [specs/schemas/evaluate-offers-response.schema.json](../schemas/evaluate-offers-response.schema.json)
+
 ```json
 {
-  "request_id": "REQ-001",
-  "winner_supplier_id": "SUP-002",
-  "ranking": [
-    {
+  "request_id": "REQ-2026-0001",
+  "decision": {
+    "selected_offer": {
+      "offer_id": "OFF-002",
       "supplier_id": "SUP-002",
-      "score": 91.4,
-      "rank": 1
-    },
-    {
-      "supplier_id": "SUP-001",
-      "score": 84.2,
-      "rank": 2
+      "supplier_name": "Supplier B",
+      "price": 11800.0,
+      "currency": "EUR",
+      "delivery_date": "2026-06-09",
+      "quality_score": 90,
+      "reliability_score": 94,
+      "valid_until": "2026-06-01"
     }
-  ],
-  "evaluation_summary": "Supplier SUP-002 selected due to best delivery time and competitive pricing."
+  },
+  "explanation": "Supplier B was selected because it offers the best balance of delivery date, price, quality, and reliability according to the configured procurement policy."
 }
 ```
 
@@ -164,11 +175,9 @@ Invalid payloads must generate structured validation errors.
 
 The evaluation result must include:
 
-- ranking rationale
-- scoring details
-- applied weights
-- policy version
-- evaluation timestamp
+- the selected offer details
+- a concise rationale for the decision
+- the relevant policy criteria considered during evaluation
 
 ---
 
