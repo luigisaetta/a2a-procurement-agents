@@ -1,0 +1,63 @@
+/*
+Expected result:
+
+The selected offer should be OFF-002 from Northern Industrial Supply.
+
+Reason:
+- OFF-003 must be excluded because its delivery date, 2026-06-20, is later
+  than the required delivery date, 2026-06-15.
+- OFF-001 and OFF-002 are both eligible because they use EUR and can deliver
+  by the required delivery date.
+- OFF-002 has the lowest eligible price, 11800.00 EUR, so it should win.
+
+The response should have:
+- decision.status = "selected_offer"
+- decision.selected_offer.offer_id = "OFF-002"
+- decision.selected_offer.supplier_id = "SUP-002"
+*/
+{
+  "request_id": "REQ-2026-0001",
+  "plant_code": "PLANT-01",
+  "material_code": "MAT-12345",
+  "material_description": "Industrial pump replacement kit",
+  "quantity": 10,
+  "unit_of_measure": "EA",
+  "currency": "EUR",
+  "required_delivery_date": "2026-06-15",
+  "evaluation_policy_id": "standard-urgent-procurement-v1",
+  "offers": [
+    {
+      "offer_id": "OFF-001",
+      "supplier_id": "SUP-001",
+      "supplier_name": "Central Components Ltd.",
+      "price": 12000.0,
+      "currency": "EUR",
+      "delivery_date": "2026-06-10",
+      "quality_score": 92,
+      "reliability_score": 88,
+      "valid_until": "2026-06-01"
+    },
+    {
+      "offer_id": "OFF-002",
+      "supplier_id": "SUP-002",
+      "supplier_name": "Northern Industrial Supply",
+      "price": 11800.0,
+      "currency": "EUR",
+      "delivery_date": "2026-06-12",
+      "quality_score": 90,
+      "reliability_score": 94,
+      "valid_until": "2026-06-01"
+    },
+    {
+      "offer_id": "OFF-003",
+      "supplier_id": "SUP-003",
+      "supplier_name": "Rapid Mechanics GmbH",
+      "price": 10900.0,
+      "currency": "EUR",
+      "delivery_date": "2026-06-20",
+      "quality_score": 95,
+      "reliability_score": 96,
+      "valid_until": "2026-06-01"
+    }
+  ]
+}

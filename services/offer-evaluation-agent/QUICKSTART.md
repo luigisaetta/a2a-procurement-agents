@@ -60,3 +60,22 @@ Check the Agent Card:
 curl -H "Authorization: Bearer $AGENT_API_KEY" \
   http://127.0.0.1:8001/.well-known/agent-card.json
 ```
+
+## Invoke With Sample Data
+
+The sample request is stored in:
+
+```text
+services/offer-evaluation-agent/examples/sample-evaluate-offers-request.jsonc
+```
+
+It contains three supplier offers. One offer is intentionally later than the required delivery date and should be excluded by the policy.
+
+Run the test client from the repository root:
+
+```bash
+PYTHONPATH=services/offer-evaluation-agent/src \
+python services/offer-evaluation-agent/examples/test_client.py
+```
+
+The expected selected offer is `OFF-002` from `Northern Industrial Supply`.

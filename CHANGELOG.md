@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-27
 
+- Added a manual A2A test client and synthetic offer evaluation sample payload.
 - Updated the Offer Evaluation Agent specification status to initial implementation.
 - Moved Offer Evaluation Agent startup instructions from the main README to a dedicated quickstart.
 - Added the first Offer Evaluation Agent A2A server implementation using Locus.

@@ -9,7 +9,11 @@ Description:    Verifies response parsing and technical consistency checks.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
+
+from test_client import load_jsonc
 
 from offer_evaluation_agent.models import (
     EvaluateOffersRequest,
@@ -63,6 +67,22 @@ def test_extract_json_object_from_text() -> None:
     assert _extract_json_object('Here: {"request_id": "REQ-1"} done') == (
         '{"request_id": "REQ-1"}'
     )
+
+
+def test_sample_payload_has_expected_winner() -> None:
+    """Load the sample JSONC payload and verify its expected structure."""
+
+    sample_path = (
+        Path(__file__).resolve().parents[1]
+        / "examples"
+        / "sample-evaluate-offers-request.jsonc"
+    )
+    payload = load_jsonc(sample_path)
+
+    assert payload["request_id"] == "REQ-2026-0001"
+    assert len(payload["offers"]) == 3
+    assert payload["offers"][1]["offer_id"] == "OFF-002"
+    assert payload["offers"][2]["delivery_date"] > payload["required_delivery_date"]
 
 
 def test_consistency_accepts_source_offer() -> None:

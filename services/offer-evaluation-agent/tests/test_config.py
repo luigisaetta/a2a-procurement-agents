@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import pytest
 
+from offer_evaluation_agent import config
 from offer_evaluation_agent.config import REQUIRED_ENV_VARS, load_settings
 
 
@@ -45,6 +46,7 @@ def test_load_settings_requires_all_variables(monkeypatch: pytest.MonkeyPatch) -
 
     for name in REQUIRED_ENV_VARS:
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(config, "LOCAL_ENV_FILE", config.SERVICE_DIR / "missing.env")
 
     with pytest.raises(RuntimeError, match="Missing required environment variables"):
         load_settings()
