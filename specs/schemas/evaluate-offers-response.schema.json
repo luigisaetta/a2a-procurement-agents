@@ -30,7 +30,7 @@
     "EvaluationDecision": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Structured decision produced by the evaluation agent. When status is selected_offer, selected_offer must contain the complete selected offer and reasons must be empty. When status is no_valid_offers, selected_offer must be an empty object and reasons must contain at least one reason. These cross-field rules are enforced by agent consistency checks.",
+      "description": "Structured decision produced by the evaluation agent. When status is selected_offer, selected_offer must contain the complete selected offer and reasons must be empty. When status is no_valid_offers, selected_offer must contain placeholder values and reasons must contain at least one reason. These cross-field rules are enforced by agent consistency checks.",
       "required": ["status", "selected_offer", "reasons"],
       "properties": {
         "status": {
@@ -39,16 +39,13 @@
           "description": "Decision status."
         },
         "selected_offer": {
-          "type": "object",
-          "description": "Complete selected offer details when status is selected_offer. Use an empty object when status is no_valid_offers.",
-          "additionalProperties": true
+          "$ref": "#/$defs/SelectedOfferPayload"
         },
         "reasons": {
           "type": "array",
           "description": "Policy exclusion reasons when status is no_valid_offers. Use an empty array when status is selected_offer.",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
           },
           "examples": [
             [
@@ -56,6 +53,69 @@
               "Some offers use a currency different from the request currency."
             ]
           ]
+        }
+      }
+    },
+    "SelectedOfferPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Selected offer object emitted in the response schema. Use real offer details when status is selected_offer and placeholder values when status is no_valid_offers.",
+      "required": [
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "price",
+        "currency",
+        "delivery_date",
+        "quality_score",
+        "reliability_score",
+        "valid_until"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "description": "Unique identifier of the selected supplier offer.",
+          "examples": ["OFF-002"]
+        },
+        "supplier_id": {
+          "type": "string",
+          "description": "Unique identifier of the selected supplier.",
+          "examples": ["SUP-002"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "description": "Human-readable name of the selected supplier.",
+          "examples": ["Supplier B"]
+        },
+        "price": {
+          "type": "number",
+          "description": "Total price of the selected offer for the requested quantity.",
+          "examples": [11800.0]
+        },
+        "currency": {
+          "type": "string",
+          "description": "ISO 4217 currency code of the selected offer price.",
+          "examples": ["EUR"]
+        },
+        "delivery_date": {
+          "type": "string",
+          "description": "Committed delivery date of the selected offer, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-09"]
+        },
+        "quality_score": {
+          "type": "number",
+          "description": "Quality score of the selected offer on a 0 to 100 scale.",
+          "examples": [90]
+        },
+        "reliability_score": {
+          "type": "number",
+          "description": "Reliability score of the selected supplier on a 0 to 100 scale.",
+          "examples": [94]
+        },
+        "valid_until": {
+          "type": "string",
+          "description": "Date until which the selected supplier offer remains valid, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-01"]
         }
       }
     }
@@ -84,7 +144,17 @@
       "request_id": "REQ-2026-0001",
       "decision": {
         "status": "no_valid_offers",
-        "selected_offer": {},
+        "selected_offer": {
+          "offer_id": "",
+          "supplier_id": "",
+          "supplier_name": "",
+          "price": 0,
+          "currency": "",
+          "delivery_date": "",
+          "quality_score": 0,
+          "reliability_score": 0,
+          "valid_until": ""
+        },
         "reasons": [
           "All offers were excluded because their delivery dates are later than the requested delivery date."
         ]

@@ -11,7 +11,7 @@ Description:    Pydantic models mirroring the canonical JSON Schemas used
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -49,11 +49,35 @@ class EvaluateOffersRequest(BaseModel):
     offers: list[SupplierOffer] = Field(min_length=1)
 
 
+class SelectedOfferPayload(BaseModel):
+    """Selected offer object emitted in the response schema.
+
+    The fields are intentionally not constrained with minimum lengths or
+    date formats because OCI/OpenAI-compatible structured output requires
+    a single fixed object shape for both positive and no-valid-offers
+    decisions. Consistency checks validate the object strictly when an
+    offer is selected.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    offer_id: str
+    supplier_id: str
+    supplier_name: str
+    price: float
+    currency: str
+    delivery_date: str
+    quality_score: float
+    reliability_score: float
+    valid_until: str
+
+
 class EvaluationDecision(BaseModel):
     """Decision returned by the Offer Evaluation Agent.
 
-    ``selected_offer`` is populated when ``status`` is ``selected_offer`` and
-    is an empty object when ``status`` is ``no_valid_offers``.
+    ``selected_offer`` is populated with real offer details when ``status``
+    is ``selected_offer`` and with placeholder values when ``status`` is
+    ``no_valid_offers``.
     ``reasons`` is populated when ``status`` is ``no_valid_offers``.
     Cross-field requirements are enforced by the agent consistency checks
     instead of JSON Schema composition keywords so the schema remains
@@ -63,8 +87,8 @@ class EvaluationDecision(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: Literal["selected_offer", "no_valid_offers"]
-    selected_offer: dict[str, Any] = Field(default_factory=dict)
-    reasons: list[str] = Field(default_factory=list)
+    selected_offer: SelectedOfferPayload
+    reasons: list[str]
 
 
 class EvaluateOffersResponse(BaseModel):

@@ -147,7 +147,7 @@ At runtime, the agent must:
 Technical consistency checks include:
 
 - a selected offer must match one of the offers received in the request
-- a `no_valid_offers` decision must not contain a selected offer
+- a `no_valid_offers` decision must use placeholder selected-offer values
 - the response `request_id` must match the input `request_id`
 
 Changing the procurement policy must be done by updating the Markdown policy file, not by changing the agent code.
@@ -191,7 +191,17 @@ When no offers remain valid after policy exclusions, the agent returns:
   "request_id": "REQ-2026-0001",
   "decision": {
     "status": "no_valid_offers",
-    "selected_offer": {},
+    "selected_offer": {
+      "offer_id": "",
+      "supplier_id": "",
+      "supplier_name": "",
+      "price": 0,
+      "currency": "",
+      "delivery_date": "",
+      "quality_score": 0,
+      "reliability_score": 0,
+      "valid_until": ""
+    },
     "reasons": [
       "All offers were excluded because their delivery dates are later than the requested delivery date."
     ]

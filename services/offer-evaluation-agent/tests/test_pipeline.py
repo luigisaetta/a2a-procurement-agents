@@ -19,6 +19,7 @@ from offer_evaluation_agent.models import (
     EvaluationDecision,
     EvaluateOffersRequest,
     EvaluateOffersResponse,
+    SelectedOfferPayload,
     SupplierOffer,
 )
 from offer_evaluation_agent.pipeline import (
@@ -93,7 +94,10 @@ def test_consistency_accepts_source_offer() -> None:
         request_id=request.request_id,
         decision=EvaluationDecision(
             status="selected_offer",
-            selected_offer=request.offers[0].model_dump(mode="json"),
+            selected_offer=SelectedOfferPayload.model_validate(
+                request.offers[0].model_dump(mode="json")
+            ),
+            reasons=[],
         ),
         explanation="Supplier A was selected.",
     )
@@ -111,7 +115,10 @@ def test_consistency_rejects_modified_selected_offer() -> None:
         request_id=request.request_id,
         decision=EvaluationDecision(
             status="selected_offer",
-            selected_offer=modified.model_dump(mode="json"),
+            selected_offer=SelectedOfferPayload.model_validate(
+                modified.model_dump(mode="json")
+            ),
+            reasons=[],
         ),
         explanation="Supplier A was selected.",
     )
@@ -127,10 +134,30 @@ def test_consistency_rejects_no_valid_without_reasons() -> None:
     request = _request()
     response = EvaluateOffersResponse(
         request_id=request.request_id,
-        decision=EvaluationDecision(status="no_valid_offers"),
+        decision=EvaluationDecision(
+            status="no_valid_offers",
+            selected_offer=_empty_selected_offer(),
+            reasons=[],
+        ),
         explanation="No supplier offer was selected.",
     )
     agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
 
     with pytest.raises(ValueError, match="must include at least one reason"):
         agent.validate_consistency(request, response)
+
+
+def _empty_selected_offer() -> SelectedOfferPayload:
+    """Return the placeholder selected offer for no-valid-offers responses."""
+
+    return SelectedOfferPayload(
+        offer_id="",
+        supplier_id="",
+        supplier_name="",
+        price=0,
+        currency="",
+        delivery_date="",
+        quality_score=0,
+        reliability_score=0,
+        valid_until="",
+    )

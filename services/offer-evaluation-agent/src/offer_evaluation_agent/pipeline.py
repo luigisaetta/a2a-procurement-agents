@@ -164,7 +164,7 @@ class OfferEvaluationWorkflowAgent:
 
         decision = response.decision
         if decision.status == "no_valid_offers":
-            if decision.selected_offer:
+            if decision.selected_offer.offer_id:
                 raise ValueError(
                     "No-valid-offers decision must not include selected_offer."
                 )
@@ -174,12 +174,14 @@ class OfferEvaluationWorkflowAgent:
                 )
             return
 
-        if not decision.selected_offer:
+        if not decision.selected_offer.offer_id:
             raise ValueError("Selected-offer decision must include selected_offer.")
         if decision.reasons:
             raise ValueError("Selected-offer decision must not include reasons.")
 
-        selected_offer = SupplierOffer.model_validate(decision.selected_offer)
+        selected_offer = SupplierOffer.model_validate(
+            decision.selected_offer.model_dump(mode="json")
+        )
 
         offers_by_id = {offer.offer_id: offer for offer in request.offers}
         source_offer = offers_by_id.get(selected_offer.offer_id)
