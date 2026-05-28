@@ -16,4 +16,4 @@ COPY ${SERVICE_PATH} /app/${SERVICE_PATH}
 
 ENV PYTHONPATH=/app/${SERVICE_PATH}/src
 
-CMD ["sh", "-c", "python -m ${MCP_MODULE} --transport streamable-http --host 0.0.0.0 --port ${PROCUREMENT_DATA_MCP_PORT:-8010} --path /mcp"]
+CMD ["sh", "-c", "python -m ${MCP_MODULE} --host 0.0.0.0 --port ${PROCUREMENT_DATA_MCP_PORT:-8010} --path /mcp"]

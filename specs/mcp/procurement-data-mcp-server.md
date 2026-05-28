@@ -58,13 +58,11 @@ The implementation should support:
 - `tools/list`
 - `tools/call`
 
-Initial transport:
+Supported transport:
 
-- stdio for local development and MCP client compatibility
+- streamable HTTP for Docker Compose and local development
 
-Future transport:
-
-- streamable HTTP when a remote MCP deployment is needed
+The server must not expose or document stdio as a supported transport. Local MCP clients must connect to the HTTP endpoint.
 
 ---
 
@@ -607,13 +605,13 @@ Example error payload:
 
 Initial implementation:
 
-- local MCP server
+- local streamable HTTP MCP server
 - read-only database user preferred
 - no write tools
 
 Future implementation:
 
-- transport-level authentication for remote MCP
+- transport-level authentication
 - least-privilege database credentials
 - optional tenant or organization filters
 

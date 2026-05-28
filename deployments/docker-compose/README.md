@@ -68,7 +68,7 @@ The MCP endpoint is available at:
 http://127.0.0.1:8010/mcp
 ```
 
-The MCP server uses streamable HTTP in Docker Compose and stdio for local development.
+The MCP server always uses streamable HTTP, including local development.
 
 The MySQL service creates the `procurement_demo` schema on first startup and loads:
 

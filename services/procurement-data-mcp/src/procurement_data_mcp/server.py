@@ -150,27 +150,17 @@ def _call_tool(function: Any, *args: Any) -> dict[str, Any]:
 
 
 def main() -> None:
-    """Run the MCP server."""
+    """Run the MCP server over streamable HTTP."""
 
     parser = argparse.ArgumentParser(description="Run the Procurement Data MCP Server.")
-    parser.add_argument(
-        "--transport",
-        choices=["stdio", "http", "streamable-http", "sse"],
-        default="stdio",
-        help="MCP transport to use.",
-    )
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind.")
     parser.add_argument("--port", type=int, default=8010, help="HTTP port to bind.")
     parser.add_argument("--path", default="/mcp", help="HTTP MCP endpoint path.")
     args = parser.parse_args()
 
     server = build_server()
-    if args.transport == "stdio":
-        server.run(transport="stdio")
-        return
-
     server.run(
-        transport=args.transport,
+        transport="streamable-http",
         host=args.host,
         port=args.port,
         path=args.path,

@@ -9,8 +9,11 @@ Description:    Tests for the Procurement Data MCP FastMCP server wrapper.
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 
+from procurement_data_mcp import server as server_module
 from procurement_data_mcp.server import build_server
 from procurement_data_mcp.tools import ProcurementDataRepositoryProtocol
 
@@ -82,3 +85,49 @@ async def test_build_server_registers_expected_tools() -> None:
 
 def _requires_protocol(_: ProcurementDataRepositoryProtocol) -> None:
     """Type-check helper for the fake repository."""
+
+
+def test_main_runs_streamable_http(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run the CLI entrypoint with streamable HTTP only."""
+
+    captured: dict[str, object] = {}
+
+    class FakeServer:
+        """Fake FastMCP server that records run arguments."""
+
+        # FastMCP only needs the run method for this entrypoint test.
+        # pylint: disable=too-few-public-methods
+
+        def run(self, **kwargs: object) -> None:
+            """Record run arguments."""
+
+            captured.update(kwargs)
+
+    def build_fake_server() -> FakeServer:
+        """Build the fake FastMCP server."""
+
+        return FakeServer()
+
+    monkeypatch.setattr(server_module, "build_server", build_fake_server)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "procurement-data-mcp",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "9010",
+            "--path",
+            "/mcp",
+        ],
+    )
+
+    server_module.main()
+
+    assert captured == {
+        "transport": "streamable-http",
+        "host": "0.0.0.0",
+        "port": 9010,
+        "path": "/mcp",
+    }

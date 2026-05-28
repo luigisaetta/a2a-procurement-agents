@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Standardized the Procurement Data MCP Server on streamable HTTP for both Docker Compose and local development.
 - Added the Procurement Data MCP Server to the Docker Compose deployment using streamable HTTP and the MySQL demo data store.
 - Implemented the initial read-only Procurement Data MCP Server with FastMCP, MySQL-backed lookup tools, unit tests, and local startup documentation.
 - Updated local development instructions to use the `a2a-procurement-agents` conda environment and configured pytest to collect both agent test suites together.
