@@ -117,6 +117,9 @@ services/
   offer-evaluation-agent/
   purchase-order-agent/
 
+deployments/
+  docker-compose/
+
 docs/
 tests/
 deploy/
@@ -142,6 +145,8 @@ Operational startup instructions are available in the agent quickstarts:
 
 - [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
 - [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
+
+The first cross-agent Docker Compose deployment is available in [deployments/docker-compose](deployments/docker-compose).
 
 ## Development Standards
 

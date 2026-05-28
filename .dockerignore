@@ -1,0 +1,10 @@
+.git/
+.pytest_cache/
+.pylint.d/
+__pycache__/
+*.py[cod]
+.env
+**/.env
+**/__pycache__/
+**/.pytest_cache/
+**/.pylint.d/

@@ -1,0 +1,41 @@
+name: a2a-procurement-agents
+
+services:
+  offer-evaluation-agent:
+    build:
+      context: ../..
+      dockerfile: deployments/docker-compose/Dockerfile.agent
+      args:
+        SERVICE_PATH: services/offer-evaluation-agent
+        AGENT_MODULE: offer_evaluation_agent.server
+    image: a2a-procurement/offer-evaluation-agent:local
+    environment:
+      OCI_REGION: ${OCI_REGION}
+      OCI_AUTH: ${OCI_AUTH}
+      OCI_MODEL_ID: ${OCI_MODEL_ID}
+      OCI_COMPARTMENT_ID: ${OCI_COMPARTMENT_ID}
+      OCI_PROFILE: ${OCI_PROFILE:-DEFAULT}
+      OFFER_EVALUATION_AGENT_PORT: ${OFFER_EVALUATION_AGENT_PORT:-8001}
+      AGENT_API_KEY: ${AGENT_API_KEY}
+    ports:
+      - "${OFFER_EVALUATION_AGENT_PORT:-8001}:${OFFER_EVALUATION_AGENT_PORT:-8001}"
+    volumes:
+      - ${OCI_CONFIG_DIR:-~/.oci}:/root/.oci:ro
+
+  purchase-order-agent:
+    build:
+      context: ../..
+      dockerfile: deployments/docker-compose/Dockerfile.agent
+      args:
+        SERVICE_PATH: services/purchase-order-agent
+        AGENT_MODULE: purchase_order_agent.server
+    image: a2a-procurement/purchase-order-agent:local
+    environment:
+      OCI_REGION: ${OCI_REGION}
+      OCI_AUTH: ${OCI_AUTH}
+      OCI_MODEL_ID: ${OCI_MODEL_ID}
+      OCI_COMPARTMENT_ID: ${OCI_COMPARTMENT_ID}
+      PURCHASE_ORDER_AGENT_PORT: ${PURCHASE_ORDER_AGENT_PORT:-8002}
+      AGENT_API_KEY: ${AGENT_API_KEY}
+    ports:
+      - "${PURCHASE_ORDER_AGENT_PORT:-8002}:${PURCHASE_ORDER_AGENT_PORT:-8002}"

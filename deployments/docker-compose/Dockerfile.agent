@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+ARG SERVICE_PATH
+ARG AGENT_MODULE
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV AGENT_MODULE=${AGENT_MODULE}
+
+WORKDIR /app
+
+COPY deployments/docker-compose/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+COPY specs /app/specs
+COPY ${SERVICE_PATH} /app/${SERVICE_PATH}
+
+ENV PYTHONPATH=/app/${SERVICE_PATH}/src
+
+CMD ["sh", "-c", "python -m ${AGENT_MODULE} --host 0.0.0.0"]

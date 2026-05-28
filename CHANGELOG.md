@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Added an initial Docker Compose deployment for running the Offer Evaluation and Purchase Order A2A agents together.
 - Added a sample purchase order JSON payload and manual A2A test client for the Purchase Order Agent.
 - Updated the Purchase Order Agent quickstart with sample invocation instructions.
 - Added the initial Purchase Order Agent A2A server implementation with deterministic input validation and fake purchase order system registration.
