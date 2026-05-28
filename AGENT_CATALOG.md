@@ -14,7 +14,7 @@ The README keeps only a short public-facing list of agents. This document provid
 | Bid Collection Agent | Planned | `services/bid-collection-agent` | Collects supplier bids and prepares them for evaluation. |
 | Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
-| Purchase Order Agent | Planned | `services/purchase-order-agent` | Generates or prepares purchase order data after an approved supplier decision. |
+| Purchase Order Agent | Draft specification | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
 
 ---
 
@@ -113,8 +113,12 @@ Future specifications will define compliance checks, approval outcomes, exceptio
 
 ## Purchase Order Agent
 
-Status: Planned
+Status: Draft specification
 
-The Purchase Order Agent generates or prepares purchase order data after an approved supplier decision.
+Specification: [specs/agents/purchase-order-agent.md](specs/agents/purchase-order-agent.md)
 
-Future specifications will define purchase order input, output, validation rules, and integration boundaries.
+The Purchase Order Agent registers purchase orders in the company purchase order system after an approved supplier decision.
+
+The initial design is deterministic and does not use an LLM.
+
+Future implementation will isolate the enterprise system integration behind a local wrapper module so the A2A contract can remain stable while the backend integration evolves.

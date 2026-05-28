@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/create-purchase-order-request.schema.json",
+  "title": "CreatePurchaseOrderRequest",
+  "description": "Request payload used by the Purchase Order Agent to register a purchase order in the company purchase order system.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "purchase_order_id",
+    "plant_code",
+    "supplier",
+    "line_items",
+    "source_offer"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement workflow request.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "purchase_order_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Internal purchase order identifier provided by the upstream workflow.",
+      "examples": ["PO-2026-0001"]
+    },
+    "plant_code": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Code of the plant, site, or business unit for which the order is created.",
+      "examples": ["PLANT-01"]
+    },
+    "supplier": {
+      "$ref": "#/$defs/Supplier"
+    },
+    "line_items": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Purchase order line items to register.",
+      "items": {
+        "$ref": "#/$defs/PurchaseOrderLineItem"
+      }
+    },
+    "source_offer": {
+      "$ref": "#/$defs/SourceOffer"
+    }
+  },
+  "$defs": {
+    "Supplier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supplier_id", "supplier_name"],
+      "properties": {
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the supplier receiving the purchase order.",
+          "examples": ["SUP-002"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable name of the supplier.",
+          "examples": ["Northern Industrial Supply"]
+        }
+      }
+    },
+    "PurchaseOrderLineItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "material_code",
+        "material_description",
+        "quantity",
+        "unit_of_measure",
+        "unit_price",
+        "currency",
+        "requested_delivery_date",
+        "confirmed_delivery_date"
+      ],
+      "properties": {
+        "material_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Internal code of the purchased material or item.",
+          "examples": ["MAT-12345"]
+        },
+        "material_description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable material description.",
+          "examples": ["Industrial pump replacement kit"]
+        },
+        "quantity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Quantity to purchase.",
+          "examples": [10]
+        },
+        "unit_of_measure": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unit of measure for the quantity.",
+          "examples": ["EA"]
+        },
+        "unit_price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Unit price for the line item.",
+          "examples": [1180.0]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code for the line item.",
+          "examples": ["EUR"]
+        },
+        "requested_delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Requested delivery date, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-15"]
+        },
+        "confirmed_delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Confirmed supplier delivery date, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-12"]
+        }
+      }
+    },
+    "SourceOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offer_id", "price", "currency"],
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identifier of the selected supplier offer used to create the purchase order.",
+          "examples": ["OFF-002"]
+        },
+        "price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total selected offer price.",
+          "examples": [11800.0]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code of the selected offer.",
+          "examples": ["EUR"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "request_id": "REQ-2026-0001",
+      "purchase_order_id": "PO-2026-0001",
+      "plant_code": "PLANT-01",
+      "supplier": {
+        "supplier_id": "SUP-002",
+        "supplier_name": "Northern Industrial Supply"
+      },
+      "line_items": [
+        {
+          "material_code": "MAT-12345",
+          "material_description": "Industrial pump replacement kit",
+          "quantity": 10,
+          "unit_of_measure": "EA",
+          "unit_price": 1180.0,
+          "currency": "EUR",
+          "requested_delivery_date": "2026-06-15",
+          "confirmed_delivery_date": "2026-06-12"
+        }
+      ],
+      "source_offer": {
+        "offer_id": "OFF-002",
+        "price": 11800.0,
+        "currency": "EUR"
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/create-purchase-order-response.schema.json",
+  "title": "CreatePurchaseOrderResponse",
+  "description": "Response payload returned by the Purchase Order Agent after attempting to register a purchase order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_id", "status", "purchase_order", "message", "error"],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement workflow request.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["registered", "failed"],
+      "description": "Purchase order registration result.",
+      "examples": ["registered"]
+    },
+    "purchase_order": {
+      "$ref": "#/$defs/PurchaseOrderRegistration"
+    },
+    "message": {
+      "type": "string",
+      "description": "Concise technical message intended for the orchestrator.",
+      "examples": ["Purchase order PO-2026-0001 was registered successfully."]
+    },
+    "error": {
+      "$ref": "#/$defs/PurchaseOrderError"
+    }
+  },
+  "$defs": {
+    "PurchaseOrderRegistration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purchase_order_id", "external_reference", "registered_at"],
+      "properties": {
+        "purchase_order_id": {
+          "type": "string",
+          "description": "Internal purchase order identifier.",
+          "examples": ["PO-2026-0001"]
+        },
+        "external_reference": {
+          "type": "string",
+          "description": "Reference returned by the company purchase order system. Empty when registration fails.",
+          "examples": ["ERP-PO-884421"]
+        },
+        "registered_at": {
+          "type": "string",
+          "description": "Registration timestamp in ISO 8601 format. Empty when registration fails.",
+          "examples": ["2026-05-28T10:30:00Z"]
+        }
+      }
+    },
+    "PurchaseOrderError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code. Empty when registration succeeds.",
+          "examples": ["EXTERNAL_SYSTEM_UNAVAILABLE"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable technical error message. Empty when registration succeeds.",
+          "examples": ["The purchase order system is unavailable."]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "request_id": "REQ-2026-0001",
+      "status": "registered",
+      "purchase_order": {
+        "purchase_order_id": "PO-2026-0001",
+        "external_reference": "ERP-PO-884421",
+        "registered_at": "2026-05-28T10:30:00Z"
+      },
+      "message": "Purchase order PO-2026-0001 was registered successfully.",
+      "error": {
+        "code": "",
+        "message": ""
+      }
+    },
+    {
+      "request_id": "REQ-2026-0001",
+      "status": "failed",
+      "purchase_order": {
+        "purchase_order_id": "PO-2026-0001",
+        "external_reference": "",
+        "registered_at": ""
+      },
+      "message": "Purchase order registration failed.",
+      "error": {
+        "code": "EXTERNAL_SYSTEM_UNAVAILABLE",
+        "message": "The purchase order system is unavailable."
+      }
+    }
+  ]
+}
