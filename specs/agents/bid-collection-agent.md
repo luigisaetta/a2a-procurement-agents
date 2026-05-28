@@ -1,6 +1,6 @@
 # Bid Collection Agent Specification
 
-Version: 0.1.0
+Version: 0.2.0
 
 Status: Draft
 
@@ -36,6 +36,8 @@ The agent must:
 - return a structured collection result
 - generate downstream `EvaluateOffersRequest` payloads for parts with at least one received offer
 - expose its capability through A2A v1
+
+Supplier discovery must use the Procurement Data MCP Server over streamable HTTP. The agent must not carry its own supplier catalog.
 
 ---
 
@@ -232,7 +234,7 @@ This schema represents the response received from a supplier API for one part.
 
 The implementation must isolate supplier identification, supplier interaction, and offer-list construction behind local provider modules.
 
-Initial planned modules:
+Initial modules:
 
 - `services/bid-collection-agent/src/bid_collection_agent/supplier_discovery_provider.py`
 - `services/bid-collection-agent/src/bid_collection_agent/offer_list_provider.py`
@@ -250,13 +252,14 @@ The supplier discovery provider is responsible for:
 
 Initial behavior:
 
-- deterministic simulated supplier catalog
-- no external network call
+- call the Procurement Data MCP Server `find_suppliers_for_part` tool over streamable HTTP
+- filter MCP supplier candidates using request-level sourcing constraints
+- keep MCP communication localized to the supplier discovery provider
 - stable supplier selection suitable for tests and audit traces
 
 Future behavior:
 
-- replace the simulated catalog with real supplier master data, ERP APIs, marketplace APIs, or supplier discovery services
+- replace the MCP-backed supplier discovery provider only if supplier master data moves to a different enterprise source
 - keep supplier identification changes localized to the provider module
 
 ## Offer List Provider

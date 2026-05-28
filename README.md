@@ -77,7 +77,7 @@ Development proceeds agent by agent. This first draft roadmap defines the initia
 | Agent | Description |
 | --- | --- |
 | Procurement Orchestrator | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
-| Bid Collection Agent | Identifies suppliers, requests offers, collects bids, and prepares them for evaluation. |
+| Bid Collection Agent | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Checks procurement decisions and supplier data against compliance rules. |
 | Purchase Order Agent | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
@@ -113,6 +113,7 @@ specs/
   examples/
 
 services/
+  bid-collection-agent/
   offer-evaluation-agent/
   procurement-data-mcp/
   purchase-order-agent/
@@ -143,6 +144,7 @@ The first implementation steps focus on the Offer Evaluation Agent. Security, ch
 
 Operational startup instructions are available in the agent quickstarts:
 
+- [Bid Collection Agent README](services/bid-collection-agent/README.md)
 - [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
 - [Procurement Data MCP Server README](services/procurement-data-mcp/README.md)
 - [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
@@ -151,7 +153,7 @@ The first cross-agent Docker Compose deployment is available in [deployments/doc
 
 The initial persistent data model is specified in [specs/data/procurement-data-model.md](specs/data/procurement-data-model.md).
 
-The planned read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
+The read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
 
 ## Development Standards
 

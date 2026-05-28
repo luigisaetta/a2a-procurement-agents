@@ -47,6 +47,25 @@ services:
     volumes:
       - ${OCI_CONFIG_DIR:-~/.oci}:/root/.oci:ro
 
+  bid-collection-agent:
+    build:
+      context: ../..
+      dockerfile: deployments/docker-compose/Dockerfile.agent
+      args:
+        SERVICE_PATH: services/bid-collection-agent
+        AGENT_MODULE: bid_collection_agent.server
+    image: a2a-procurement/bid-collection-agent:local
+    environment:
+      BID_COLLECTION_AGENT_PORT: ${BID_COLLECTION_AGENT_PORT:-8000}
+      AGENT_API_KEY: ${AGENT_API_KEY:-}
+      PROCUREMENT_DATA_MCP_URL: ${PROCUREMENT_DATA_MCP_URL:-http://procurement-data-mcp:8010/mcp}
+      PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS: ${PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS:-10}
+    ports:
+      - "${BID_COLLECTION_AGENT_PORT:-8000}:${BID_COLLECTION_AGENT_PORT:-8000}"
+    depends_on:
+      procurement-data-mcp:
+        condition: service_started
+
   procurement-data-mcp:
     build:
       context: ../..

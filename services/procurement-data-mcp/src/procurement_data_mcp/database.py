@@ -201,8 +201,8 @@ class ProcurementDataRepository:
         return self._fetch_all(
             f"""
             SELECT sp.supplier_part_id, s.supplier_id, s.supplier_name,
-                   s.contact_endpoint, s.currency, s.quality_score,
-                   s.reliability_score, sp.lead_time_days,
+                   s.country_code, s.country_name, s.contact_endpoint,
+                   s.currency, s.quality_score, s.reliability_score, sp.lead_time_days,
                    sp.min_order_quantity, sp.is_preferred
             FROM supplier_parts sp
             JOIN suppliers s ON s.supplier_id = sp.supplier_id

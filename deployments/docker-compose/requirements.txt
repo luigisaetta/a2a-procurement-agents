@@ -1,4 +1,5 @@
-locus-sdk==0.2.0b22
+locus-sdk==0.2.0b23
+fastmcp==3.3.1
 python-dotenv==1.2.2
 pydantic==2.13.4
 fastapi==0.136.1

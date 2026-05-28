@@ -9,7 +9,7 @@ The README keeps only a short public-facing list of agents. This document provid
 | Agent | Status | Service Folder | Purpose |
 | --- | --- | --- | --- |
 | Procurement Orchestrator | Planned | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
-| Bid Collection Agent | Draft specification | `services/bid-collection-agent` | Identifies suppliers, requests offers, collects bids, and prepares them for evaluation. |
+| Bid Collection Agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
 | Purchase Order Agent | Initial A2A server implementation | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
@@ -26,20 +26,22 @@ The orchestrator should not own supplier discovery, bid evaluation, compliance, 
 
 ## Bid Collection Agent
 
-Status: Draft specification
+Status: Initial A2A server implementation
 
 The Bid Collection Agent identifies eligible suppliers, sends bid requests, receives supplier offers, and normalizes those offers into the format required by the Offer Evaluation Agent.
 
 Specification: [specs/agents/bid-collection-agent.md](specs/agents/bid-collection-agent.md)
 
-Each requested part carries sourcing hints rather than a preselected supplier list. The agent uses provider abstractions so simulated supplier discovery and supplier APIs can later be replaced by real integrations without changing the external A2A contract.
+Server entry point: [services/bid-collection-agent/src/bid_collection_agent/server.py](services/bid-collection-agent/src/bid_collection_agent/server.py)
+
+Each requested part carries sourcing hints rather than a preselected supplier list. The agent uses the Procurement Data MCP Server for supplier discovery and keeps supplier offer calls behind a provider abstraction so simulated supplier APIs can later be replaced by real integrations without changing the external A2A contract.
 
 ### Responsibilities
 
 The agent is responsible for:
 
 - receiving requested procurement parts and sourcing constraints
-- identifying eligible suppliers for each requested part
+- identifying eligible suppliers for each requested part through MCP
 - building supplier-specific bid requests
 - contacting supplier APIs through a provider boundary
 - collecting successful offers

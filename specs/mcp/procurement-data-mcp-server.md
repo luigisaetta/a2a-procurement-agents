@@ -431,6 +431,8 @@ Output:
       "supplier_part_id": "SP-001",
       "supplier_id": "SUP-001",
       "supplier_name": "VoltEdge Components",
+      "country_code": "DE",
+      "country_name": "Germany",
       "contact_endpoint": "mock://suppliers/SUP-001/offers",
       "currency": "EUR",
       "quality_score": 94,
@@ -541,6 +543,8 @@ Output:
     {
       "supplier_id": "SUP-001",
       "supplier_name": "VoltEdge Components",
+      "country_code": "DE",
+      "country_name": "Germany",
       "contact_endpoint": "mock://suppliers/SUP-001/offers",
       "currency": "EUR",
       "quality_score": 94,

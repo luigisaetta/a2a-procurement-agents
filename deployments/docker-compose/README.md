@@ -6,10 +6,11 @@ The current compose stack runs:
 
 - MySQL demo data store on port `3306`
 - Procurement Data MCP Server on port `8010`
+- Bid Collection Agent on port `8000`
 - Offer Evaluation Agent on port `8001`
 - Purchase Order Agent on port `8002`
 
-Both services are built as independent containers and communicate through their A2A HTTP contracts.
+The agents are built as independent containers and communicate through their A2A HTTP contracts. The Bid Collection Agent also reads supplier master data through the Procurement Data MCP Server.
 
 ## Prerequisites
 
@@ -41,6 +42,7 @@ Update:
 - `MYSQL_ROOT_PASSWORD`
 - `MYSQL_PASSWORD`
 - `PROCUREMENT_DATA_MCP_PORT`
+- `PROCUREMENT_DATA_MCP_URL`
 
 `OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent.
 
@@ -58,6 +60,12 @@ The Agent Cards are available at:
 ```text
 http://127.0.0.1:8001/.well-known/agent-card.json
 http://127.0.0.1:8002/.well-known/agent-card.json
+```
+
+The Bid Collection Agent Card is available at:
+
+```text
+http://127.0.0.1:8000/.well-known/agent-card.json
 ```
 
 All A2A routes require bearer authentication with `AGENT_API_KEY`.
@@ -84,6 +92,9 @@ The workflow tables `procurement_requests`, `supplier_offers`, and `purchase_ord
 In another shell:
 
 ```bash
+curl -H "Authorization: Bearer $AGENT_API_KEY" \
+  http://127.0.0.1:8000/.well-known/agent-card.json
+
 curl -H "Authorization: Bearer $AGENT_API_KEY" \
   http://127.0.0.1:8001/.well-known/agent-card.json
 
@@ -128,6 +139,6 @@ docker compose up --build
 
 The Dockerfile uses a shared runtime image pattern but copies each service folder into its own image. This keeps the deployment simple while preserving the project rule that agents do not share business runtime code.
 
-If `locus-sdk==0.2.0b22` is not available from the package index used by Docker, replace the dependency source in `requirements.txt` or override the Dockerfile with an internal base image that already contains Locus.
+If `locus-sdk==0.2.0b23` is not available from the package index used by Docker, replace the dependency source in `requirements.txt` or override the Dockerfile with an internal base image that already contains Locus.
 
 MySQL initialization scripts run only when the `mysql-data` volume is empty. The seed loader uses `LOAD DATA LOCAL INFILE` against the CSV files mounted from `specs/examples/data`. Changing seed CSV files after the first startup requires recreating the volume with `docker compose down -v`.
