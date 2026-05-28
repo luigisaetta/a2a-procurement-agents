@@ -232,6 +232,7 @@ async def main_async() -> None:
         )
 
     print(f"Invoking Procurement Orchestrator at {base_url}")
+    _print_client_request(SAMPLE_PAYLOAD)
     if args.no_stream:
         await invoke_non_streaming(base_url, api_key, SAMPLE_PAYLOAD)
     else:
@@ -242,6 +243,41 @@ def main() -> None:
     """Run the async client from a synchronous entry point."""
 
     asyncio.run(main_async())
+
+
+def _print_client_request(payload: dict[str, Any]) -> None:
+    """Print the request sent by this client before streaming starts."""
+
+    _print_separator("client_request")
+    print("The client is asking the Procurement Orchestrator to process:")
+    print(json.dumps(_request_summary(payload), indent=2, sort_keys=True))
+    _print_separator("client_request_payload")
+    print(json.dumps(payload, indent=2, sort_keys=True))
+
+
+def _request_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    """Build a compact human-readable summary of the sample request."""
+
+    return {
+        "request_id": payload["request_id"],
+        "requested_by": payload["requested_by"],
+        "currency": payload["currency"],
+        "evaluation_policy_id": payload["evaluation_policy_id"],
+        "auto_create_purchase_order": payload["auto_create_purchase_order"],
+        "max_rebid_attempts": payload["max_rebid_attempts"],
+        "parts_count": len(payload["parts"]),
+        "parts": [
+            {
+                "part_id": part["part_id"],
+                "material_code": part["material_code"],
+                "material_description": part["material_description"],
+                "plant_code": part["plant_code"],
+                "quantity": part["quantity"],
+                "required_delivery_date": part["required_delivery_date"],
+            }
+            for part in payload["parts"]
+        ],
+    }
 
 
 if __name__ == "__main__":
