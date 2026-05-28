@@ -17,7 +17,7 @@ Required variables:
 ```bash
 export BID_COLLECTION_AGENT_PORT=8000
 export AGENT_API_KEY=change-me
-export PROCUREMENT_DATA_MCP_URL=http://127.0.0.1:8010/mcp
+export PROCUREMENT_DATA_MCP_URL=http://127.0.0.1:8011/mcp
 ```
 
 ## Run

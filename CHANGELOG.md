@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Changed the default Procurement Data MCP HTTP port from `8010` to `8011` across Docker Compose, examples, documentation, and bid collection tests.
 - Added a manual Procurement Orchestrator end-to-end Python client for the Docker Compose deployment and documented build, start, stop, log, and client commands.
 - Implemented the initial Procurement Orchestrator Agent with A2A downstream calls, streaming JSON progress events, retry handling, purchase order creation, Docker Compose deployment, tests, and minimal structured logging.
 - Added the draft Procurement Orchestrator Agent specification and canonical orchestration request, streaming event, and final response schemas.

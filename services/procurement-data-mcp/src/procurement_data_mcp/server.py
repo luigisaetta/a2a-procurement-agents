@@ -154,7 +154,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Run the Procurement Data MCP Server.")
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind.")
-    parser.add_argument("--port", type=int, default=8010, help="HTTP port to bind.")
+    parser.add_argument("--port", type=int, default=8011, help="HTTP port to bind.")
     parser.add_argument("--path", default="/mcp", help="HTTP MCP endpoint path.")
     args = parser.parse_args()
 

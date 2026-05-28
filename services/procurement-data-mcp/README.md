@@ -37,13 +37,13 @@ Run from the repository root:
 ```bash
 PYTHONPATH=services/procurement-data-mcp/src \
 conda run -n a2a-procurement-agents \
-python -m procurement_data_mcp.server --host 127.0.0.1 --port 8010 --path /mcp
+python -m procurement_data_mcp.server --host 127.0.0.1 --port 8011 --path /mcp
 ```
 
 The server always uses MCP streamable HTTP transport. The local endpoint is:
 
 ```text
-http://127.0.0.1:8010/mcp
+http://127.0.0.1:8011/mcp
 ```
 
 ## Tools

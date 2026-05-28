@@ -48,7 +48,7 @@ def _settings() -> Settings:
     return Settings(
         agent_port=8000,
         agent_api_key="secret",
-        procurement_data_mcp_url="http://127.0.0.1:8010/mcp",
+        procurement_data_mcp_url="http://127.0.0.1:8011/mcp",
         mcp_timeout_seconds=10,
         request_schema_file=root / "specs/schemas/collect-bids-request.schema.json",
         response_schema_file=root / "specs/schemas/collect-bids-response.schema.json",

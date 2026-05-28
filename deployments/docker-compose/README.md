@@ -5,7 +5,7 @@ This folder contains the first Docker Compose deployment for running the local A
 The current compose stack runs:
 
 - MySQL demo data store on port `3306`
-- Procurement Data MCP Server on port `8010`
+- Procurement Data MCP Server on port `8011`
 - Bid Collection Agent on port `8000`
 - Offer Evaluation Agent on port `8001`
 - Purchase Order Agent on port `8002`
@@ -106,7 +106,7 @@ All A2A routes require bearer authentication with `AGENT_API_KEY`.
 The MCP endpoint is available at:
 
 ```text
-http://127.0.0.1:8010/mcp
+http://127.0.0.1:8011/mcp
 ```
 
 The MCP server always uses streamable HTTP, including local development.
@@ -171,7 +171,7 @@ docker compose exec mysql sh -c '
 Verify the MCP service is listening:
 
 ```bash
-curl -i http://127.0.0.1:8010/mcp
+curl -i http://127.0.0.1:8011/mcp
 ```
 
 The endpoint is an MCP streamable HTTP endpoint, so a plain browser or curl request may return a protocol-level error. A reachable HTTP response confirms that the service is running.
