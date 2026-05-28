@@ -1,0 +1,21 @@
+supplier_id,supplier_name,country_code,country_name,contact_endpoint,currency,quality_score,reliability_score,is_active,created_at,updated_at
+SUP-001,VoltEdge Components,DE,Germany,mock://suppliers/SUP-001/offers,EUR,94,92,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-002,CellForge Systems,PL,Poland,mock://suppliers/SUP-002/offers,EUR,90,88,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-003,Northstar Battery Works,SE,Sweden,mock://suppliers/SUP-003/offers,SEK,92,90,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-004,HelioDrive Technologies,IT,Italy,mock://suppliers/SUP-004/offers,EUR,91,89,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-005,Axion Motion Labs,FR,France,mock://suppliers/SUP-005/offers,EUR,93,91,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-006,VectorRotor Manufacturing,ES,Spain,mock://suppliers/SUP-006/offers,EUR,88,87,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-007,SilicaVolt Electronics,NL,Netherlands,mock://suppliers/SUP-007/offers,EUR,95,90,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-008,NovaCharge Assemblies,BE,Belgium,mock://suppliers/SUP-008/offers,EUR,89,86,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-009,ThermoLoop Mobility,AT,Austria,mock://suppliers/SUP-009/offers,EUR,92,93,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-010,CryoFlow Automotive,CZ,Czechia,mock://suppliers/SUP-010/offers,CZK,87,85,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-011,BrakeSphere Dynamics,DE,Germany,mock://suppliers/SUP-011/offers,EUR,90,89,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-012,AeroChassis Fabrication,SK,Slovakia,mock://suppliers/SUP-012/offers,EUR,88,90,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-013,OptiSense Mobility,FI,Finland,mock://suppliers/SUP-013/offers,EUR,94,87,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-014,QuantumCabin Systems,GB,United Kingdom,mock://suppliers/SUP-014/offers,GBP,91,88,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-015,LumaMatrix Lighting,PT,Portugal,mock://suppliers/SUP-015/offers,EUR,89,91,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-016,ArdentTrim Studio,IT,Italy,mock://suppliers/SUP-016/offers,EUR,92,86,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-017,FlexWire Automotive,RO,Romania,mock://suppliers/SUP-017/offers,EUR,87,88,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-018,SafeLink Powergear,HU,Hungary,mock://suppliers/SUP-018/offers,EUR,90,92,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-019,CarbonArc Structures,SI,Slovenia,mock://suppliers/SUP-019/offers,EUR,93,89,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+SUP-020,SignalPeak Connectivity,IE,Ireland,mock://suppliers/SUP-020/offers,EUR,91,90,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z

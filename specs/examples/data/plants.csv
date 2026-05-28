@@ -1,0 +1,11 @@
+plant_id,plant_code,plant_name,country_code,country_name,city,address,is_active,created_at,updated_at
+PLANT-001,DE-MUN,LuxEV Munich Assembly Plant,DE,Germany,Munich,Leopoldstrasse 240 Munich,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-002,FR-LYO,LuxEV Lyon Assembly Plant,FR,France,Lyon,42 Avenue Jean Jaures Lyon,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-003,GB-BIR,LuxEV Birmingham Assembly Plant,GB,United Kingdom,Birmingham,18 Innovation Drive Birmingham,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-004,IT-TOR,LuxEV Turin Assembly Plant,IT,Italy,Turin,88 Corso Unita d Italia Turin,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-005,ES-BCN,LuxEV Barcelona Assembly Plant,ES,Spain,Barcelona,12 Carrer de la Industria Barcelona,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-006,PL-WRO,LuxEV Wroclaw Assembly Plant,PL,Poland,Wroclaw,31 Aleja Przemyslowa Wroclaw,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-007,NL-EIN,LuxEV Eindhoven Assembly Plant,NL,Netherlands,Eindhoven,7 High Tech Campus Eindhoven,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-008,BE-GHE,LuxEV Ghent Assembly Plant,BE,Belgium,Ghent,25 Industrieweg Ghent,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-009,SE-GOT,LuxEV Gothenburg Assembly Plant,SE,Sweden,Gothenburg,64 Teknikgatan Gothenburg,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PLANT-010,AT-GRA,LuxEV Graz Assembly Plant,AT,Austria,Graz,5 Fahrzeugstrasse Graz,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z

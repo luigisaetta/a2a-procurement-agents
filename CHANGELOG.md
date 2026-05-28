@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Added synthetic CSV seed data for plants, electric vehicle parts, suppliers, and supplier-part assignments.
 - Simplified the persistent procurement data model around the initial automotive scenario and the seven core entities needed for the first workflow.
 - Added the initial persistent procurement data model specification.
 - Added the draft Bid Collection Agent specification and canonical bid collection and supplier bid schemas, consolidating supplier identification, bid request, and offer collection into one agent.
