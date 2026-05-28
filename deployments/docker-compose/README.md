@@ -9,8 +9,9 @@ The current compose stack runs:
 - Bid Collection Agent on port `8000`
 - Offer Evaluation Agent on port `8001`
 - Purchase Order Agent on port `8002`
+- Procurement Orchestrator on port `8003`
 
-The agents are built as independent containers and communicate through their A2A HTTP contracts. The Bid Collection Agent also reads supplier master data through the Procurement Data MCP Server.
+The agents are built as independent containers and communicate through their A2A HTTP contracts. The Bid Collection Agent reads supplier master data through the Procurement Data MCP Server. The Procurement Orchestrator calls the Bid Collection, Offer Evaluation, and Purchase Order agents through A2A.
 
 ## Prerequisites
 
@@ -43,6 +44,9 @@ Update:
 - `MYSQL_PASSWORD`
 - `PROCUREMENT_DATA_MCP_PORT`
 - `PROCUREMENT_DATA_MCP_URL`
+- `BID_COLLECTION_AGENT_URL`
+- `OFFER_EVALUATION_AGENT_URL`
+- `PURCHASE_ORDER_AGENT_URL`
 
 `OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent.
 
@@ -66,6 +70,12 @@ The Bid Collection Agent Card is available at:
 
 ```text
 http://127.0.0.1:8000/.well-known/agent-card.json
+```
+
+The Procurement Orchestrator Agent Card is available at:
+
+```text
+http://127.0.0.1:8003/.well-known/agent-card.json
 ```
 
 All A2A routes require bearer authentication with `AGENT_API_KEY`.
@@ -100,6 +110,9 @@ curl -H "Authorization: Bearer $AGENT_API_KEY" \
 
 curl -H "Authorization: Bearer $AGENT_API_KEY" \
   http://127.0.0.1:8002/.well-known/agent-card.json
+
+curl -H "Authorization: Bearer $AGENT_API_KEY" \
+  http://127.0.0.1:8003/.well-known/agent-card.json
 ```
 
 Verify the demo data store:

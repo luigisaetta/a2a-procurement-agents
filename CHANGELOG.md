@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Implemented the initial Procurement Orchestrator Agent with A2A downstream calls, streaming JSON progress events, retry handling, purchase order creation, Docker Compose deployment, tests, and minimal structured logging.
 - Added the draft Procurement Orchestrator Agent specification and canonical orchestration request, streaming event, and final response schemas.
 - Implemented the initial Bid Collection Agent with MCP-backed supplier discovery, simulated supplier offer collection, A2A server wiring, Docker Compose deployment, and tests.
 - Standardized the Procurement Data MCP Server on streamable HTTP for both Docker Compose and local development.

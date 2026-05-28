@@ -147,6 +147,7 @@ Operational startup instructions are available in the agent quickstarts:
 - [Bid Collection Agent README](services/bid-collection-agent/README.md)
 - [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
 - [Procurement Data MCP Server README](services/procurement-data-mcp/README.md)
+- [Procurement Orchestrator README](services/procurement-orchestrator/README.md)
 - [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
 
 The first cross-agent Docker Compose deployment is available in [deployments/docker-compose](deployments/docker-compose).

@@ -47,6 +47,30 @@ services:
     volumes:
       - ${OCI_CONFIG_DIR:-~/.oci}:/root/.oci:ro
 
+  procurement-orchestrator:
+    build:
+      context: ../..
+      dockerfile: deployments/docker-compose/Dockerfile.agent
+      args:
+        SERVICE_PATH: services/procurement-orchestrator
+        AGENT_MODULE: procurement_orchestrator.server
+    image: a2a-procurement/procurement-orchestrator:local
+    environment:
+      PROCUREMENT_ORCHESTRATOR_PORT: ${PROCUREMENT_ORCHESTRATOR_PORT:-8003}
+      AGENT_API_KEY: ${AGENT_API_KEY:-}
+      BID_COLLECTION_AGENT_URL: ${BID_COLLECTION_AGENT_URL:-http://bid-collection-agent:8000}
+      OFFER_EVALUATION_AGENT_URL: ${OFFER_EVALUATION_AGENT_URL:-http://offer-evaluation-agent:8001}
+      PURCHASE_ORDER_AGENT_URL: ${PURCHASE_ORDER_AGENT_URL:-http://purchase-order-agent:8002}
+    ports:
+      - "${PROCUREMENT_ORCHESTRATOR_PORT:-8003}:${PROCUREMENT_ORCHESTRATOR_PORT:-8003}"
+    depends_on:
+      bid-collection-agent:
+        condition: service_started
+      offer-evaluation-agent:
+        condition: service_started
+      purchase-order-agent:
+        condition: service_started
+
   bid-collection-agent:
     build:
       context: ../..

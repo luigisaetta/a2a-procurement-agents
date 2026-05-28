@@ -8,7 +8,7 @@ The README keeps only a short public-facing list of agents. This document provid
 
 | Agent | Status | Service Folder | Purpose |
 | --- | --- | --- | --- |
-| Procurement Orchestrator | Draft specification | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
+| Procurement Orchestrator | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
@@ -18,7 +18,7 @@ The README keeps only a short public-facing list of agents. This document provid
 
 ## Procurement Orchestrator
 
-Status: Draft specification
+Status: Initial A2A server implementation
 
 The Procurement Orchestrator coordinates the overall procurement flow. It is responsible for invoking specialized agents through A2A, passing task context between them, and collecting their results into a coherent workflow.
 
@@ -26,9 +26,11 @@ The orchestrator should not own supplier discovery, bid evaluation, compliance, 
 
 Specification: [specs/agents/procurement-orchestrator.md](specs/agents/procurement-orchestrator.md)
 
+Server entry point: [services/procurement-orchestrator/src/procurement_orchestrator/server.py](services/procurement-orchestrator/src/procurement_orchestrator/server.py)
+
 The initial orchestrator contract is JSON-only. Natural-language intake is handled by a separate conversational layer that converts operator requests into a structured `ProcurementOrchestrationRequest`.
 
-The orchestrator streams progress events, retries bid collection when no valid offer is selected, and optionally creates purchase orders after a winning offer is selected.
+The orchestrator streams progress events, writes minimal structured logs, retries bid collection when no valid offer is selected, and optionally creates purchase orders after a winning offer is selected.
 
 ## Bid Collection Agent
 
