@@ -5,6 +5,7 @@ This folder contains the first Docker Compose deployment for running the local A
 The current compose stack runs:
 
 - MySQL demo data store on port `3306`
+- Procurement Data MCP Server on port `8010`
 - Offer Evaluation Agent on port `8001`
 - Purchase Order Agent on port `8002`
 
@@ -19,6 +20,8 @@ Both services are built as independent containers and communicate through their 
 The Purchase Order Agent does not call an LLM, but it keeps the same runtime environment contract for consistency with the rest of the platform.
 
 MySQL is used as a local demo data store for the minimal procurement data model. It is initialized with the synthetic automotive seed CSV files from [../../specs/examples/data](../../specs/examples/data).
+
+The Procurement Data MCP Server exposes read-only MCP tools backed by the MySQL demo data store.
 
 ## Environment
 
@@ -37,6 +40,7 @@ Update:
 - `OCI_CONFIG_DIR`
 - `MYSQL_ROOT_PASSWORD`
 - `MYSQL_PASSWORD`
+- `PROCUREMENT_DATA_MCP_PORT`
 
 `OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent.
 
@@ -57,6 +61,14 @@ http://127.0.0.1:8002/.well-known/agent-card.json
 ```
 
 All A2A routes require bearer authentication with `AGENT_API_KEY`.
+
+The MCP endpoint is available at:
+
+```text
+http://127.0.0.1:8010/mcp
+```
+
+The MCP server uses streamable HTTP in Docker Compose and stdio for local development.
 
 The MySQL service creates the `procurement_demo` schema on first startup and loads:
 
@@ -90,6 +102,14 @@ docker compose exec mysql sh -c '
         SELECT COUNT(*) AS supplier_parts FROM supplier_parts;"
 '
 ```
+
+Verify the MCP service is listening:
+
+```bash
+curl -i http://127.0.0.1:8010/mcp
+```
+
+The endpoint is an MCP streamable HTTP endpoint, so a plain browser or curl request may return a protocol-level error. A reachable HTTP response confirms that the service is running.
 
 ## Stop
 

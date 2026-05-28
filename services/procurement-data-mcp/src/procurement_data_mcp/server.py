@@ -7,6 +7,7 @@ Description:    FastMCP server exposing read-only procurement data tools.
 
 from __future__ import annotations
 
+import argparse
 from typing import Any
 
 from fastmcp import FastMCP
@@ -149,9 +150,31 @@ def _call_tool(function: Any, *args: Any) -> dict[str, Any]:
 
 
 def main() -> None:
-    """Run the MCP server over stdio."""
+    """Run the MCP server."""
 
-    build_server().run()
+    parser = argparse.ArgumentParser(description="Run the Procurement Data MCP Server.")
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "http", "streamable-http", "sse"],
+        default="stdio",
+        help="MCP transport to use.",
+    )
+    parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind.")
+    parser.add_argument("--port", type=int, default=8010, help="HTTP port to bind.")
+    parser.add_argument("--path", default="/mcp", help="HTTP MCP endpoint path.")
+    args = parser.parse_args()
+
+    server = build_server()
+    if args.transport == "stdio":
+        server.run(transport="stdio")
+        return
+
+    server.run(
+        transport=args.transport,
+        host=args.host,
+        port=args.port,
+        path=args.path,
+    )
 
 
 if __name__ == "__main__":

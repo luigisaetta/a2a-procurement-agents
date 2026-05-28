@@ -47,6 +47,27 @@ services:
     volumes:
       - ${OCI_CONFIG_DIR:-~/.oci}:/root/.oci:ro
 
+  procurement-data-mcp:
+    build:
+      context: ../..
+      dockerfile: deployments/docker-compose/Dockerfile.mcp
+      args:
+        SERVICE_PATH: services/procurement-data-mcp
+        MCP_MODULE: procurement_data_mcp.server
+    image: a2a-procurement/procurement-data-mcp:local
+    environment:
+      PROCUREMENT_DB_HOST: mysql
+      PROCUREMENT_DB_PORT: 3306
+      PROCUREMENT_DB_NAME: procurement_demo
+      PROCUREMENT_DB_USER: ${MYSQL_USER:-procurement_app}
+      PROCUREMENT_DB_PASSWORD: ${MYSQL_PASSWORD:-procurement_app_password}
+      PROCUREMENT_DATA_MCP_PORT: ${PROCUREMENT_DATA_MCP_PORT:-8010}
+    ports:
+      - "${PROCUREMENT_DATA_MCP_PORT:-8010}:${PROCUREMENT_DATA_MCP_PORT:-8010}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   purchase-order-agent:
     build:
       context: ../..
