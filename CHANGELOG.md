@@ -2,6 +2,10 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-05-28
+
+- Declared JSON input and output modes for the Offer Evaluation Agent A2A skill while keeping text/plain compatibility.
+
 ## 2026-05-27
 
 - Reworked the Offer Evaluation Agent response model to avoid JSON Schema composition keywords unsupported by OCI structured output.

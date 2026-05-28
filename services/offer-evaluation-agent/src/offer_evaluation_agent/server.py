@@ -50,6 +50,8 @@ def build_server(settings: Settings) -> A2AServer:
                     "procurement policy and return a structured decision."
                 ),
                 tags=["procurement", "offers", "evaluation", "policy"],
+                inputModes=["application/json", "text/plain"],
+                outputModes=["application/json", "text/plain"],
                 examples=[
                     "Evaluate this JSON procurement request and select the best offer."
                 ],
