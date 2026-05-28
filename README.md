@@ -90,6 +90,7 @@ This repository follows a spec-first development model.
 
 Specifications define the contract before implementation:
 
+- persistent data entities
 - schemas
 - workflows
 - events
@@ -145,6 +146,8 @@ Operational startup instructions are available in the agent quickstarts:
 - [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
 
 The first cross-agent Docker Compose deployment is available in [deployments/docker-compose](deployments/docker-compose).
+
+The initial persistent data model is specified in [specs/data/procurement-data-model.md](specs/data/procurement-data-model.md).
 
 ## Development Standards
 
