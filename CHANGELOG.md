@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Added the draft Bid Collection Agent specification and canonical bid collection and supplier bid schemas, consolidating supplier identification, bid request, and offer collection into one agent.
 - Added an initial Docker Compose deployment for running the Offer Evaluation and Purchase Order A2A agents together.
 - Added a sample purchase order JSON payload and manual A2A test client for the Purchase Order Agent.
 - Updated the Purchase Order Agent quickstart with sample invocation instructions.

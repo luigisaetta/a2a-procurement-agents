@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/collect-bids-request.schema.json",
+  "title": "CollectBidsRequest",
+  "description": "Request payload used by the Bid Collection Agent to identify suppliers and request offers for one or more procurement parts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "currency",
+    "evaluation_policy_id",
+    "response_deadline",
+    "sourcing_constraints",
+    "parts"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement request.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "Expected ISO 4217 currency code for supplier offers.",
+      "examples": ["EUR"]
+    },
+    "evaluation_policy_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Evaluation policy identifier to copy into downstream offer evaluation requests.",
+      "examples": ["standard-urgent-procurement-v1"]
+    },
+    "response_deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Deadline for supplier bid responses, expressed as an ISO 8601 timestamp.",
+      "examples": ["2026-05-29T12:00:00Z"]
+    },
+    "sourcing_constraints": {
+      "$ref": "#/$defs/SourcingConstraints"
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Requested procurement parts to source.",
+      "items": {
+        "$ref": "#/$defs/PartBidRequest"
+      }
+    }
+  },
+  "$defs": {
+    "PartBidRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "part_id",
+        "plant_code",
+        "material_code",
+        "material_description",
+        "quantity",
+        "unit_of_measure",
+        "required_delivery_date"
+      ],
+      "properties": {
+        "part_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the requested part within the procurement request.",
+          "examples": ["PART-001"]
+        },
+        "plant_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Code of the plant, site, or business unit requesting the part.",
+          "examples": ["PLANT-01"]
+        },
+        "material_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Internal code of the requested material or item.",
+          "examples": ["MAT-12345"]
+        },
+        "material_description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable description of the requested material.",
+          "examples": ["Industrial pump replacement kit"]
+        },
+        "quantity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Requested quantity of the part.",
+          "examples": [10]
+        },
+        "unit_of_measure": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unit of measure for the requested quantity.",
+          "examples": ["EA"]
+        },
+        "required_delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Requested delivery date for the part, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-15"]
+        },
+        "supplier_search_hints": {
+          "$ref": "#/$defs/SupplierSearchHints"
+        }
+      }
+    },
+    "SourcingConstraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_suppliers_per_part", "allowed_regions"],
+      "properties": {
+        "max_suppliers_per_part": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of suppliers the agent should identify and contact for each part.",
+          "examples": [3]
+        },
+        "allowed_regions": {
+          "type": "array",
+          "description": "Allowed supplier regions. Use an empty array when no region restriction applies.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["EU", "UK"]]
+        },
+        "preferred_supplier_ids": {
+          "type": "array",
+          "description": "Optional supplier identifiers that should be preferred during supplier identification when eligible.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["SUP-001", "SUP-002"]]
+        }
+      }
+    },
+    "SupplierSearchHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commodity_category", "required_certifications"],
+      "properties": {
+        "commodity_category": {
+          "type": "string",
+          "description": "Optional commodity or sourcing category used to identify eligible suppliers.",
+          "examples": ["industrial-pump-parts"]
+        },
+        "required_certifications": {
+          "type": "array",
+          "description": "Supplier certifications required for this part. Use an empty array when no certification is required.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["ISO-9001"]]
+        }
+      }
+    }
+  }
+}

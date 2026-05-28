@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/supplier-bid-response.schema.json",
+  "title": "SupplierBidResponse",
+  "description": "Supplier-facing response payload received by the Bid Collection Agent from a supplier API for a single requested part.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_id", "bid_request_id", "supplier_id", "status", "offer", "error"],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement request.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "bid_request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the bid request sent to the supplier.",
+      "examples": ["BIDREQ-REQ-2026-0001-PART-001-SUP-001"]
+    },
+    "supplier_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the supplier responding to the bid request.",
+      "examples": ["SUP-001"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["offer_received", "declined", "failed"],
+      "description": "Supplier response status."
+    },
+    "offer": {
+      "$ref": "#/$defs/SupplierOffer"
+    },
+    "error": {
+      "$ref": "#/$defs/SupplierBidError"
+    }
+  },
+  "$defs": {
+    "SupplierOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Offer returned by a supplier. When status is declined or failed, placeholder values are used and the error object explains the outcome.",
+      "required": [
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "part_id",
+        "material_code",
+        "price",
+        "currency",
+        "delivery_date",
+        "quality_score",
+        "reliability_score",
+        "valid_until"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "description": "Unique identifier of the supplier offer.",
+          "examples": ["OFF-001"]
+        },
+        "supplier_id": {
+          "type": "string",
+          "description": "Unique identifier of the supplier submitting the offer.",
+          "examples": ["SUP-001"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "description": "Human-readable supplier name.",
+          "examples": ["Northern Industrial Supply"]
+        },
+        "part_id": {
+          "type": "string",
+          "description": "Requested part identifier this offer answers.",
+          "examples": ["PART-001"]
+        },
+        "material_code": {
+          "type": "string",
+          "description": "Internal code of the requested material or item.",
+          "examples": ["MAT-12345"]
+        },
+        "price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total offer price for the requested quantity.",
+          "examples": [12000.0]
+        },
+        "currency": {
+          "type": "string",
+          "description": "ISO 4217 currency code of the offer price.",
+          "examples": ["EUR"]
+        },
+        "delivery_date": {
+          "type": "string",
+          "description": "Supplier committed delivery date, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-10"]
+        },
+        "quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Supplier or offer quality score on a 0 to 100 scale.",
+          "examples": [92]
+        },
+        "reliability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Supplier reliability score on a 0 to 100 scale.",
+          "examples": [88]
+        },
+        "valid_until": {
+          "type": "string",
+          "description": "Date until which the supplier offer remains valid, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-01"]
+        }
+      }
+    },
+    "SupplierBidError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Supplier response error code. Use an empty string when status is offer_received.",
+          "examples": ["SUPPLIER_TIMEOUT"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Supplier response error message. Use an empty string when status is offer_received.",
+          "examples": ["The supplier API did not respond before the deadline."]
+        }
+      }
+    }
+  }
+}

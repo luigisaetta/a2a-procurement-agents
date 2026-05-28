@@ -77,9 +77,7 @@ Development proceeds agent by agent. This first draft roadmap defines the initia
 | Agent | Description |
 | --- | --- |
 | Procurement Orchestrator | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
-| Supplier Discovery Agent | Identifies candidate suppliers for a procurement request. |
-| Bid Invitation Agent | Sends bid invitations to selected suppliers. |
-| Bid Collection Agent | Collects supplier bids and prepares them for evaluation. |
+| Bid Collection Agent | Identifies suppliers, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Checks procurement decisions and supplier data against compliance rules. |
 | Purchase Order Agent | Registers purchase orders in the company purchase order system and returns a technical confirmation. |

@@ -9,9 +9,7 @@ The README keeps only a short public-facing list of agents. This document provid
 | Agent | Status | Service Folder | Purpose |
 | --- | --- | --- | --- |
 | Procurement Orchestrator | Planned | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
-| Supplier Discovery Agent | Planned | `services/supplier-discovery-agent` | Identifies candidate suppliers for a procurement request. |
-| Bid Invitation Agent | Planned | `services/bid-invitation-agent` | Sends bid invitations to selected suppliers. |
-| Bid Collection Agent | Planned | `services/bid-collection-agent` | Collects supplier bids and prepares them for evaluation. |
+| Bid Collection Agent | Draft specification | `services/bid-collection-agent` | Identifies suppliers, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
 | Purchase Order Agent | Initial A2A server implementation | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
@@ -26,29 +24,42 @@ The Procurement Orchestrator coordinates the overall procurement flow. It is res
 
 The orchestrator should not own supplier discovery, bid evaluation, compliance, or purchase order business logic. Those responsibilities remain with specialized agents.
 
-## Supplier Discovery Agent
-
-Status: Planned
-
-The Supplier Discovery Agent identifies candidate suppliers for a procurement request.
-
-Future specifications will define the input criteria, supplier data sources, and output contract for discovered supplier candidates.
-
-## Bid Invitation Agent
-
-Status: Planned
-
-The Bid Invitation Agent sends bid invitations to selected suppliers.
-
-Future specifications will define invitation payloads, supplier contact requirements, response deadlines, and delivery tracking.
-
 ## Bid Collection Agent
 
-Status: Planned
+Status: Draft specification
 
-The Bid Collection Agent collects supplier bids and normalizes them into the offer format required by the Offer Evaluation Agent.
+The Bid Collection Agent identifies eligible suppliers, sends bid requests, receives supplier offers, and normalizes those offers into the format required by the Offer Evaluation Agent.
 
-Future specifications will define bid ingestion, validation, deadline handling, and handoff to offer evaluation.
+Specification: [specs/agents/bid-collection-agent.md](specs/agents/bid-collection-agent.md)
+
+Each requested part carries sourcing hints rather than a preselected supplier list. The agent uses provider abstractions so simulated supplier discovery and supplier APIs can later be replaced by real integrations without changing the external A2A contract.
+
+### Responsibilities
+
+The agent is responsible for:
+
+- receiving requested procurement parts and sourcing constraints
+- identifying eligible suppliers for each requested part
+- building supplier-specific bid requests
+- contacting supplier APIs through a provider boundary
+- collecting successful offers
+- recording declined or failed supplier responses
+- generating downstream offer evaluation request payloads
+
+### Non Responsibilities
+
+The agent does not:
+
+- evaluate offers
+- select the winning supplier offer
+- create purchase orders
+- orchestrate the full procurement workflow
+
+### A2A Capability
+
+The agent will expose the `collect_bids` skill through its Agent Card.
+
+The skill returns identified suppliers, normalized offers grouped by part, and `EvaluateOffersRequest` payloads ready for the Offer Evaluation Agent.
 
 ## Offer Evaluation Agent
 

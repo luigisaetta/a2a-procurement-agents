@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/collect-bids-response.schema.json",
+  "title": "CollectBidsResponse",
+  "description": "Response payload returned by the Bid Collection Agent after identifying suppliers, requesting offers, and normalizing supplier offers for one or more procurement parts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_id", "status", "part_results", "evaluation_requests", "message"],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the procurement request.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "partial", "failed"],
+      "description": "Overall bid collection status."
+    },
+    "part_results": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Bid collection result for each requested part.",
+      "items": {
+        "$ref": "#/$defs/PartBidResult"
+      }
+    },
+    "evaluation_requests": {
+      "type": "array",
+      "description": "Offer Evaluation Agent request payloads generated from collected supplier offers. A part without collected offers is omitted from this array.",
+      "items": {
+        "$ref": "#/$defs/EvaluateOffersRequestPayload"
+      }
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Concise technical summary of the bid collection result.",
+      "examples": ["Collected 2 supplier offers across 1 requested part."]
+    }
+  },
+  "$defs": {
+    "PartBidResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "part_id",
+        "material_code",
+        "status",
+        "identified_suppliers",
+        "offers",
+        "supplier_responses"
+      ],
+      "properties": {
+        "part_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the requested part.",
+          "examples": ["PART-001"]
+        },
+        "material_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Internal code of the requested material or item.",
+          "examples": ["MAT-12345"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["offers_collected", "partial", "no_offers"],
+          "description": "Bid collection status for this part."
+        },
+        "identified_suppliers": {
+          "type": "array",
+          "description": "Suppliers identified and selected for contact for this part.",
+          "items": {
+            "$ref": "#/$defs/IdentifiedSupplier"
+          }
+        },
+        "offers": {
+          "type": "array",
+          "description": "Normalized supplier offers collected for this part.",
+          "items": {
+            "$ref": "#/$defs/SupplierOffer"
+          }
+        },
+        "supplier_responses": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Technical response summary for each supplier contacted for this part.",
+          "items": {
+            "$ref": "#/$defs/SupplierResponseSummary"
+          }
+        }
+      }
+    },
+    "IdentifiedSupplier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supplier_id",
+        "supplier_name",
+        "api_endpoint",
+        "region",
+        "selection_reason"
+      ],
+      "properties": {
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the identified supplier.",
+          "examples": ["SUP-001"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable supplier name.",
+          "examples": ["Northern Industrial Supply"]
+        },
+        "api_endpoint": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Supplier API endpoint used by the supplier offer provider.",
+          "examples": ["mock://suppliers/SUP-001/offers"]
+        },
+        "region": {
+          "type": "string",
+          "description": "Supplier operating region used during supplier identification.",
+          "examples": ["EU"]
+        },
+        "selection_reason": {
+          "type": "string",
+          "description": "Concise technical reason why the supplier was selected for contact.",
+          "examples": ["Supplier supports the requested commodity category in an allowed region."]
+        }
+      }
+    },
+    "SupplierOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "price",
+        "currency",
+        "delivery_date",
+        "quality_score",
+        "reliability_score",
+        "valid_until"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the supplier offer.",
+          "examples": ["OFF-001"]
+        },
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the supplier submitting the offer.",
+          "examples": ["SUP-001"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable supplier name.",
+          "examples": ["Northern Industrial Supply"]
+        },
+        "price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total offer price for the requested quantity.",
+          "examples": [12000.0]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code of the offer price.",
+          "examples": ["EUR"]
+        },
+        "delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Supplier committed delivery date, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-10"]
+        },
+        "quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Supplier or offer quality score on a 0 to 100 scale.",
+          "examples": [92]
+        },
+        "reliability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Supplier reliability score on a 0 to 100 scale.",
+          "examples": [88]
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date",
+          "description": "Date until which the supplier offer remains valid, expressed as an ISO 8601 date.",
+          "examples": ["2026-06-01"]
+        }
+      }
+    },
+    "SupplierResponseSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supplier_id",
+        "supplier_name",
+        "bid_request_id",
+        "status",
+        "error"
+      ],
+      "properties": {
+        "supplier_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the contacted supplier.",
+          "examples": ["SUP-001"]
+        },
+        "supplier_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable supplier name.",
+          "examples": ["Northern Industrial Supply"]
+        },
+        "bid_request_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the bid request sent to the supplier.",
+          "examples": ["BIDREQ-REQ-2026-0001-PART-001-SUP-001"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["offer_received", "declined", "failed"],
+          "description": "Supplier response status."
+        },
+        "error": {
+          "$ref": "#/$defs/SupplierBidError"
+        }
+      }
+    },
+    "SupplierBidError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Supplier response error code. Use an empty string when no error occurred.",
+          "examples": ["SUPPLIER_DECLINED"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Supplier response error message. Use an empty string when no error occurred.",
+          "examples": ["The supplier declined to bid for the requested part."]
+        }
+      }
+    },
+    "EvaluateOffersRequestPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "plant_code",
+        "material_code",
+        "material_description",
+        "quantity",
+        "unit_of_measure",
+        "currency",
+        "required_delivery_date",
+        "evaluation_policy_id",
+        "offers"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plant_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "material_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "material_description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quantity": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit_of_measure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "required_delivery_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "evaluation_policy_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "offers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/SupplierOffer"
+          }
+        }
+      }
+    }
+  }
+}
