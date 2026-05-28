@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Updated local development instructions to use the `a2a-procurement-agents` conda environment and configured pytest to collect both agent test suites together.
 - Added the draft Procurement Data MCP Server specification for read-only access to plants, parts, suppliers, and supplier-part relationships.
 - Added MySQL to the Docker Compose deployment with schema initialization and synthetic procurement seed data loading.
 - Added synthetic CSV seed data for plants, electric vehicle parts, suppliers, and supplier-part assignments.

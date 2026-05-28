@@ -185,18 +185,18 @@ Description:    Brief description of the module.
 
 ## Python Runtime Environment
 
-Python development and execution for Locus-based agents must use the `locus` conda environment.
+Python development and local execution for this repository must use the `a2a-procurement-agents` conda environment.
 
 Use:
 
 ```bash
-conda activate locus
+conda activate a2a-procurement-agents
 ```
 
 or:
 
 ```bash
-conda run -n locus <command>
+conda run -n a2a-procurement-agents <command>
 ```
 
 ---
