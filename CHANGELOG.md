@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Added a root-level future extensions document with Langfuse observability as the first candidate extension.
 - Declared JSON input and output modes for the Offer Evaluation Agent A2A skill while keeping text/plain compatibility.
 
 ## 2026-05-27

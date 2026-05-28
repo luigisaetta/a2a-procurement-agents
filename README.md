@@ -52,7 +52,7 @@ Reference links:
 
 ## Runtime Foundation
 
-Agents are implemented with **Oracle Locus**, used as the runtime layer for agent execution and A2A infrastructure.
+Agents are implemented with [Oracle Locus](https://locusagents.oracle.com/), used as the runtime layer for agent execution and A2A infrastructure.
 
 Locus provides the mechanics this project needs:
 
