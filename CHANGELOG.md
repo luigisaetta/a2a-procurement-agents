@@ -4,7 +4,8 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
-- Added the initial persistent procurement data model specification covering procurement demand, suppliers, bids, offers, evaluations, compliance, purchase orders, workflow runs, task records, and audit events.
+- Simplified the persistent procurement data model around the initial automotive scenario and the seven core entities needed for the first workflow.
+- Added the initial persistent procurement data model specification.
 - Added the draft Bid Collection Agent specification and canonical bid collection and supplier bid schemas, consolidating supplier identification, bid request, and offer collection into one agent.
 - Added an initial Docker Compose deployment for running the Offer Evaluation and Purchase Order A2A agents together.
 - Added a sample purchase order JSON payload and manual A2A test client for the Purchase Order Agent.
