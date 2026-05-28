@@ -20,6 +20,7 @@ from locus.a2a import A2AClient, Message, TextPart
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_ENV_FILE = REPOSITORY_ROOT / "deployments" / "docker-compose" / ".env"
+SEPARATOR_WIDTH = 72
 
 SAMPLE_PAYLOAD: dict[str, Any] = {
     "request_id": "REQ-DEMO-E2E-0001",
@@ -114,6 +115,7 @@ async def invoke_streaming(
     client = A2AClient(url=base_url, api_key=api_key)
     message = _message(payload)
     async for event in client.send_message_streaming(message, timeout=1200):
+        _print_separator(_message_type(event))
         print(json.dumps(event, indent=2, sort_keys=True))
 
 
@@ -141,6 +143,7 @@ async def invoke_non_streaming(
     text = getattr(task.artifacts[-1].parts[0], "text", "")
     if not text:
         raise RuntimeError("A2A task artifact does not contain text output.")
+    _print_separator("final_response")
     print(json.dumps(json.loads(text), indent=2, sort_keys=True))
 
 
@@ -152,6 +155,66 @@ def _message(payload: dict[str, Any]) -> Message:
         parts=[TextPart(text=json.dumps(payload, indent=2))],
         messageId="sample-procurement-orchestration-request",
     )
+
+
+def _print_separator(title: str) -> None:
+    """Print a readable centered message separator."""
+
+    line = "-" * SEPARATOR_WIDTH
+    print()
+    print(line)
+    print(title.center(SEPARATOR_WIDTH))
+    print(line)
+
+
+def _message_type(event: dict[str, Any]) -> str:
+    """Return a human-readable type for one streamed A2A event."""
+
+    orchestration_event = _extract_orchestration_json(event)
+    if orchestration_event:
+        return str(orchestration_event.get("event_type", "orchestration_event"))
+
+    if "error" in event:
+        return "a2a_error"
+
+    for key in ("kind", "type", "event", "event_type"):
+        value = event.get(key)
+        if value:
+            return str(value)
+
+    return "a2a_message"
+
+
+def _extract_orchestration_json(event: dict[str, Any]) -> dict[str, Any]:
+    """Extract the JSON orchestration event embedded in an A2A update."""
+
+    for text in _iter_text_values(event):
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict) and "event_type" in parsed:
+            return parsed
+    return {}
+
+
+def _iter_text_values(value: Any) -> list[str]:
+    """Return all string values stored under keys named ``text``."""
+
+    if isinstance(value, dict):
+        items: list[str] = []
+        for key, nested in value.items():
+            if key == "text" and isinstance(nested, str):
+                items.append(nested)
+            else:
+                items.extend(_iter_text_values(nested))
+        return items
+    if isinstance(value, list):
+        items = []
+        for nested in value:
+            items.extend(_iter_text_values(nested))
+        return items
+    return []
 
 
 async def main_async() -> None:
