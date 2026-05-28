@@ -82,7 +82,7 @@ Development proceeds agent by agent. This first draft roadmap defines the initia
 | Bid Collection Agent | Collects supplier bids and prepares them for evaluation. |
 | Offer Evaluation Agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Checks procurement decisions and supplier data against compliance rules. |
-| Purchase Order Agent | Generates or prepares purchase order data after an approved supplier decision. |
+| Purchase Order Agent | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
 
 Detailed agent descriptions are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
 
@@ -115,6 +115,7 @@ specs/
 
 services/
   offer-evaluation-agent/
+  purchase-order-agent/
 
 docs/
 tests/
@@ -137,7 +138,10 @@ The project is designed with enterprise-grade concerns in mind:
 
 The first implementation steps focus on the Offer Evaluation Agent. Security, checkpointing, orchestration, and observability features will be introduced incrementally as the agent network expands.
 
-Operational startup instructions for the first agent are available in [services/offer-evaluation-agent/QUICKSTART.md](services/offer-evaluation-agent/QUICKSTART.md).
+Operational startup instructions are available in the agent quickstarts:
+
+- [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
+- [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
 
 ## Development Standards
 

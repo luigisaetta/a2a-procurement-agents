@@ -2,7 +2,7 @@
 
 Version: 0.1.0
 
-Status: Draft
+Status: Initial implementation
 
 ---
 
@@ -171,6 +171,10 @@ Initial behavior:
 - no real external write
 - deterministic stub registration
 - synthetic external reference generation
+
+Implemented wrapper:
+
+- [services/purchase-order-agent/src/purchase_order_agent/po_system.py](../../services/purchase-order-agent/src/purchase_order_agent/po_system.py)
 
 Future behavior:
 

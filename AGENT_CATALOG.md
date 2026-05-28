@@ -14,7 +14,7 @@ The README keeps only a short public-facing list of agents. This document provid
 | Bid Collection Agent | Planned | `services/bid-collection-agent` | Collects supplier bids and prepares them for evaluation. |
 | Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
-| Purchase Order Agent | Draft specification | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
+| Purchase Order Agent | Initial A2A server implementation | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
 
 ---
 
@@ -113,12 +113,18 @@ Future specifications will define compliance checks, approval outcomes, exceptio
 
 ## Purchase Order Agent
 
-Status: Draft specification
+Status: Initial A2A server implementation
 
 Specification: [specs/agents/purchase-order-agent.md](specs/agents/purchase-order-agent.md)
+
+Server entry point: [services/purchase-order-agent/src/purchase_order_agent/server.py](services/purchase-order-agent/src/purchase_order_agent/server.py)
+
+Quickstart: [services/purchase-order-agent/QUICKSTART.md](services/purchase-order-agent/QUICKSTART.md)
 
 The Purchase Order Agent registers purchase orders in the company purchase order system after an approved supplier decision.
 
 The initial design is deterministic and does not use an LLM.
 
-Future implementation will isolate the enterprise system integration behind a local wrapper module so the A2A contract can remain stable while the backend integration evolves.
+The current implementation exposes an A2A server with the `create_purchase_order` skill. It validates JSON input, calls a local fake purchase order system wrapper, and returns a structured JSON confirmation.
+
+The enterprise system integration is isolated behind a local wrapper module so the A2A contract can remain stable while the backend integration evolves.
