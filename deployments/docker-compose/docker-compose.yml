@@ -1,6 +1,31 @@
 name: a2a-procurement-agents
 
 services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: procurement_demo
+      MYSQL_USER: ${MYSQL_USER:-procurement_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-procurement_app_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-procurement_root_password}
+    command:
+      - --local-infile=1
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql:/docker-entrypoint-initdb.d:ro
+      - ../../specs/examples/data:/seed-data:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   offer-evaluation-agent:
     build:
       context: ../..
@@ -39,3 +64,6 @@ services:
       AGENT_API_KEY: ${AGENT_API_KEY}
     ports:
       - "${PURCHASE_ORDER_AGENT_PORT:-8002}:${PURCHASE_ORDER_AGENT_PORT:-8002}"
+
+volumes:
+  mysql-data:

@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Added MySQL to the Docker Compose deployment with schema initialization and synthetic procurement seed data loading.
 - Added synthetic CSV seed data for plants, electric vehicle parts, suppliers, and supplier-part assignments.
 - Simplified the persistent procurement data model around the initial automotive scenario and the seven core entities needed for the first workflow.
 - Added the initial persistent procurement data model specification.

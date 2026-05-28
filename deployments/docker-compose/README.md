@@ -4,6 +4,7 @@ This folder contains the first Docker Compose deployment for running the local A
 
 The current compose stack runs:
 
+- MySQL demo data store on port `3306`
 - Offer Evaluation Agent on port `8001`
 - Purchase Order Agent on port `8002`
 
@@ -16,6 +17,8 @@ Both services are built as independent containers and communicate through their 
 - access to the Oracle Locus SDK package used by the runtime image
 
 The Purchase Order Agent does not call an LLM, but it keeps the same runtime environment contract for consistency with the rest of the platform.
+
+MySQL is used as a local demo data store for the minimal procurement data model. It is initialized with the synthetic automotive seed CSV files from [../../specs/examples/data](../../specs/examples/data).
 
 ## Environment
 
@@ -32,6 +35,8 @@ Update:
 - `OCI_COMPARTMENT_ID`
 - `AGENT_API_KEY`
 - `OCI_CONFIG_DIR`
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_PASSWORD`
 
 `OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent.
 
@@ -53,6 +58,15 @@ http://127.0.0.1:8002/.well-known/agent-card.json
 
 All A2A routes require bearer authentication with `AGENT_API_KEY`.
 
+The MySQL service creates the `procurement_demo` schema on first startup and loads:
+
+- `plants`
+- `parts`
+- `suppliers`
+- `supplier_parts`
+
+The workflow tables `procurement_requests`, `supplier_offers`, and `purchase_orders` are created empty.
+
 ## Verify
 
 In another shell:
@@ -65,10 +79,29 @@ curl -H "Authorization: Bearer $AGENT_API_KEY" \
   http://127.0.0.1:8002/.well-known/agent-card.json
 ```
 
+Verify the demo data store:
+
+```bash
+docker compose exec mysql sh -c '
+  mysql -u root -p"$MYSQL_ROOT_PASSWORD" procurement_demo \
+    -e "SELECT COUNT(*) AS plants FROM plants;
+        SELECT COUNT(*) AS parts FROM parts;
+        SELECT COUNT(*) AS suppliers FROM suppliers;
+        SELECT COUNT(*) AS supplier_parts FROM supplier_parts;"
+'
+```
+
 ## Stop
 
 ```bash
 docker compose down
+```
+
+To reset the MySQL volume and reload seed data:
+
+```bash
+docker compose down -v
+docker compose up --build
 ```
 
 ## Notes
@@ -76,3 +109,5 @@ docker compose down
 The Dockerfile uses a shared runtime image pattern but copies each service folder into its own image. This keeps the deployment simple while preserving the project rule that agents do not share business runtime code.
 
 If `locus-sdk==0.2.0b22` is not available from the package index used by Docker, replace the dependency source in `requirements.txt` or override the Dockerfile with an internal base image that already contains Locus.
+
+MySQL initialization scripts run only when the `mysql-data` volume is empty. The seed loader uses `LOAD DATA LOCAL INFILE` against the CSV files mounted from `specs/examples/data`. Changing seed CSV files after the first startup requires recreating the volume with `docker compose down -v`.
