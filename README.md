@@ -114,6 +114,7 @@ specs/
 
 services/
   offer-evaluation-agent/
+  procurement-data-mcp/
   purchase-order-agent/
 
 deployments/
@@ -143,6 +144,7 @@ The first implementation steps focus on the Offer Evaluation Agent. Security, ch
 Operational startup instructions are available in the agent quickstarts:
 
 - [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
+- [Procurement Data MCP Server README](services/procurement-data-mcp/README.md)
 - [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
 
 The first cross-agent Docker Compose deployment is available in [deployments/docker-compose](deployments/docker-compose).
