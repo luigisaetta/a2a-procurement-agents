@@ -4,6 +4,8 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-28
 
+- Added a sample purchase order JSON payload and manual A2A test client for the Purchase Order Agent.
+- Updated the Purchase Order Agent quickstart with sample invocation instructions.
 - Added the initial Purchase Order Agent A2A server implementation with deterministic input validation and fake purchase order system registration.
 - Added the Purchase Order Agent local environment files, quickstart, and unit tests.
 - Updated the agent catalog and README to include Purchase Order Agent implementation and startup references.

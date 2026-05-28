@@ -1,0 +1,26 @@
+{
+  "request_id": "REQ-2026-0001",
+  "purchase_order_id": "PO-2026-0001",
+  "plant_code": "PLANT-01",
+  "supplier": {
+    "supplier_id": "SUP-002",
+    "supplier_name": "Northern Industrial Supply"
+  },
+  "line_items": [
+    {
+      "material_code": "MAT-12345",
+      "material_description": "Industrial pump replacement kit",
+      "quantity": 10,
+      "unit_of_measure": "EA",
+      "unit_price": 1180.0,
+      "currency": "EUR",
+      "requested_delivery_date": "2026-06-15",
+      "confirmed_delivery_date": "2026-06-12"
+    }
+  ],
+  "source_offer": {
+    "offer_id": "OFF-002",
+    "price": 11800.0,
+    "currency": "EUR"
+  }
+}

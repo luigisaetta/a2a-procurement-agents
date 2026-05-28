@@ -80,3 +80,25 @@ The current purchase order system call is a deterministic fake wrapper implement
 ```text
 services/purchase-order-agent/src/purchase_order_agent/po_system.py
 ```
+
+## Invoke With Sample Data
+
+The sample request is stored in:
+
+```text
+services/purchase-order-agent/examples/sample-create-purchase-order-request.json
+```
+
+Run the test client from the repository root while the server is running:
+
+```bash
+PYTHONPATH=services/purchase-order-agent/src \
+python services/purchase-order-agent/examples/test_client.py
+```
+
+The expected response has:
+
+- `status = "registered"`
+- `purchase_order.purchase_order_id = "PO-2026-0001"`
+- `purchase_order.external_reference = "ERP-PO-2026-0001"`
+- `error.code = ""`

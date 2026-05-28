@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
 from locus.core.events import TerminateEvent
@@ -74,6 +75,23 @@ def test_request_validation_rejects_negative_quantity() -> None:
 
     with pytest.raises(ValidationError):
         CreatePurchaseOrderRequest.model_validate(payload)
+
+
+def test_sample_payload_is_valid() -> None:
+    """Load the sample payload and verify its expected structure."""
+
+    sample_path = (
+        Path(__file__).resolve().parents[1]
+        / "examples"
+        / "sample-create-purchase-order-request.json"
+    )
+    payload = json.loads(sample_path.read_text(encoding="utf-8"))
+    request = CreatePurchaseOrderRequest.model_validate(payload)
+
+    assert request.request_id == "REQ-2026-0001"
+    assert request.purchase_order_id == "PO-2026-0001"
+    assert request.supplier.supplier_id == "SUP-002"
+    assert request.source_offer.offer_id == "OFF-002"
 
 
 def test_pipeline_returns_json_response() -> None:
