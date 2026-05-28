@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/procurement-orchestration-response.schema.json",
+  "title": "ProcurementOrchestrationResponse",
+  "description": "Final response returned by the Procurement Orchestrator Agent after the orchestration task reaches a terminal state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "orchestration_id",
+    "request_id",
+    "status",
+    "started_at",
+    "completed_at",
+    "part_results",
+    "message",
+    "error"
+  ],
+  "properties": {
+    "orchestration_id": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["ORCH-REQ-2026-0001"]
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["REQ-2026-0001"]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed_with_purchase_orders",
+        "completed_without_purchase_orders",
+        "completed_without_valid_offer",
+        "partial",
+        "failed"
+      ],
+      "description": "Terminal orchestration status."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "part_results": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Terminal result for each requested part.",
+      "items": {
+        "$ref": "#/$defs/PartOrchestrationResult"
+      }
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Concise technical summary of the orchestration outcome."
+    },
+    "error": {
+      "$ref": "#/$defs/OrchestrationError"
+    }
+  },
+  "$defs": {
+    "PartOrchestrationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "part_id",
+        "material_code",
+        "status",
+        "attempts_used",
+        "bid_collection",
+        "evaluation",
+        "purchase_order",
+        "error"
+      ],
+      "properties": {
+        "part_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "material_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "purchase_order_created",
+            "winner_selected",
+            "no_valid_offer",
+            "purchase_order_failed",
+            "failed"
+          ]
+        },
+        "attempts_used": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total bid collection attempts used for this part, including the initial attempt."
+        },
+        "bid_collection": {
+          "$ref": "#/$defs/BidCollectionSummary"
+        },
+        "evaluation": {
+          "$ref": "#/$defs/EvaluationSummary"
+        },
+        "purchase_order": {
+          "$ref": "#/$defs/PurchaseOrderSummary"
+        },
+        "error": {
+          "$ref": "#/$defs/OrchestrationError"
+        }
+      }
+    },
+    "BidCollectionSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "identified_suppliers_count", "offers_count"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["completed", "partial", "failed", ""]
+        },
+        "identified_suppliers_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "offers_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "EvaluationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "selected_offer", "explanation"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["selected_offer", "no_valid_offers", ""]
+        },
+        "selected_offer": {
+          "$ref": "#/$defs/SelectedOffer"
+        },
+        "explanation": {
+          "type": "string"
+        }
+      }
+    },
+    "SelectedOffer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "price",
+        "currency",
+        "delivery_date",
+        "quality_score",
+        "reliability_score",
+        "valid_until"
+      ],
+      "properties": {
+        "offer_id": {
+          "type": "string"
+        },
+        "supplier_id": {
+          "type": "string"
+        },
+        "supplier_name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "delivery_date": {
+          "type": "string"
+        },
+        "quality_score": {
+          "type": "number"
+        },
+        "reliability_score": {
+          "type": "number"
+        },
+        "valid_until": {
+          "type": "string"
+        }
+      }
+    },
+    "PurchaseOrderSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "purchase_order_id",
+        "external_reference",
+        "registered_at"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["registered", "failed", "skipped", ""]
+        },
+        "purchase_order_id": {
+          "type": "string"
+        },
+        "external_reference": {
+          "type": "string"
+        },
+        "registered_at": {
+          "type": "string"
+        }
+      }
+    },
+    "OrchestrationError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code. Empty when no error occurred."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable technical error message. Empty when no error occurred."
+        }
+      }
+    }
+  }
+}

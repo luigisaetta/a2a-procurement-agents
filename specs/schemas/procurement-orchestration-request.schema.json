@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/procurement-orchestration-request.schema.json",
+  "title": "ProcurementOrchestrationRequest",
+  "description": "Structured request accepted by the Procurement Orchestrator Agent to run an end-to-end procurement workflow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "requested_by",
+    "currency",
+    "evaluation_policy_id",
+    "response_deadline",
+    "auto_create_purchase_order",
+    "sourcing_constraints",
+    "parts"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Client-provided idempotency key for the procurement workflow.",
+      "examples": ["REQ-2026-0001"]
+    },
+    "requested_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Operator, system, or user identifier that initiated the request.",
+      "examples": ["operator@example.com"]
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "Expected ISO 4217 currency code for supplier offers and purchase orders.",
+      "examples": ["EUR"]
+    },
+    "evaluation_policy_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Offer evaluation policy identifier to pass to the Offer Evaluation Agent.",
+      "examples": ["standard-urgent-procurement-v1"]
+    },
+    "response_deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Deadline for supplier bid responses, expressed as an ISO 8601 timestamp.",
+      "examples": ["2026-05-29T12:00:00Z"]
+    },
+    "auto_create_purchase_order": {
+      "type": "boolean",
+      "description": "Whether the orchestrator should automatically call the Purchase Order Agent after a winning offer is selected.",
+      "examples": [true]
+    },
+    "max_rebid_attempts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 2,
+      "description": "Maximum number of additional bid collection attempts after no valid offer is selected. The initial attempt is not counted as a retry.",
+      "examples": [2]
+    },
+    "timeouts": {
+      "$ref": "#/$defs/OrchestrationTimeouts"
+    },
+    "sourcing_constraints": {
+      "$ref": "#/$defs/SourcingConstraints"
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Requested procurement parts to source.",
+      "items": {
+        "$ref": "#/$defs/PartOrchestrationRequest"
+      }
+    }
+  },
+  "$defs": {
+    "OrchestrationTimeouts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bid_collection_seconds",
+        "offer_evaluation_seconds",
+        "purchase_order_seconds",
+        "total_seconds"
+      ],
+      "properties": {
+        "bid_collection_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Timeout for one Bid Collection Agent invocation.",
+          "examples": [300]
+        },
+        "offer_evaluation_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Timeout for one Offer Evaluation Agent invocation.",
+          "examples": [120]
+        },
+        "purchase_order_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Timeout for one Purchase Order Agent invocation.",
+          "examples": [120]
+        },
+        "total_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum runtime for the whole orchestration task.",
+          "examples": [1800]
+        }
+      }
+    },
+    "SourcingConstraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_suppliers_per_part", "allowed_regions"],
+      "properties": {
+        "max_suppliers_per_part": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of suppliers to contact for each part and attempt.",
+          "examples": [3]
+        },
+        "allowed_regions": {
+          "type": "array",
+          "description": "Allowed supplier regions. Use an empty array when no region restriction applies.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["EU", "UK"]]
+        },
+        "preferred_supplier_ids": {
+          "type": "array",
+          "description": "Optional supplier identifiers that should be preferred when eligible.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["SUP-001", "SUP-002"]]
+        }
+      }
+    },
+    "PartOrchestrationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "part_id",
+        "plant_code",
+        "material_code",
+        "material_description",
+        "quantity",
+        "unit_of_measure",
+        "required_delivery_date"
+      ],
+      "properties": {
+        "part_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the requested part.",
+          "examples": ["PART-001"]
+        },
+        "plant_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Destination plant code.",
+          "examples": ["DE-MUN"]
+        },
+        "material_code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Internal material or part code.",
+          "examples": ["EV-BAT-MOD-001"]
+        },
+        "material_description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable material description.",
+          "examples": ["High Density Battery Module"]
+        },
+        "quantity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Requested quantity.",
+          "examples": [10]
+        },
+        "unit_of_measure": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unit of measure for the requested quantity.",
+          "examples": ["EA"]
+        },
+        "required_delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Required delivery date.",
+          "examples": ["2026-06-15"]
+        },
+        "supplier_search_hints": {
+          "$ref": "#/$defs/SupplierSearchHints"
+        }
+      }
+    },
+    "SupplierSearchHints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commodity_category", "required_certifications"],
+      "properties": {
+        "commodity_category": {
+          "type": "string",
+          "description": "Optional commodity or sourcing category used to identify eligible suppliers.",
+          "examples": ["battery"]
+        },
+        "required_certifications": {
+          "type": "array",
+          "description": "Supplier certifications required for this part.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["ISO-9001"]]
+        }
+      }
+    }
+  }
+}

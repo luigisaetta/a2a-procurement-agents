@@ -76,7 +76,7 @@ Development proceeds agent by agent. This first draft roadmap defines the initia
 
 | Agent | Description |
 | --- | --- |
-| Procurement Orchestrator | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
+| Procurement Orchestrator | Coordinates the end-to-end structured procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | Checks procurement decisions and supplier data against compliance rules. |
@@ -154,6 +154,8 @@ The first cross-agent Docker Compose deployment is available in [deployments/doc
 The initial persistent data model is specified in [specs/data/procurement-data-model.md](specs/data/procurement-data-model.md).
 
 The read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
+
+The draft procurement orchestration workflow is specified in [specs/agents/procurement-orchestrator.md](specs/agents/procurement-orchestrator.md).
 
 ## Development Standards
 

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/procurement-orchestration-event.schema.json",
+  "title": "ProcurementOrchestrationEvent",
+  "description": "Streaming event emitted by the Procurement Orchestrator Agent while an orchestration task is running.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "orchestration_id",
+    "request_id",
+    "sequence",
+    "timestamp",
+    "event_type",
+    "status",
+    "message",
+    "payload"
+  ],
+  "properties": {
+    "orchestration_id": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["ORCH-REQ-2026-0001"]
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["REQ-2026-0001"]
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonic sequence number within the orchestration stream."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event creation timestamp."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "workflow_started",
+        "bid_collection_started",
+        "bid_collection_completed",
+        "offer_evaluation_started",
+        "offer_evaluation_completed",
+        "rebid_requested",
+        "purchase_order_started",
+        "purchase_order_completed",
+        "part_completed",
+        "part_failed",
+        "workflow_completed",
+        "workflow_failed"
+      ],
+      "description": "Stable event type emitted by the orchestrator."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "running",
+        "retrying",
+        "completed",
+        "partial",
+        "failed"
+      ],
+      "description": "Current orchestration or part status."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Concise technical event message."
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Event-specific JSON payload. Must remain JSON-compatible."
+    }
+  }
+}
