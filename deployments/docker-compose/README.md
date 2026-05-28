@@ -33,30 +33,53 @@ Create a local compose environment file:
 cp deployments/docker-compose/.env.example deployments/docker-compose/.env
 ```
 
-Update:
+For the end-to-end demo, update:
 
 - `OCI_REGION`
 - `OCI_MODEL_ID`
 - `OCI_COMPARTMENT_ID`
 - `AGENT_API_KEY`
 - `OCI_CONFIG_DIR`
-- `MYSQL_ROOT_PASSWORD`
-- `MYSQL_PASSWORD`
-- `PROCUREMENT_DATA_MCP_PORT`
-- `PROCUREMENT_DATA_MCP_URL`
-- `BID_COLLECTION_AGENT_URL`
-- `OFFER_EVALUATION_AGENT_URL`
-- `PURCHASE_ORDER_AGENT_URL`
 
 `OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent.
 
-## Start
+The remaining values in `.env.example` have local-demo defaults. Override them only when a port, database password, or internal service URL conflicts with your environment.
+
+The end-to-end demo client needs only:
+
+- `PROCUREMENT_ORCHESTRATOR_PORT`
+- `AGENT_API_KEY`
+
+Both values are read from the shell environment first and then from this compose `.env` file.
+
+## Build
 
 Run from this folder:
 
 ```bash
 cd deployments/docker-compose
-docker compose up --build
+docker compose build
+```
+
+To build only the orchestrator image:
+
+```bash
+docker compose build procurement-orchestrator
+```
+
+## Start
+
+Run the full stack:
+
+```bash
+cd deployments/docker-compose
+docker compose up -d
+```
+
+To rebuild and start in one command:
+
+```bash
+docker compose up -d --build
 ```
 
 The Agent Cards are available at:
@@ -96,6 +119,24 @@ The MySQL service creates the `procurement_demo` schema on first startup and loa
 - `supplier_parts`
 
 The workflow tables `procurement_requests`, `supplier_offers`, and `purchase_orders` are created empty.
+
+## End-to-End Client
+
+After the stack is running, invoke the Procurement Orchestrator from the repository root:
+
+```bash
+conda run -n a2a-procurement-agents \
+  python services/procurement-orchestrator/examples/test_client.py
+```
+
+The client sends an embedded sample payload to the orchestrator and prints the A2A streaming events. Edit `SAMPLE_PAYLOAD` in [../../services/procurement-orchestrator/examples/test_client.py](../../services/procurement-orchestrator/examples/test_client.py) to change the test request.
+
+To print only the final task artifact:
+
+```bash
+conda run -n a2a-procurement-agents \
+  python services/procurement-orchestrator/examples/test_client.py --no-stream
+```
 
 ## Verify
 
@@ -138,6 +179,7 @@ The endpoint is an MCP streamable HTTP endpoint, so a plain browser or curl requ
 ## Stop
 
 ```bash
+cd deployments/docker-compose
 docker compose down
 ```
 
@@ -146,6 +188,31 @@ To reset the MySQL volume and reload seed data:
 ```bash
 docker compose down -v
 docker compose up --build
+```
+
+## Logs
+
+Show all logs:
+
+```bash
+cd deployments/docker-compose
+docker compose logs -f
+```
+
+Follow only the orchestrator logs:
+
+```bash
+docker compose logs -f procurement-orchestrator
+```
+
+Follow the main end-to-end path:
+
+```bash
+docker compose logs -f \
+  procurement-orchestrator \
+  bid-collection-agent \
+  offer-evaluation-agent \
+  purchase-order-agent
 ```
 
 ## Notes

@@ -40,6 +40,17 @@ The Agent Card is available at:
 http://127.0.0.1:8003/.well-known/agent-card.json
 ```
 
+## Manual Client
+
+The Docker Compose end-to-end client reads `AGENT_API_KEY` and `PROCUREMENT_ORCHESTRATOR_PORT` from the shell environment or from [../../deployments/docker-compose/.env](../../deployments/docker-compose/.env):
+
+```bash
+conda run -n a2a-procurement-agents \
+  python services/procurement-orchestrator/examples/test_client.py
+```
+
+The sample request payload is embedded in [examples/test_client.py](examples/test_client.py).
+
 ## Contracts
 
 - Request: [../../specs/schemas/procurement-orchestration-request.schema.json](../../specs/schemas/procurement-orchestration-request.schema.json)
@@ -47,4 +58,3 @@ http://127.0.0.1:8003/.well-known/agent-card.json
 - Final response: [../../specs/schemas/procurement-orchestration-response.schema.json](../../specs/schemas/procurement-orchestration-response.schema.json)
 
 The specification is maintained in [../../specs/agents/procurement-orchestrator.md](../../specs/agents/procurement-orchestrator.md).
-
