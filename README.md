@@ -149,6 +149,8 @@ The first cross-agent Docker Compose deployment is available in [deployments/doc
 
 The initial persistent data model is specified in [specs/data/procurement-data-model.md](specs/data/procurement-data-model.md).
 
+The planned read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
+
 ## Development Standards
 
 Code and documentation follow the repository rules in [AGENTS.md](AGENTS.md).
