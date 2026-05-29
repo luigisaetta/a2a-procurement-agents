@@ -25,6 +25,7 @@ from offer_evaluation_agent.models import (
 from offer_evaluation_agent.pipeline import (
     OfferEvaluationWorkflowAgent,
     _extract_json_object,
+    enforce_policy_consistency,
 )
 
 
@@ -145,6 +146,66 @@ def test_consistency_rejects_no_valid_without_reasons() -> None:
 
     with pytest.raises(ValueError, match="must include at least one reason"):
         agent.validate_consistency(request, response)
+
+
+def test_policy_guardrail_selects_valid_offer_when_llm_says_no_valid() -> None:
+    """Correct false no-valid-offers decisions when eligible offers exist."""
+
+    request = _request()
+    response = EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision=EvaluationDecision(
+            status="no_valid_offers",
+            selected_offer=_empty_selected_offer(),
+            reasons=["No offer matched the policy."],
+        ),
+        explanation="No valid offer.",
+    )
+
+    guarded = enforce_policy_consistency(request, response)
+
+    assert guarded.decision.status == "selected_offer"
+    assert guarded.decision.selected_offer.offer_id == "OFF-001"
+    assert guarded.decision.reasons == []
+
+
+def test_policy_guardrail_selects_lowest_eligible_offer() -> None:
+    """Correct selected offers that are valid but not policy-optimal."""
+
+    request = _request().model_copy(
+        update={
+            "offers": [
+                _request().offers[0],
+                SupplierOffer(
+                    offer_id="OFF-002",
+                    supplier_id="SUP-002",
+                    supplier_name="Supplier B",
+                    price=9000.0,
+                    currency="EUR",
+                    delivery_date="2026-06-12",
+                    quality_score=85,
+                    reliability_score=86,
+                    valid_until="2026-06-01",
+                ),
+            ]
+        }
+    )
+    response = EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision=EvaluationDecision(
+            status="selected_offer",
+            selected_offer=SelectedOfferPayload.model_validate(
+                request.offers[0].model_dump(mode="json")
+            ),
+            reasons=[],
+        ),
+        explanation="Supplier A was selected.",
+    )
+
+    guarded = enforce_policy_consistency(request, response)
+
+    assert guarded.decision.status == "selected_offer"
+    assert guarded.decision.selected_offer.offer_id == "OFF-002"
 
 
 def _empty_selected_offer() -> SelectedOfferPayload:

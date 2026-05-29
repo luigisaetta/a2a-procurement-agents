@@ -11,10 +11,15 @@ The current compose stack runs:
 - Purchase Order Agent on port `8002`
 - Procurement Orchestrator on port `8003`
 - Conversational Procurement Intake Layer on port `8012`
+- Procurement Intake Web UI on port `3000` when the optional `ui` profile is enabled
 
 The agents are built as independent containers and communicate through their A2A HTTP contracts. The Bid Collection Agent reads supplier master data through the Procurement Data MCP Server. The Procurement Orchestrator calls the Bid Collection, Offer Evaluation, and Purchase Order agents through A2A.
 
 The Conversational Procurement Intake Layer is not an A2A agent. It serves the UI through HTTP, uses an LLM extractor by default, calls the Procurement Orchestrator through an A2A client, and relays orchestration progress to the UI through Server-Sent Events.
+
+The Procurement Intake Web UI is a Next.js application. It proxies browser requests to the Conversational Procurement Intake Layer through `/api/intake` and renders workflow progress in real time.
+
+The UI container is optional because it requires the Node base image from Docker Hub. If Docker Hub access is blocked by a corporate TLS proxy, start the backend stack with Compose and run the UI locally with npm.
 
 ## Prerequisites
 
@@ -52,6 +57,7 @@ The end-to-end demo client needs only:
 
 - `PROCUREMENT_ORCHESTRATOR_PORT`
 - `CONVERSATIONAL_INTAKE_PORT`
+- `PROCUREMENT_INTAKE_UI_PORT`
 - `AGENT_API_KEY`
 
 Both values are read from the shell environment first and then from this compose `.env` file.
@@ -73,7 +79,7 @@ docker compose build procurement-orchestrator
 
 ## Start
 
-Run the full stack:
+Run the backend stack:
 
 ```bash
 cd deployments/docker-compose
@@ -84,6 +90,20 @@ To rebuild and start in one command:
 
 ```bash
 docker compose up -d --build
+```
+
+To include the UI container as well:
+
+```bash
+docker compose --profile ui up -d --build
+```
+
+For the recommended local UI test when Docker Hub cannot pull `node:22-slim`, start the backend stack with Compose and run the UI from the repository root in a second shell:
+
+```bash
+cd services/procurement-intake-ui
+CONVERSATIONAL_INTAKE_BASE_URL=http://127.0.0.1:8012 \
+  npm run dev -- --hostname 127.0.0.1 --port 3000
 ```
 
 The Agent Cards are available at:
@@ -114,6 +134,12 @@ http://127.0.0.1:8012
 ```
 
 It is an application service, so it does not expose an Agent Card.
+
+The Procurement Intake Web UI is available at this URL when either the `ui` Compose profile or the local Next.js dev server is running:
+
+```text
+http://127.0.0.1:3000
+```
 
 The MCP endpoint is available at:
 
@@ -147,6 +173,12 @@ The full conversational end-to-end path starts from the Conversational Procureme
 
 ```text
 UI/client -> Conversational Intake HTTP API -> LLM extraction -> A2A Orchestrator client -> Procurement Orchestrator -> downstream agents
+```
+
+From the browser, use the Procurement Intake Web UI:
+
+```text
+http://127.0.0.1:3000
 ```
 
 The initial service exposes:
@@ -235,6 +267,7 @@ Follow the main end-to-end path:
 
 ```bash
 docker compose logs -f \
+  procurement-intake-ui \
   conversational-procurement-intake \
   procurement-orchestrator \
   bid-collection-agent \

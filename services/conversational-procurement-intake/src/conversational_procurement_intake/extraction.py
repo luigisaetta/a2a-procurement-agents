@@ -95,16 +95,7 @@ class DeterministicIntakeExtractor:  # pylint: disable=too-few-public-methods
             Extraction result containing either missing fields or a request.
         """
 
-        candidate = CandidateIntakeFields(
-            material_reference=text,
-            plant_reference=text,
-            quantity=_extract_quantity(text),
-            required_delivery_date=_extract_delivery_date(text),
-            response_deadline=_extract_response_deadline(text),
-            auto_create_purchase_order=_extract_auto_create_purchase_order(text),
-            max_suppliers_per_part=_extract_max_suppliers(text),
-            allowed_regions=_extract_allowed_regions(text),
-        )
+        candidate = build_deterministic_candidate(text)
         return await build_extraction_result(
             candidate,
             self._master_data_resolver,
@@ -184,7 +175,9 @@ async def build_extraction_result(
             )
         )
 
-    missing = _deduplicate(missing)
+    missing = _normalize_missing_fields(
+        missing, candidate, part_candidates, plant_candidates
+    )
     if missing or ambiguities:
         return ExtractionResult(
             message=(
@@ -209,7 +202,7 @@ async def build_extraction_result(
         max_rebid_attempts=2,
         sourcing_constraints=SourcingConstraints(
             max_suppliers_per_part=candidate.max_suppliers_per_part or 3,
-            allowed_regions=candidate.allowed_regions,
+            allowed_regions=_normalize_allowed_regions(candidate.allowed_regions),
             preferred_supplier_ids=[],
         ),
         parts=[
@@ -234,6 +227,58 @@ async def build_extraction_result(
         ambiguities=[],
         defaults_applied=defaults,
         orchestration_request=request,
+    )
+
+
+def build_deterministic_candidate(text: str) -> CandidateIntakeFields:
+    """Build candidate fields from simple deterministic text rules.
+
+    Args:
+        text: Full conversation text collected for the session.
+
+    Returns:
+        Candidate fields extracted without an LLM.
+    """
+
+    return CandidateIntakeFields(
+        material_reference=text,
+        plant_reference=text,
+        quantity=_extract_quantity(text),
+        required_delivery_date=_extract_delivery_date(text),
+        response_deadline=_extract_response_deadline(text),
+        auto_create_purchase_order=_extract_auto_create_purchase_order(text),
+        max_suppliers_per_part=_extract_max_suppliers(text),
+        allowed_regions=_extract_allowed_regions(text),
+    )
+
+
+def enforce_candidate_evidence(
+    candidate: CandidateIntakeFields, text: str
+) -> CandidateIntakeFields:
+    """Validate that sensitive LLM-extracted values are text-supported.
+
+    Args:
+        candidate: Candidate fields produced by the LLM.
+        text: Full conversation text collected for the session.
+
+    Returns:
+        Candidate fields with unsupported sensitive values removed.
+    """
+
+    missing_fields = list(candidate.missing_fields)
+    quantity = candidate.quantity
+    clarification_question = candidate.clarification_question
+    if quantity is not None and not _has_quantity_evidence(text, quantity):
+        quantity = None
+        missing_fields.append("parts[0].quantity")
+        clarification_question = ""
+
+    return candidate.model_copy(
+        update={
+            "quantity": quantity,
+            "clarification_question": clarification_question,
+            "missing_fields": _deduplicate(missing_fields),
+        }
     )
 
 
@@ -274,11 +319,33 @@ def _default_values(candidate: CandidateIntakeFields) -> list[DefaultApplied]:
 def _extract_quantity(text: str) -> float | None:
     """Extract a positive numeric quantity from text."""
 
-    match = re.search(r"\b(\d+(?:\.\d+)?)\b", text)
-    if not match:
+    matches = _quantity_evidence_matches(text)
+    if not matches:
         return None
-    value = float(match.group(1))
+    value = float(matches[0])
     return value if value > 0 else None
+
+
+def _has_quantity_evidence(text: str, quantity: float) -> bool:
+    """Return whether text contains explicit evidence for a quantity value."""
+
+    return any(float(value) == quantity for value in _quantity_evidence_matches(text))
+
+
+def _quantity_evidence_matches(text: str) -> list[str]:
+    """Return explicit quantity-like numeric values from text."""
+
+    patterns = [
+        r"\b(?:quantity|qty)\s+(?:is|=|:)?\s*(\d+(?:\.\d+)?)\b",
+        r"\b(?:we\s+)?(?:need|require|order|buy|procure)\s+(\d+(?:\.\d+)?)"
+        r"\b(?!\s*[vV]\b)",
+        r"\b(\d+(?:\.\d+)?)\s+"
+        r"(?:units?|items?|pieces?|ea|battery\s+modules?|modules?|inverters?)\b",
+    ]
+    matches: list[str] = []
+    for pattern in patterns:
+        matches.extend(re.findall(pattern, text, re.IGNORECASE))
+    return matches
 
 
 def _extract_delivery_date(text: str) -> date | None:
@@ -287,7 +354,8 @@ def _extract_delivery_date(text: str) -> date | None:
     match = re.search(r"\bby\s+([A-Za-z]+)\s+(\d{1,2})\b", text, re.IGNORECASE)
     if not match:
         match = re.search(
-            r"\bdelivery\s+(?:by|date)\s+([A-Za-z]+)\s+(\d{1,2})\b",
+            r"\b(?:required\s+)?delivery\s+(?:by|date)\s+(?:is\s+)?"
+            r"([A-Za-z]+)\s+(\d{1,2})\b",
             text,
             re.IGNORECASE,
         )
@@ -299,8 +367,21 @@ def _extract_delivery_date(text: str) -> date | None:
 def _extract_response_deadline(text: str) -> datetime | None:
     """Extract a bid response deadline from text."""
 
+    today_match = re.search(
+        r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?today"
+        r"(?:\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?)?",
+        text,
+        re.IGNORECASE,
+    )
+    if today_match:
+        hour = int(today_match.group(1) or "17")
+        minute = int(today_match.group(2) or "0")
+        return datetime.combine(
+            date(CURRENT_YEAR, 5, 29), time(hour, minute), tzinfo=UTC
+        )
+
     match = re.search(
-        r"\b(?:bid|response)\s+deadline\s+([A-Za-z]+)\s+(\d{1,2})"
+        r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?([A-Za-z]+)\s+(\d{1,2})"
         r"(?:\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?)?",
         text,
         re.IGNORECASE,
@@ -338,6 +419,27 @@ def _extract_allowed_regions(text: str) -> list[str]:
     if "european" in normalized or "eu suppliers" in normalized:
         return ["EU"]
     return []
+
+
+def _normalize_allowed_regions(values: list[str]) -> list[str]:
+    """Normalize natural-language region names to sourcing region codes."""
+
+    aliases = {
+        "eu": "EU",
+        "europe": "EU",
+        "european": "EU",
+        "european union": "EU",
+        "uk": "UK",
+        "gb": "UK",
+        "great britain": "UK",
+        "united kingdom": "UK",
+    }
+    regions: list[str] = []
+    for value in values:
+        normalized = aliases.get(value.casefold().strip(), value.upper().strip())
+        if normalized and normalized not in regions:
+            regions.append(normalized)
+    return regions
 
 
 def _month_day_to_date(month_name: str, day: int) -> date:
@@ -389,3 +491,26 @@ def _deduplicate(values: list[str]) -> list[str]:
         if value not in deduplicated:
             deduplicated.append(value)
     return deduplicated
+
+
+def _normalize_missing_fields(
+    missing: list[str],
+    candidate: CandidateIntakeFields,
+    part_candidates: list[object],
+    plant_candidates: list[object],
+) -> list[str]:
+    """Remove stale LLM missing markers for fields that validated successfully."""
+
+    resolved_fields = set()
+    if candidate.quantity is not None:
+        resolved_fields.add("parts[0].quantity")
+    if candidate.required_delivery_date is not None:
+        resolved_fields.add("parts[0].required_delivery_date")
+    if candidate.response_deadline is not None:
+        resolved_fields.add("response_deadline")
+    if len(part_candidates) == 1:
+        resolved_fields.add("parts[0].material_code")
+    if len(plant_candidates) == 1:
+        resolved_fields.add("parts[0].plant_code")
+
+    return _deduplicate([field for field in missing if field not in resolved_fields])

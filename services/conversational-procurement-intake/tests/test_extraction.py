@@ -60,3 +60,47 @@ async def test_extractor_builds_orchestration_request_with_defaults() -> None:
         "currency",
         "evaluation_policy_id",
     }
+
+
+@pytest.mark.anyio
+async def test_extractor_does_not_use_delivery_day_as_quantity() -> None:
+    """Do not infer quantity from dates in a clarification message."""
+
+    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+
+    result = await extractor.extract(
+        (
+            "We need battery modules for the Munich plant as soon as possible. "
+            "Required delivery date is June 15. Bid deadline is today at 17:00. "
+            "Ask up to 3 European suppliers and create the purchase order "
+            "automatically."
+        ),
+        "operator@example.com",
+        8,
+    )
+
+    assert result.orchestration_request is None
+    assert "parts[0].quantity" in result.missing_fields
+    assert result.message == "What quantity do you need?"
+
+
+@pytest.mark.anyio
+async def test_extractor_reads_quantity_from_units_clarification() -> None:
+    """Accept quantity when the user provides it with units."""
+
+    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+
+    result = await extractor.extract(
+        (
+            "We need battery modules for the Munich plant as soon as possible. "
+            "Quantity is 10 units. Required delivery date is June 15. "
+            "Bid deadline is today at 17:00. Ask up to 3 European suppliers "
+            "and create the purchase order automatically."
+        ),
+        "operator@example.com",
+        9,
+    )
+
+    request = result.orchestration_request
+    assert request is not None
+    assert request.parts[0].quantity == 10

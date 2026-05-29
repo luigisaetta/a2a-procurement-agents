@@ -97,6 +97,23 @@ services:
       procurement-orchestrator:
         condition: service_started
 
+  procurement-intake-ui:
+    profiles:
+      - ui
+    build:
+      context: ../..
+      dockerfile: services/procurement-intake-ui/Dockerfile
+    image: a2a-procurement/procurement-intake-ui:local
+    environment:
+      PORT: ${PROCUREMENT_INTAKE_UI_PORT:-3000}
+      HOSTNAME: 0.0.0.0
+      CONVERSATIONAL_INTAKE_BASE_URL: ${CONVERSATIONAL_INTAKE_BASE_URL:-http://conversational-procurement-intake:8012}
+    ports:
+      - "${PROCUREMENT_INTAKE_UI_PORT:-3000}:${PROCUREMENT_INTAKE_UI_PORT:-3000}"
+    depends_on:
+      conversational-procurement-intake:
+        condition: service_started
+
   bid-collection-agent:
     build:
       context: ../..

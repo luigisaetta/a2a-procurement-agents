@@ -8,12 +8,55 @@ The README keeps only a short public-facing list. This document provides the dee
 
 | Component | Type | Status | Service Folder | Purpose |
 | --- | --- | --- | --- | --- |
+| Procurement Intake Web UI | Next.js web application | Planned | `services/procurement-intake-ui` | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
 | Conversational Procurement Intake Layer | HTTP application layer | Initial HTTP implementation | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
 | Procurement Orchestrator | A2A agent | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | A2A agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | A2A agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
 | Compliance Agent | A2A agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
 | Purchase Order Agent | A2A agent | Initial A2A server implementation | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
+
+---
+
+## Procurement Intake Web UI
+
+Status: Planned
+
+Type: Next.js web application, not an A2A agent
+
+Specification: [specs/ui/procurement-intake-web-ui.md](specs/ui/procurement-intake-web-ui.md)
+
+The Procurement Intake Web UI is the browser-based entry point for procurement operators.
+
+It lets users describe procurement needs in natural language, clarify missing information, review the structured request prepared by the Conversational Procurement Intake Layer, explicitly confirm workflow launch, and monitor orchestration progress in real time.
+
+The UI communicates only with the Conversational Procurement Intake Layer. It must not call the Procurement Orchestrator, downstream agents, or MCP server directly.
+
+The primary live update path is Server-Sent Events relayed by the intake layer. The UI must translate low-level orchestration events into business-friendly progress messages and avoid showing unnecessary technical protocol details in the main workflow.
+
+### Responsibilities
+
+The UI is responsible for:
+
+- natural-language conversation with the operator
+- displaying clarification prompts
+- displaying structured procurement request summaries
+- requiring explicit confirmation before workflow launch
+- opening and consuming SSE progress streams
+- showing real-time business-friendly workflow status
+- showing terminal procurement results
+- providing polling fallback for missed events or SSE reconnects
+
+### Non Responsibilities
+
+The UI does not:
+
+- interpret procurement requests with an LLM
+- resolve master data
+- generate orchestration JSON
+- call A2A agents directly
+- call MCP tools directly
+- expose raw protocol details in the primary user experience
 
 ---
 

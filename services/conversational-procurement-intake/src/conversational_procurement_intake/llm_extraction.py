@@ -19,6 +19,7 @@ from conversational_procurement_intake.extraction import (
     CandidateIntakeFields,
     ExtractionResult,
     build_extraction_result,
+    enforce_candidate_evidence,
 )
 from conversational_procurement_intake.master_data import MasterDataResolver
 
@@ -31,6 +32,10 @@ separate master-data lookup step to resolve them.
 
 If the user has not provided a mandatory business value, leave that field null
 or empty and include the canonical missing field name.
+
+Do not infer quantity from delivery dates, bid deadlines, times, supplier
+counts, voltages, model numbers, or part codes. Extract quantity only when the
+conversation explicitly states the requested material quantity.
 
 Mandatory business values are:
 - material_reference
@@ -110,6 +115,7 @@ class LLMIntakeExtractor:  # pylint: disable=too-few-public-methods
         """Extract and validate intake state from conversation text."""
 
         candidate = await self._llm_client.extract_candidate(text)
+        candidate = enforce_candidate_evidence(candidate, text)
         return await build_extraction_result(
             candidate,
             self._master_data_resolver,

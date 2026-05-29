@@ -76,6 +76,7 @@ Development proceeds component by component. This first draft roadmap defines th
 
 | Component | Type | Description |
 | --- | --- | --- |
+| Procurement Intake Web UI | Next.js web application | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
 | Conversational Procurement Intake Layer | HTTP application layer | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
 | Procurement Orchestrator | A2A agent | Coordinates the end-to-end structured procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | A2A agent | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
@@ -117,6 +118,7 @@ services/
   bid-collection-agent/
   conversational-procurement-intake/
   offer-evaluation-agent/
+  procurement-intake-ui/
   procurement-data-mcp/
   procurement-orchestrator/
   purchase-order-agent/
@@ -147,6 +149,7 @@ The first implementation steps focus on the Offer Evaluation Agent. Security, ch
 
 Operational startup instructions are available in the agent quickstarts:
 
+- [Procurement Intake Web UI README](services/procurement-intake-ui/README.md)
 - [Conversational Procurement Intake Layer README](services/conversational-procurement-intake/README.md)
 - [Bid Collection Agent README](services/bid-collection-agent/README.md)
 - [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
@@ -161,6 +164,8 @@ The initial persistent data model is specified in [specs/data/procurement-data-m
 The read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
 
 The draft conversational procurement intake layer is specified in [specs/layers/conversational-procurement-intake.md](specs/layers/conversational-procurement-intake.md).
+
+The draft procurement intake web UI is specified in [specs/ui/procurement-intake-web-ui.md](specs/ui/procurement-intake-web-ui.md).
 
 The draft procurement orchestration workflow is specified in [specs/agents/procurement-orchestrator.md](specs/agents/procurement-orchestrator.md).
 

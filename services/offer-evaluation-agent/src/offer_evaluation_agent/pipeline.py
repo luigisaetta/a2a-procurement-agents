@@ -82,6 +82,7 @@ class OfferEvaluationWorkflowAgent:
         llm_prompt = self._build_llm_prompt(request, policy_text, response_schema)
         result = await asyncio.to_thread(self._decision_agent.run_sync, llm_prompt)
         response = self._parse_response(result.parsed, result.message)
+        response = enforce_policy_consistency(request, response)
 
         yield ThinkEvent(iteration=5, reasoning="Running technical consistency checks.")
         self.validate_consistency(request, response)
@@ -222,6 +223,106 @@ def _extract_json_object(raw_message: str) -> str:
     candidate = stripped[start : end + 1]
     json.loads(candidate)
     return candidate
+
+
+def enforce_policy_consistency(
+    request: EvaluateOffersRequest,
+    response: EvaluateOffersResponse,
+) -> EvaluateOffersResponse:
+    """Enforce deterministic policy guardrails on top of the LLM decision.
+
+    Args:
+        request: Original evaluation request.
+        response: LLM-generated evaluation response.
+
+    Returns:
+        A response consistent with the urgent procurement policy.
+    """
+
+    expected_offer = _select_best_eligible_offer(request)
+    if expected_offer is None:
+        return _no_valid_offers_response(request, response)
+
+    selected_offer_id = response.decision.selected_offer.offer_id
+    if (
+        response.decision.status == "selected_offer"
+        and selected_offer_id == expected_offer.offer_id
+    ):
+        return response
+
+    return EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision={
+            "status": "selected_offer",
+            "selected_offer": expected_offer.model_dump(mode="json"),
+            "reasons": [],
+        },
+        explanation=(
+            f"{expected_offer.supplier_name} was selected because it is the "
+            "lowest-cost eligible offer in the requested currency and meets "
+            "the required delivery date."
+        ),
+    )
+
+
+def _select_best_eligible_offer(
+    request: EvaluateOffersRequest,
+) -> SupplierOffer | None:
+    """Select the best eligible offer according to the local policy."""
+
+    eligible = [
+        offer
+        for offer in request.offers
+        if offer.currency == request.currency
+        and offer.delivery_date <= request.required_delivery_date
+    ]
+    if not eligible:
+        return None
+    return sorted(
+        eligible,
+        key=lambda offer: (
+            offer.price,
+            -offer.reliability_score,
+            offer.delivery_date,
+            offer.offer_id,
+        ),
+    )[0]
+
+
+def _no_valid_offers_response(
+    request: EvaluateOffersRequest,
+    response: EvaluateOffersResponse,
+) -> EvaluateOffersResponse:
+    """Return a consistent no-valid-offers response."""
+
+    if response.decision.status == "no_valid_offers" and response.decision.reasons:
+        return response
+
+    return EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision={
+            "status": "no_valid_offers",
+            "selected_offer": {
+                "offer_id": "",
+                "supplier_id": "",
+                "supplier_name": "",
+                "price": 0,
+                "currency": "",
+                "delivery_date": "",
+                "quality_score": 0,
+                "reliability_score": 0,
+                "valid_until": "",
+            },
+            "reasons": [
+                "Every offer was excluded because it used a different currency "
+                "or missed the required delivery date."
+            ],
+        },
+        explanation=(
+            "No supplier offer was selected because every offer was excluded "
+            "by the policy."
+        ),
+    )
 
 
 def build_workflow_agent(settings: Settings) -> OfferEvaluationWorkflowAgent:
