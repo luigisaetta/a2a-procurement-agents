@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-29
 
+- Updated the agent catalog and conversational intake specification to reflect the implemented Procurement Intake Web UI and multi-field clarification behavior.
 - Hardened LLM-backed intake extraction so the LLM remains responsible for conversational extraction while deterministic code only validates evidence, grounds entities, and applies guardrails.
 - Normalized conversational sourcing region aliases such as `Europe` and `European` to canonical region codes before sending requests to the orchestrator.
 - Tightened deterministic intake quantity extraction so dates, times, and supplier counts are not mistaken for requested material quantity during clarification flows.

@@ -8,7 +8,7 @@ The README keeps only a short public-facing list. This document provides the dee
 
 | Component | Type | Status | Service Folder | Purpose |
 | --- | --- | --- | --- | --- |
-| Procurement Intake Web UI | Next.js web application | Planned | `services/procurement-intake-ui` | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
+| Procurement Intake Web UI | Next.js web application | Initial implementation | `services/procurement-intake-ui` | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
 | Conversational Procurement Intake Layer | HTTP application layer | Initial HTTP implementation | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
 | Procurement Orchestrator | A2A agent | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | A2A agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
@@ -20,7 +20,7 @@ The README keeps only a short public-facing list. This document provides the dee
 
 ## Procurement Intake Web UI
 
-Status: Planned
+Status: Initial implementation
 
 Type: Next.js web application, not an A2A agent
 

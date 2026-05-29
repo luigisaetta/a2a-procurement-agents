@@ -111,8 +111,12 @@ Suggested response shape:
 {
   "session_id": "INTAKE-2026-0001",
   "state": "needs_clarification",
-  "message": "Which bid response deadline should I use?",
-  "missing_fields": ["response_deadline"],
+  "message": "Please provide these missing details: What quantity do you need? What required delivery date should I use? Which bid response deadline should I use?",
+  "missing_fields": [
+    "parts[0].quantity",
+    "parts[0].required_delivery_date",
+    "response_deadline"
+  ],
   "ambiguities": [],
   "confirmation_summary": null,
   "orchestration_request": null,
@@ -324,6 +328,8 @@ The layer must ask for clarification when:
 - a preferred supplier is unknown, inactive, or not eligible for the requested part
 
 Clarification questions should be concise and should include candidate options when MCP lookup returns plausible matches.
+
+When more than one mandatory field is missing, the layer must ask for all currently missing mandatory details in one response instead of asking for only the first missing field. This keeps the dialogue efficient and makes the current completeness state explicit to the user.
 
 The layer should avoid asking for information that can be safely resolved through MCP lookup or documented defaults.
 
