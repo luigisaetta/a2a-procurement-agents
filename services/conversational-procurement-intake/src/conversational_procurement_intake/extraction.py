@@ -180,9 +180,8 @@ async def build_extraction_result(
     )
     if missing or ambiguities:
         return ExtractionResult(
-            message=(
-                candidate.clarification_question
-                or _clarification_message(missing, ambiguities)
+            message=_clarification_message_for_candidate(
+                candidate, missing, ambiguities
             ),
             missing_fields=missing,
             ambiguities=ambiguities,
@@ -463,22 +462,45 @@ def _month_day_to_date(month_name: str, day: int) -> date:
     return date(CURRENT_YEAR, month, day)
 
 
-def _clarification_message(  # pylint: disable=too-many-return-statements
+def _clarification_message_for_candidate(
+    candidate: CandidateIntakeFields,
+    missing: list[str],
+    ambiguities: list[ClarificationAmbiguity],
+) -> str:
+    """Build a clarification message, preserving useful single LLM questions."""
+
+    if candidate.clarification_question and len(missing) <= 1:
+        return candidate.clarification_question
+    return _clarification_message(missing, ambiguities)
+
+
+def _clarification_message(
     missing: list[str], ambiguities: list[ClarificationAmbiguity]
 ) -> str:
     """Build a concise clarification message."""
 
     if ambiguities:
         return ambiguities[0].reason
-    if "response_deadline" in missing:
+    if len(missing) > 1:
+        questions = [_missing_field_question(field) for field in missing]
+        return "Please provide these missing details: " + " ".join(questions)
+    if missing:
+        return _missing_field_question(missing[0])
+    return "Please provide the missing procurement details."
+
+
+def _missing_field_question(field: str) -> str:
+    """Return the user-facing question for one missing field."""
+
+    if field == "response_deadline":
         return "Which bid response deadline should I use?"
-    if "parts[0].required_delivery_date" in missing:
+    if field == "parts[0].required_delivery_date":
         return "What required delivery date should I use?"
-    if "parts[0].quantity" in missing:
+    if field == "parts[0].quantity":
         return "What quantity do you need?"
-    if "parts[0].material_code" in missing:
+    if field == "parts[0].material_code":
         return "Which material or part do you need?"
-    if "parts[0].plant_code" in missing:
+    if field == "parts[0].plant_code":
         return "Which destination plant should receive the material?"
     return "Please provide the missing procurement details."
 

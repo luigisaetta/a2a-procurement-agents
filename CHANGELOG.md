@@ -7,6 +7,7 @@ All meaningful changes to this project are documented in this file.
 - Hardened LLM-backed intake extraction so the LLM remains responsible for conversational extraction while deterministic code only validates evidence, grounds entities, and applies guardrails.
 - Normalized conversational sourcing region aliases such as `Europe` and `European` to canonical region codes before sending requests to the orchestrator.
 - Tightened deterministic intake quantity extraction so dates, times, and supplier counts are not mistaken for requested material quantity during clarification flows.
+- Updated intake clarification behavior to ask for all currently missing mandatory details in one response instead of asking for only the first missing field.
 - Added deterministic policy guardrails to the Offer Evaluation Agent so LLM decisions cannot incorrectly return no valid offers or select a non-optimal offer when eligible offers exist.
 - Implemented the initial Next.js Procurement Intake Web UI with chat, structured request review, confirmation, SSE progress timeline, intake proxy routes, Dockerfile, and Docker Compose deployment.
 - Added the draft Procurement Intake Web UI specification for a Next.js interface that converses with the intake layer, confirms requests, and displays real-time workflow progress through SSE.

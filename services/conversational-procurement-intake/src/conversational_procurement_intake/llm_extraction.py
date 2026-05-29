@@ -32,6 +32,9 @@ separate master-data lookup step to resolve them.
 
 If the user has not provided a mandatory business value, leave that field null
 or empty and include the canonical missing field name.
+When multiple mandatory values are missing, include all of them in
+missing_fields and make clarification_question ask for all missing details
+together.
 
 Do not infer quantity from delivery dates, bid deadlines, times, supplier
 counts, voltages, model numbers, or part codes. Extract quantity only when the
@@ -139,6 +142,8 @@ def _build_prompt(text: str) -> str:
         "- parts[0].quantity\n"
         "- parts[0].required_delivery_date\n"
         "- response_deadline\n\n"
+        "If more than one canonical field is missing, include every missing "
+        "field and ask for every missing value in one clarification question.\n\n"
         "CandidateIntakeFields JSON Schema:\n"
         f"{json.dumps(schema, indent=2)}\n\n"
         "Conversation:\n"

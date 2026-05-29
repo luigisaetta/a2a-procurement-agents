@@ -31,6 +31,31 @@ async def test_extractor_requests_missing_response_deadline() -> None:
 
 
 @pytest.mark.anyio
+async def test_extractor_requests_all_missing_details() -> None:
+    """Ask for all missing mandatory values in one clarification."""
+
+    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+
+    result = await extractor.extract(
+        "We need battery modules for the Munich plant as soon as possible.",
+        "operator@example.com",
+        2,
+    )
+
+    assert result.orchestration_request is None
+    assert result.missing_fields == [
+        "parts[0].quantity",
+        "parts[0].required_delivery_date",
+        "response_deadline",
+    ]
+    assert result.message == (
+        "Please provide these missing details: What quantity do you need? "
+        "What required delivery date should I use? "
+        "Which bid response deadline should I use?"
+    )
+
+
+@pytest.mark.anyio
 async def test_extractor_builds_orchestration_request_with_defaults() -> None:
     """Build a valid orchestration request after all mandatory fields exist."""
 

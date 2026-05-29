@@ -85,7 +85,7 @@ async def test_llm_extractor_reports_missing_fields_from_candidate() -> None:
     )
 
     result = await extractor.extract(
-        "User conversation text.",
+        "We need 10 high density battery modules for Munich by June 15.",
         "operator@example.com",
         12,
     )
@@ -93,6 +93,48 @@ async def test_llm_extractor_reports_missing_fields_from_candidate() -> None:
     assert result.orchestration_request is None
     assert "response_deadline" in result.missing_fields
     assert result.message == "Which bid response deadline should I use?"
+
+
+@pytest.mark.anyio
+async def test_llm_extractor_asks_all_missing_fields() -> None:
+    """Do not preserve a single LLM question when multiple fields are missing."""
+
+    extractor = LLMIntakeExtractor(
+        FakeLLMClient(
+            CandidateIntakeFields(
+                material_reference="battery modules",
+                plant_reference="Munich",
+                quantity=None,
+                required_delivery_date=None,
+                response_deadline=None,
+                clarification_question="Which bid response deadline should I use?",
+                missing_fields=[
+                    "parts[0].quantity",
+                    "parts[0].required_delivery_date",
+                    "response_deadline",
+                ],
+            )
+        ),
+        StaticMasterDataResolver(),
+    )
+
+    result = await extractor.extract(
+        "We need battery modules for the Munich plant as soon as possible.",
+        "operator@example.com",
+        12,
+    )
+
+    assert result.orchestration_request is None
+    assert result.missing_fields == [
+        "parts[0].quantity",
+        "parts[0].required_delivery_date",
+        "response_deadline",
+    ]
+    assert result.message == (
+        "Please provide these missing details: What quantity do you need? "
+        "What required delivery date should I use? "
+        "Which bid response deadline should I use?"
+    )
 
 
 @pytest.mark.anyio
