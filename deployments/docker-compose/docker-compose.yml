@@ -71,6 +71,32 @@ services:
       purchase-order-agent:
         condition: service_started
 
+  conversational-procurement-intake:
+    build:
+      context: ../..
+      dockerfile: deployments/docker-compose/Dockerfile.agent
+      args:
+        SERVICE_PATH: services/conversational-procurement-intake
+        AGENT_MODULE: conversational_procurement_intake.server
+    image: a2a-procurement/conversational-procurement-intake:local
+    environment:
+      CONVERSATIONAL_INTAKE_PORT: ${CONVERSATIONAL_INTAKE_PORT:-8012}
+      CONVERSATIONAL_INTAKE_EXTRACTOR_MODE: ${CONVERSATIONAL_INTAKE_EXTRACTOR_MODE:-llm}
+      PROCUREMENT_ORCHESTRATOR_URL: ${PROCUREMENT_ORCHESTRATOR_URL:-http://procurement-orchestrator:8003}
+      AGENT_API_KEY: ${AGENT_API_KEY:-}
+      OCI_REGION: ${OCI_REGION}
+      OCI_AUTH: ${OCI_AUTH}
+      OCI_MODEL_ID: ${OCI_MODEL_ID}
+      OCI_COMPARTMENT_ID: ${OCI_COMPARTMENT_ID}
+      OCI_PROFILE: ${OCI_PROFILE:-DEFAULT}
+    ports:
+      - "${CONVERSATIONAL_INTAKE_PORT:-8012}:${CONVERSATIONAL_INTAKE_PORT:-8012}"
+    volumes:
+      - ${OCI_CONFIG_DIR:-~/.oci}:/root/.oci:ro
+    depends_on:
+      procurement-orchestrator:
+        condition: service_started
+
   bid-collection-agent:
     build:
       context: ../..

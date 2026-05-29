@@ -115,8 +115,10 @@ specs/
 
 services/
   bid-collection-agent/
+  conversational-procurement-intake/
   offer-evaluation-agent/
   procurement-data-mcp/
+  procurement-orchestrator/
   purchase-order-agent/
 
 deployments/
@@ -145,6 +147,7 @@ The first implementation steps focus on the Offer Evaluation Agent. Security, ch
 
 Operational startup instructions are available in the agent quickstarts:
 
+- [Conversational Procurement Intake Layer README](services/conversational-procurement-intake/README.md)
 - [Bid Collection Agent README](services/bid-collection-agent/README.md)
 - [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
 - [Procurement Data MCP Server README](services/procurement-data-mcp/README.md)

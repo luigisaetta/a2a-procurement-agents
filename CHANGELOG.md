@@ -4,6 +4,10 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-29
 
+- Added the Conversational Procurement Intake Layer to the Docker Compose deployment with LLM extraction enabled by default and A2A connectivity to the Procurement Orchestrator.
+- Changed the Conversational Procurement Intake Layer default extractor mode to LLM, keeping deterministic extraction as an explicit local fallback.
+- Added LLM-backed structured extraction for the Conversational Procurement Intake Layer, with deterministic grounding and tests using an injectable fake LLM client.
+- Implemented the initial Conversational Procurement Intake HTTP service with in-memory sessions, deterministic demo extraction, static master-data grounding, confirmation handling, A2A orchestrator client boundary, SSE event relay, polling fallback, README, and tests.
 - Added the draft Conversational Procurement Intake Layer specification for natural-language procurement intake, MCP-backed entity grounding, clarification, confirmation, and orchestration request generation.
 - Clarified that the Conversational Procurement Intake Layer serves the UI through an HTTP JSON API and submits confirmed workflows to the Procurement Orchestrator through an A2A client.
 - Specified orchestration event relay from the Procurement Orchestrator A2A stream to UI-facing HTTP updates, with Server-Sent Events preferred and polling required as a fallback.

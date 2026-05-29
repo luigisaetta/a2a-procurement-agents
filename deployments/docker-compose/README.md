@@ -10,8 +10,11 @@ The current compose stack runs:
 - Offer Evaluation Agent on port `8001`
 - Purchase Order Agent on port `8002`
 - Procurement Orchestrator on port `8003`
+- Conversational Procurement Intake Layer on port `8012`
 
 The agents are built as independent containers and communicate through their A2A HTTP contracts. The Bid Collection Agent reads supplier master data through the Procurement Data MCP Server. The Procurement Orchestrator calls the Bid Collection, Offer Evaluation, and Purchase Order agents through A2A.
+
+The Conversational Procurement Intake Layer is not an A2A agent. It serves the UI through HTTP, uses an LLM extractor by default, calls the Procurement Orchestrator through an A2A client, and relays orchestration progress to the UI through Server-Sent Events.
 
 ## Prerequisites
 
@@ -41,13 +44,14 @@ For the end-to-end demo, update:
 - `AGENT_API_KEY`
 - `OCI_CONFIG_DIR`
 
-`OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent.
+`OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent and Conversational Procurement Intake Layer.
 
 The remaining values in `.env.example` have local-demo defaults. Override them only when a port, database password, or internal service URL conflicts with your environment.
 
 The end-to-end demo client needs only:
 
 - `PROCUREMENT_ORCHESTRATOR_PORT`
+- `CONVERSATIONAL_INTAKE_PORT`
 - `AGENT_API_KEY`
 
 Both values are read from the shell environment first and then from this compose `.env` file.
@@ -103,6 +107,14 @@ http://127.0.0.1:8003/.well-known/agent-card.json
 
 All A2A routes require bearer authentication with `AGENT_API_KEY`.
 
+The Conversational Procurement Intake Layer HTTP API is available at:
+
+```text
+http://127.0.0.1:8012
+```
+
+It is an application service, so it does not expose an Agent Card.
+
 The MCP endpoint is available at:
 
 ```text
@@ -130,6 +142,20 @@ conda run -n a2a-procurement-agents \
 ```
 
 The client sends an embedded sample payload to the orchestrator and prints the A2A streaming events. Edit `SAMPLE_PAYLOAD` in [../../services/procurement-orchestrator/examples/test_client.py](../../services/procurement-orchestrator/examples/test_client.py) to change the test request.
+
+The full conversational end-to-end path starts from the Conversational Procurement Intake Layer:
+
+```text
+UI/client -> Conversational Intake HTTP API -> LLM extraction -> A2A Orchestrator client -> Procurement Orchestrator -> downstream agents
+```
+
+The initial service exposes:
+
+- `POST /sessions`
+- `POST /sessions/{session_id}/messages`
+- `POST /sessions/{session_id}/confirm`
+- `GET /sessions/{session_id}/events` for SSE
+- `GET /sessions/{session_id}/orchestration-events` for polling fallback
 
 To print only the final task artifact:
 
@@ -209,6 +235,7 @@ Follow the main end-to-end path:
 
 ```bash
 docker compose logs -f \
+  conversational-procurement-intake \
   procurement-orchestrator \
   bid-collection-agent \
   offer-evaluation-agent \

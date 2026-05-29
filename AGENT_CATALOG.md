@@ -8,7 +8,7 @@ The README keeps only a short public-facing list. This document provides the dee
 
 | Component | Type | Status | Service Folder | Purpose |
 | --- | --- | --- | --- | --- |
-| Conversational Procurement Intake Layer | HTTP application layer | Planned | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
+| Conversational Procurement Intake Layer | HTTP application layer | Initial HTTP implementation | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
 | Procurement Orchestrator | A2A agent | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | A2A agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
 | Offer Evaluation Agent | A2A agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
@@ -19,11 +19,13 @@ The README keeps only a short public-facing list. This document provides the dee
 
 ## Conversational Procurement Intake Layer
 
-Status: Planned
+Status: Initial HTTP implementation
 
 Type: HTTP application layer, not an A2A agent
 
 Specification: [specs/layers/conversational-procurement-intake.md](specs/layers/conversational-procurement-intake.md)
+
+Service folder: [services/conversational-procurement-intake](services/conversational-procurement-intake)
 
 The Conversational Procurement Intake Layer provides the natural-language entry point for end users.
 
@@ -34,6 +36,8 @@ The layer may use the read-only Procurement Data MCP Server to resolve and valid
 The initial implementation must not expose an Agent Card and must not be treated as a peer A2A agent. It is an HTTP application/service layer that communicates with the UI through a JSON API, prepares structured requests, and submits confirmed requests to the Procurement Orchestrator through an A2A client.
 
 After submission, the layer consumes the orchestrator A2A event stream, stores normalized progress events in the intake session state, and relays each event to the UI immediately through Server-Sent Events. Polling remains a required fallback for reconnect and recovery, not the primary live update path.
+
+The implementation includes an LLM-backed structured extractor, a deterministic fallback for local testing, and a static master-data resolver for the demo scenario. The static resolver is the replaceable boundary for the planned read-only Procurement Data MCP client.
 
 The layer must ask for explicit user confirmation before submitting a completed request to the Procurement Orchestrator.
 
