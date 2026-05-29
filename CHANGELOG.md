@@ -2,6 +2,13 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-05-29
+
+- Added the draft Conversational Procurement Intake Layer specification for natural-language procurement intake, MCP-backed entity grounding, clarification, confirmation, and orchestration request generation.
+- Clarified that the Conversational Procurement Intake Layer serves the UI through an HTTP JSON API and submits confirmed workflows to the Procurement Orchestrator through an A2A client.
+- Specified orchestration event relay from the Procurement Orchestrator A2A stream to UI-facing HTTP updates, with Server-Sent Events preferred and polling required as a fallback.
+- Clarified that orchestration events must be forwarded to connected UI clients in real time over SSE as they are received, not cached and emitted only after workflow completion.
+
 ## 2026-05-28
 
 - Changed the default Procurement Data MCP HTTP port from `8010` to `8011` across Docker Compose, examples, documentation, and bid collection tests.

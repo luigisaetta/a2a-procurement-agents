@@ -70,19 +70,20 @@ Reference link:
 
 - [Oracle Locus on GitHub](https://github.com/oracle-samples/locus)
 
-## Agents
+## System Components
 
-Development proceeds agent by agent. This first draft roadmap defines the initial procurement agent network.
+Development proceeds component by component. This first draft roadmap defines the initial procurement system.
 
-| Agent | Description |
-| --- | --- |
-| Procurement Orchestrator | Coordinates the end-to-end structured procurement workflow across specialized A2A agents. |
-| Bid Collection Agent | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
-| Offer Evaluation Agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
-| Compliance Agent | Checks procurement decisions and supplier data against compliance rules. |
-| Purchase Order Agent | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
+| Component | Type | Description |
+| --- | --- | --- |
+| Conversational Procurement Intake Layer | HTTP application layer | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
+| Procurement Orchestrator | A2A agent | Coordinates the end-to-end structured procurement workflow across specialized A2A agents. |
+| Bid Collection Agent | A2A agent | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
+| Offer Evaluation Agent | A2A agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
+| Compliance Agent | A2A agent | Checks procurement decisions and supplier data against compliance rules. |
+| Purchase Order Agent | A2A agent | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
 
-Detailed agent descriptions are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
+Detailed component descriptions are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
 
 ## Spec-First Development
 
@@ -155,6 +156,8 @@ The first cross-agent Docker Compose deployment is available in [deployments/doc
 The initial persistent data model is specified in [specs/data/procurement-data-model.md](specs/data/procurement-data-model.md).
 
 The read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
+
+The draft conversational procurement intake layer is specified in [specs/layers/conversational-procurement-intake.md](specs/layers/conversational-procurement-intake.md).
 
 The draft procurement orchestration workflow is specified in [specs/agents/procurement-orchestrator.md](specs/agents/procurement-orchestrator.md).
 

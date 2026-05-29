@@ -1,18 +1,67 @@
 # Agent Catalog
 
-This catalog describes the agents planned and developed in this project.
+This catalog describes the agents and adjacent system components planned and developed in this project.
 
-The README keeps only a short public-facing list of agents. This document provides the deeper operational descriptions that will grow as new agents are specified, implemented, and integrated through A2A.
+The README keeps only a short public-facing list. This document provides the deeper operational descriptions that will grow as new agents and system components are specified, implemented, and integrated.
 
-## Draft Agent Network
+## Draft System Components
 
-| Agent | Status | Service Folder | Purpose |
-| --- | --- | --- | --- |
-| Procurement Orchestrator | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
-| Bid Collection Agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
-| Offer Evaluation Agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
-| Compliance Agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
-| Purchase Order Agent | Initial A2A server implementation | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
+| Component | Type | Status | Service Folder | Purpose |
+| --- | --- | --- | --- | --- |
+| Conversational Procurement Intake Layer | HTTP application layer | Planned | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
+| Procurement Orchestrator | A2A agent | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
+| Bid Collection Agent | A2A agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
+| Offer Evaluation Agent | A2A agent | Initial A2A server implementation | `services/offer-evaluation-agent` | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
+| Compliance Agent | A2A agent | Planned | `services/compliance-agent` | Checks procurement decisions and supplier data against compliance rules. |
+| Purchase Order Agent | A2A agent | Initial A2A server implementation | `services/purchase-order-agent` | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
+
+---
+
+## Conversational Procurement Intake Layer
+
+Status: Planned
+
+Type: HTTP application layer, not an A2A agent
+
+Specification: [specs/layers/conversational-procurement-intake.md](specs/layers/conversational-procurement-intake.md)
+
+The Conversational Procurement Intake Layer provides the natural-language entry point for end users.
+
+It interprets user requests, checks whether they are clear and complete, asks for missing or ambiguous information, and produces the structured `ProcurementOrchestrationRequest` JSON payload accepted by the Procurement Orchestrator.
+
+The layer may use the read-only Procurement Data MCP Server to resolve and validate plant, part, supplier, and supplier-part references. LLM output is treated as candidate extraction only; canonical procurement identifiers must come from validated user input or MCP lookup results.
+
+The initial implementation must not expose an Agent Card and must not be treated as a peer A2A agent. It is an HTTP application/service layer that communicates with the UI through a JSON API, prepares structured requests, and submits confirmed requests to the Procurement Orchestrator through an A2A client.
+
+After submission, the layer consumes the orchestrator A2A event stream, stores normalized progress events in the intake session state, and relays each event to the UI immediately through Server-Sent Events. Polling remains a required fallback for reconnect and recovery, not the primary live update path.
+
+The layer must ask for explicit user confirmation before submitting a completed request to the Procurement Orchestrator.
+
+### Responsibilities
+
+The layer is responsible for:
+
+- natural-language procurement intake
+- HTTP API communication with the UI
+- conversation state during request clarification
+- extraction of candidate procurement fields
+- MCP-backed entity grounding and validation
+- clarification questions for missing, ambiguous, or conflicting information
+- documented default application
+- final JSON Schema validation
+- A2A client submission to the Procurement Orchestrator after user confirmation
+- orchestration event relay from the A2A stream to UI-facing HTTP updates
+
+### Non Responsibilities
+
+The layer does not:
+
+- collect supplier bids
+- evaluate supplier offers
+- select suppliers
+- create purchase orders directly
+- mutate procurement master data
+- bypass the Procurement Orchestrator
 
 ---
 
