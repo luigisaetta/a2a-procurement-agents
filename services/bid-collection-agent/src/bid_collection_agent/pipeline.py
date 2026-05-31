@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Deterministic bid collection workflow using MCP supplier discovery.
 """
@@ -8,9 +8,13 @@ Description:    Deterministic bid collection workflow using MCP supplier discove
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
+from locus.agent.hook_orchestrator import HookOrchestrator
 from locus.core.events import LocusEvent, TerminateEvent, ThinkEvent
+from locus.core.state import AgentState
 
 from bid_collection_agent.config import Settings
 from bid_collection_agent.models import (
@@ -32,16 +36,22 @@ from bid_collection_agent.supplier_offer_provider import (
     SupplierOfferProvider,
 )
 
+# The lifecycle wrapper intentionally mirrors the other independent agents
+# without introducing shared runtime code between services.
+# pylint: disable=duplicate-code
+
 
 class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
     """Locus-compatible deterministic bid collection workflow agent."""
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         settings: Settings,
         supplier_discovery_provider: SupplierDiscoveryProvider | None = None,
         supplier_offer_provider: SupplierOfferProvider | None = None,
         offer_list_provider: OfferListProvider | None = None,
+        hooks: list[Any] | None = None,
     ) -> None:
         """Initialize the workflow agent.
 
@@ -50,6 +60,7 @@ class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
             supplier_discovery_provider: Optional supplier discovery provider.
             supplier_offer_provider: Optional supplier offer provider.
             offer_list_provider: Optional offer list provider.
+            hooks: Optional Locus lifecycle hooks.
         """
 
         self._settings = settings
@@ -64,6 +75,8 @@ class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
             supplier_offer_provider or SimulatedSupplierOfferProvider()
         )
         self._offer_list_provider = offer_list_provider or OfferListProvider()
+        self._hooks = hooks or []
+        self._hook_orchestrator = HookOrchestrator(self._hooks)
 
     async def run(self, prompt: str) -> AsyncIterator[LocusEvent]:
         """Run the bid collection workflow.
@@ -74,6 +87,33 @@ class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
         Yields:
             Locus events consumed by ``A2AServer``.
         """
+
+        state = await self._hook_orchestrator.run_before_invocation(
+            prompt,
+            AgentState(agent_id="bid-collection-agent", max_iterations=1),
+        )
+        success = False
+        try:
+            async for event in self._run_workflow(prompt):
+                if isinstance(event, TerminateEvent):
+                    state = state.model_copy(
+                        update={
+                            "iteration": event.iterations_used,
+                            "confidence": event.final_confidence,
+                            "updated_at": datetime.now(UTC),
+                        }
+                    )
+                yield event
+            success = True
+        except Exception as exc:
+            state = state.with_error(type(exc).__name__)
+            raise
+        finally:
+            state = state.model_copy(update={"updated_at": datetime.now(UTC)})
+            await self._hook_orchestrator.run_after_invocation(state, success)
+
+    async def _run_workflow(self, prompt: str) -> AsyncIterator[LocusEvent]:
+        """Run the deterministic bid collection workflow body."""
 
         yield ThinkEvent(iteration=1, reasoning="Validating CollectBidsRequest.")
         request = CollectBidsRequest.model_validate_json(prompt)
@@ -193,11 +233,15 @@ class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
         return result, evaluation_request
 
 
-def build_workflow_agent(settings: Settings) -> BidCollectionWorkflowAgent:
+def build_workflow_agent(
+    settings: Settings,
+    hooks: list[Any] | None = None,
+) -> BidCollectionWorkflowAgent:
     """Build the Locus-compatible deterministic workflow agent.
 
     Args:
         settings: Validated runtime settings.
+        hooks: Optional Locus lifecycle hooks.
 
     Returns:
         Configured bid collection workflow agent.
@@ -205,7 +249,7 @@ def build_workflow_agent(settings: Settings) -> BidCollectionWorkflowAgent:
 
     _ensure_file_exists(settings.request_schema_file)
     _ensure_file_exists(settings.response_schema_file)
-    return BidCollectionWorkflowAgent(settings)
+    return BidCollectionWorkflowAgent(settings, hooks=hooks)
 
 
 def _validate_unique_part_ids(request: CollectBidsRequest) -> None:

@@ -224,13 +224,13 @@ The agent must follow the shared Agent Telemetry Specification:
 
 [specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
 
-It must emit OpenTelemetry metrics for:
+It must participate in Locus lifecycle hooks so the built-in Locus `TelemetryHook` can emit native Locus telemetry for:
 
 - `create_purchase_order` invocation count
 - purchase order registration execution duration
 - purchase order registration error count
 
-The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+The Locus lifecycle hook bridge must be attached at the A2A workflow execution boundary or the narrowest equivalent local task-handler wrapper.
 
 Purchase order IDs, supplier IDs, and backend system references must not be used as metric attributes.
 

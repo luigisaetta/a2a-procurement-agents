@@ -20,6 +20,15 @@ export AGENT_API_KEY=change-me
 export PROCUREMENT_DATA_MCP_URL=http://127.0.0.1:8011/mcp
 ```
 
+Optional Locus telemetry:
+
+```bash
+export BID_COLLECTION_AGENT_TELEMETRY_ENABLED=true
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317
+```
+
+The built-in Locus `TelemetryHook` emits native Locus metrics such as `locus.invocations` and `locus.invocation.duration`.
+
 ## Run
 
 Start MySQL and the Procurement Data MCP Server first:
@@ -42,4 +51,3 @@ The Agent Card is available at:
 ```text
 http://127.0.0.1:8000/.well-known/agent-card.json
 ```
-

@@ -69,9 +69,9 @@ Type: Cross-cutting observability contract, not an A2A agent
 
 Specification: [specs/observability/agent-telemetry.md](specs/observability/agent-telemetry.md)
 
-The Agent Telemetry Layer defines the shared operational contract for collecting A2A agent metrics with OpenTelemetry.
+The Agent Telemetry Layer defines the shared operational contract for collecting A2A agent metrics with the built-in Locus telemetry hook.
 
-It standardizes metric names, units, low-cardinality attributes, error categories, and the preferred Locus task-boundary hook placement without introducing shared business runtime code between agents.
+It standardizes the use of Locus lifecycle hooks, Locus-native telemetry metrics, low-cardinality attributes, error categories, and the preferred A2A workflow-boundary hook placement without introducing shared business runtime code between agents.
 
 Initial metrics cover invocation count, execution duration, and error count for the Procurement Orchestrator, Bid Collection Agent, Offer Evaluation Agent, and Purchase Order Agent.
 

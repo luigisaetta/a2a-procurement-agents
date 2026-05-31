@@ -2,7 +2,7 @@
 Tests for Purchase Order Agent workflow.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Verifies request validation and deterministic registration output.
 """
@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 import pytest
+from locus.agent.hook_orchestrator import HookOrchestrator
 from locus.core.events import TerminateEvent
 from pydantic import ValidationError
 
@@ -100,6 +101,7 @@ def test_pipeline_returns_json_response() -> None:
     # pylint: disable=protected-access
     agent = PurchaseOrderWorkflowAgent.__new__(PurchaseOrderWorkflowAgent)
     agent._po_system_client = PurchaseOrderSystemClient()
+    agent._hook_orchestrator = HookOrchestrator([])
 
     events = asyncio.run(_collect_events(agent.run(json.dumps(_payload()))))
     final_event = events[-1]
@@ -110,7 +112,66 @@ def test_pipeline_returns_json_response() -> None:
     assert response["purchase_order"]["external_reference"] == "ERP-PO-2026-0001"
 
 
+def test_pipeline_runs_locus_hooks_for_success() -> None:
+    """Run Locus lifecycle hooks around a successful workflow."""
+
+    hook = _RecordingHook()
+    # pylint: disable=protected-access
+    agent = PurchaseOrderWorkflowAgent.__new__(PurchaseOrderWorkflowAgent)
+    agent._po_system_client = PurchaseOrderSystemClient()
+    agent._hook_orchestrator = HookOrchestrator([hook])
+
+    asyncio.run(_collect_events(agent.run(json.dumps(_payload()))))
+
+    assert hook.before_prompts == [json.dumps(_payload())]
+    assert hook.after_success == [True]
+    assert hook.after_agent_ids == ["purchase-order-agent"]
+
+
+def test_pipeline_runs_locus_hooks_for_validation_error() -> None:
+    """Run Locus lifecycle hooks when workflow validation fails."""
+
+    hook = _RecordingHook()
+    payload = _payload()
+    payload["line_items"][0]["quantity"] = -1
+    # pylint: disable=protected-access
+    agent = PurchaseOrderWorkflowAgent.__new__(PurchaseOrderWorkflowAgent)
+    agent._po_system_client = PurchaseOrderSystemClient()
+    agent._hook_orchestrator = HookOrchestrator([hook])
+
+    with pytest.raises(ValidationError):
+        asyncio.run(_collect_events(agent.run(json.dumps(payload))))
+
+    assert hook.after_success == [False]
+    assert hook.after_error_counts == [1]
+
+
 async def _collect_events(async_events):
     """Collect async workflow events into a list."""
 
     return [event async for event in async_events]
+
+
+class _RecordingHook:
+    """Record Locus lifecycle hook calls for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize recorded hook call lists."""
+
+        self.before_prompts: list[str] = []
+        self.after_success: list[bool] = []
+        self.after_agent_ids: list[str | None] = []
+        self.after_error_counts: list[int] = []
+
+    async def on_before_invocation(self, prompt, state):
+        """Record before-invocation calls."""
+
+        self.before_prompts.append(prompt)
+        return state
+
+    async def on_after_invocation(self, state, success):
+        """Record after-invocation calls."""
+
+        self.after_success.append(success)
+        self.after_agent_ids.append(state.agent_id)
+        self.after_error_counts.append(len(state.errors))

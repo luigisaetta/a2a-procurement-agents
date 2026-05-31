@@ -31,6 +31,15 @@ PURCHASE_ORDER_AGENT_PORT=8002
 AGENT_API_KEY=change-me
 ```
 
+Optional Locus telemetry:
+
+```bash
+PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317
+```
+
+The built-in Locus `TelemetryHook` emits native Locus metrics such as `locus.invocations` and `locus.invocation.duration`.
+
 Environment variables already present in the shell take precedence. Missing values are loaded from the local `.env` file.
 
 The initial Purchase Order Agent does not call an LLM, but it keeps the same OCI runtime variables used by the other agents for operational consistency.

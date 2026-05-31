@@ -16,7 +16,9 @@ The goal is to make it simple to collect and later visualize operational metrics
 - average, minimum, and maximum execution time per agent
 - number of errors per agent
 
-Telemetry must be emitted through OpenTelemetry so the platform can send metrics and traces to a standard collector, backend, or dashboard without coupling agents to a specific visualization product.
+Telemetry must be emitted through the built-in Oracle Locus telemetry hook so the platform uses the runtime's native instrumentation wherever possible.
+
+Locus emits OpenTelemetry-compatible telemetry. Deployment can route that telemetry to a standard collector, backend, or dashboard without coupling agents to a specific visualization product.
 
 ---
 
@@ -50,11 +52,13 @@ Those components may adopt compatible OpenTelemetry conventions later, but their
 
 The project rule remains unchanged: independently deployable agents must not depend on internal implementation details or shared business runtime code from other agents.
 
-Telemetry standardization must therefore happen through this specification, not through a mandatory repository-local shared module.
+Telemetry standardization must therefore happen through this specification and Locus runtime hooks, not through a mandatory repository-local shared module.
 
-Each agent may implement its own local telemetry adapter as long as it emits the metric names, units, and attributes defined here.
+Each agent may implement the small local lifecycle bridge needed to let its workflow participate in Locus hook execution. That bridge must not contain shared procurement business logic.
 
-If Oracle Locus provides a stable telemetry hook package or runtime integration, agents may use that external runtime capability because Locus is already the common infrastructure layer. That usage must remain limited to protocol/runtime instrumentation and must not introduce shared procurement business logic.
+The baseline telemetry provider is `locus.hooks.builtin.telemetry.TelemetryHook` or the corresponding Locus factory helper.
+
+Using this Locus runtime capability is allowed because Locus is already the common infrastructure layer. That usage must remain limited to protocol/runtime instrumentation and must not introduce shared procurement business logic.
 
 ## Locus Boundary Instrumentation
 
@@ -71,7 +75,7 @@ If the installed Locus version does not expose a native hook API for this bounda
 
 ## OpenTelemetry First
 
-Metrics must be emitted through the OpenTelemetry metrics API and exported through OTLP.
+Metrics must be emitted by Locus telemetry instrumentation and exported through the configured OpenTelemetry pipeline.
 
 Agents must not write metrics directly to a dashboard-specific API.
 
@@ -89,11 +93,15 @@ Those identifiers may be attached to spans or structured logs when tracing is en
 
 # Metric Contract
 
-All metric names use the `a2a.procurement.agent` namespace.
+The baseline metric names are the native names emitted by the Locus `TelemetryHook`.
+
+Procurement dashboards must derive their agent-level views from these native Locus metrics and their service-level attributes.
+
+The project does not define custom `a2a.procurement.*` metrics in the initial implementation.
 
 ## Invocation Counter
 
-Name: `a2a.procurement.agent.invocations`
+Name: `locus.invocations`
 
 Type: counter
 
@@ -103,11 +111,11 @@ Description: Counts A2A agent task executions observed at the agent boundary.
 
 The counter must be incremented once for each accepted execution.
 
-Invalid requests rejected before task execution may increment `a2a.procurement.agent.validation_errors`, but must not increment this metric unless the runtime has already accepted the task for execution.
+Invalid requests that reach the workflow lifecycle should appear as failed Locus invocations. Requests rejected by the HTTP or JSON-RPC transport before workflow execution may only appear in transport-level logs or telemetry.
 
 ## Execution Duration Histogram
 
-Name: `a2a.procurement.agent.execution.duration`
+Name: `locus.invocation.duration`
 
 Type: histogram
 
@@ -121,54 +129,44 @@ Dashboards must derive average, minimum, maximum, and percentile execution time 
 
 ## Error Counter
 
-Name: `a2a.procurement.agent.errors`
+Name: derived from `locus.invocation.duration` where `success` is `False`, or from error spans when tracing is enabled.
 
-Type: counter
+Type: derived view
 
 Unit: `{error}`
 
 Description: Counts A2A agent task executions that terminate with an error outcome.
 
-The counter must be incremented once per failed execution, not once per exception or retry.
+The dashboard or backend query must count failed invocation records once per execution, not once per exception or retry.
 
 ## Validation Error Counter
 
-Name: `a2a.procurement.agent.validation_errors`
+Name: derived from failed `locus.invocation.duration` records or error spans with a validation error category.
 
-Type: counter
+Type: derived view
 
 Unit: `{error}`
 
 Description: Counts inbound payload validation failures that prevent normal task execution.
 
-This metric is optional for the first implementation, but recommended because it explains why rejected requests may not appear in the invocation counter.
+This derived view is optional for the first implementation, but recommended because it explains why rejected requests may appear as failed executions.
 
 ---
 
 # Required Metric Attributes
 
-Every metric emitted by this specification must include:
+Every telemetry-enabled agent must set a distinct Locus/OpenTelemetry service name.
 
 | Attribute | Example | Description |
 | --- | --- | --- |
 | `service.name` | `offer-evaluation-agent` | OpenTelemetry service name for the process emitting telemetry. |
-| `agent.name` | `Offer Evaluation Agent` | Human-readable agent name. |
-| `agent.role` | `offer_evaluation` | Stable low-cardinality role identifier. |
-| `agent.version` | `0.1.0` | Agent implementation or contract version known at runtime. |
-| `a2a.skill` | `evaluate_offers` | A2A skill being executed. |
-| `deployment.environment` | `local` | Runtime environment such as `local`, `demo`, `test`, or `prod`. |
 
-Terminal metrics must also include:
+Locus built-in invocation metrics also include runtime-defined attributes such as:
 
 | Attribute | Example | Description |
 | --- | --- | --- |
-| `execution.outcome` | `success` | One of `success`, `error`, `timeout`, or `canceled`. |
-
-Error metrics must also include:
-
-| Attribute | Example | Description |
-| --- | --- | --- |
-| `error.type` | `validation_error` | Stable low-cardinality error category. |
+| `agent_id` | `offer-evaluation-agent` | Agent identifier attached to the Locus `AgentState`. |
+| `success` | `True` | Whether the Locus invocation completed without an exception. |
 
 ---
 
@@ -180,10 +178,8 @@ When tracing is enabled, each A2A task execution should create or continue a spa
 | --- | --- |
 | `a2a.task_id` | `task-123` |
 | `procurement.request_id` | `REQ-2026-0001` |
-| `a2a.skill` | `run_procurement_workflow` |
-| `agent.name` | `Procurement Orchestrator` |
-| `agent.role` | `procurement_orchestrator` |
-| `execution.outcome` | `success` |
+| `agent_id` | `procurement-orchestrator` |
+| `service.name` | `procurement-orchestrator` |
 
 The Procurement Orchestrator should propagate trace context to downstream A2A calls when the transport and Locus runtime support it.
 
@@ -208,20 +204,31 @@ New A2A agents must extend this registry before implementation.
 
 # Configuration
 
-Each agent must support telemetry configuration through environment variables.
+Each agent must support telemetry enablement through a service-specific environment variable.
+
+Initial enablement variables:
+
+| Agent | Variable |
+| --- | --- |
+| Procurement Orchestrator | `PROCUREMENT_ORCHESTRATOR_TELEMETRY_ENABLED` |
+| Bid Collection Agent | `BID_COLLECTION_AGENT_TELEMETRY_ENABLED` |
+| Offer Evaluation Agent | `OFFER_EVALUATION_AGENT_TELEMETRY_ENABLED` |
+| Purchase Order Agent | `PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED` |
 
 Required variables:
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `OTEL_SERVICE_NAME` | agent-specific service name | OpenTelemetry service name. |
+| `OTEL_SERVICE_NAME` | agent-specific service name | Optional OpenTelemetry service name override. The service code sets a stable default when creating the Locus telemetry hook. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP collector endpoint. If unset, telemetry export may be disabled locally. |
 | `OTEL_METRICS_EXPORTER` | `otlp` when endpoint is set | OpenTelemetry metrics exporter selection. |
 | `OTEL_TRACES_EXPORTER` | `otlp` when endpoint is set | OpenTelemetry traces exporter selection. |
 | `OTEL_RESOURCE_ATTRIBUTES` | unset | Additional OpenTelemetry resource attributes. |
 | `DEPLOYMENT_ENVIRONMENT` | `local` | Value used for `deployment.environment`. |
 
-Agent-specific configuration may add an explicit telemetry enablement flag, but telemetry must be safe to disable for local development and tests.
+Runtime images that export telemetry through OTLP must include the OpenTelemetry SDK and OTLP exporter packages.
+
+Telemetry must be disabled by default for local development and tests.
 
 Tests must be able to run without an external OpenTelemetry Collector.
 
@@ -242,7 +249,7 @@ Initial `error.type` values:
 | `timeout` | Execution exceeded a configured timeout. |
 | `internal_error` | Unexpected internal failure. |
 
-Agents may define additional low-cardinality error categories in their own specifications.
+The initial Locus-native telemetry implementation does not require custom `error.type` metric attributes. These categories are reserved for future custom spans, log correlation, or derived views if a backend supports them.
 
 ---
 
@@ -260,9 +267,9 @@ The first dashboard view should provide:
 The dashboard should support filtering by:
 
 - environment
-- agent role
-- A2A skill
-- execution outcome
+- `service.name`
+- `agent_id`
+- `success`
 
 Dashboard implementation is not part of this specification.
 
@@ -285,8 +292,8 @@ The observability layer is complete only if:
 - this specification is implemented by all in-scope A2A agents
 - each in-scope agent records invocation count, execution duration, and error count
 - telemetry can be disabled for tests and local development
-- unit tests verify metric emission without requiring an external collector
-- Docker Compose can optionally route telemetry to an OpenTelemetry Collector
+- unit tests verify Locus lifecycle hook execution without requiring an external collector
+- Docker Compose can optionally route telemetry to an OpenTelemetry Collector in a later deployment step
 - README or quickstart documentation explains how to enable telemetry locally
 - black passes for any Python implementation changes
 - pylint passes for any Python implementation changes

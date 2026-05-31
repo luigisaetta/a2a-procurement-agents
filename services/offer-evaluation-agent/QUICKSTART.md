@@ -31,6 +31,15 @@ OFFER_EVALUATION_AGENT_PORT=8001
 AGENT_API_KEY=change-me
 ```
 
+Optional Locus telemetry:
+
+```bash
+OFFER_EVALUATION_AGENT_TELEMETRY_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317
+```
+
+The built-in Locus `TelemetryHook` emits native Locus metrics such as `locus.invocations` and `locus.invocation.duration`.
+
 Environment variables already present in the shell take precedence. Missing values are loaded from the local `.env` file.
 
 `OCI_AUTH=API_KEY` uses the OCI config profile named by `OCI_PROFILE`, or `DEFAULT` when `OCI_PROFILE` is not set.

@@ -402,13 +402,13 @@ The agent must follow the shared Agent Telemetry Specification:
 
 [specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
 
-It must emit OpenTelemetry metrics for:
+It must participate in Locus lifecycle hooks so the built-in Locus `TelemetryHook` can emit native Locus telemetry for:
 
 - `collect_bids` invocation count
 - bid collection execution duration
 - bid collection error count
 
-The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+The Locus lifecycle hook bridge must be attached at the A2A workflow execution boundary or the narrowest equivalent local task-handler wrapper.
 
 Bid request IDs should be stable and included in logs to support traceability across supplier calls.
 

@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Tests for the Procurement Orchestrator deterministic workflow.
 """
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from procurement_orchestrator.config import Settings
 from procurement_orchestrator.pipeline import ProcurementOrchestratorWorkflowAgent
@@ -193,10 +194,17 @@ async def test_orchestrator_creates_purchase_order() -> None:
     """Run the happy path through all downstream agents."""
 
     client = FakeProcurementAgentClient()
-    agent = ProcurementOrchestratorWorkflowAgent(_settings(), agent_client=client)
+    hook = _RecordingHook()
+    agent = ProcurementOrchestratorWorkflowAgent(
+        _settings(),
+        agent_client=client,
+        hooks=[hook],
+    )
 
     events = [event async for event in agent.run(_request())]
 
+    assert hook.after_success == [True]
+    assert hook.after_agent_ids == ["procurement-orchestrator"]
     streamed = [json.loads(event.reasoning) for event in events[:-1]]
     final = json.loads(events[-1].final_message)
     assert streamed[0]["event_type"] == "accepted"
@@ -240,6 +248,25 @@ async def test_orchestrator_skips_purchase_order_when_requested() -> None:
     assert not client.purchase_order_calls
 
 
+@pytest.mark.anyio
+async def test_orchestrator_runs_locus_hooks_for_validation_error() -> None:
+    """Run Locus lifecycle hooks when orchestration validation fails."""
+
+    hook = _RecordingHook()
+    agent = ProcurementOrchestratorWorkflowAgent(
+        _settings(),
+        agent_client=FakeProcurementAgentClient(),
+        hooks=[hook],
+    )
+
+    with pytest.raises(ValidationError):
+        async for _event in agent.run("{}"):
+            pass
+
+    assert hook.after_success == [False]
+    assert hook.after_error_counts == [1]
+
+
 def _offer(request_id: str, part: dict[str, Any]) -> dict[str, Any]:
     """Build a deterministic supplier offer."""
 
@@ -270,3 +297,26 @@ def _empty_offer() -> dict[str, Any]:
         "reliability_score": 0,
         "valid_until": "",
     }
+
+
+class _RecordingHook:
+    """Record Locus lifecycle hook calls for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize recorded hook call lists."""
+
+        self.after_success: list[bool] = []
+        self.after_agent_ids: list[str | None] = []
+        self.after_error_counts: list[int] = []
+
+    async def on_before_invocation(self, _prompt, state):
+        """Return state unchanged from before-invocation."""
+
+        return state
+
+    async def on_after_invocation(self, state, success):
+        """Record after-invocation calls."""
+
+        self.after_success.append(success)
+        self.after_agent_ids.append(state.agent_id)
+        self.after_error_counts.append(len(state.errors))

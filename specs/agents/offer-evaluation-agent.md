@@ -275,13 +275,13 @@ The agent must follow the shared Agent Telemetry Specification:
 
 [specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
 
-It must emit OpenTelemetry metrics for:
+It must participate in Locus lifecycle hooks so the built-in Locus `TelemetryHook` can emit native Locus telemetry for:
 
 - `evaluate_offers` invocation count
 - offer evaluation execution duration
 - offer evaluation error count
 
-The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+The Locus lifecycle hook bridge must be attached at the A2A workflow execution boundary or the narrowest equivalent local task-handler wrapper.
 
 LLM prompt text, supplier commercial terms, and full request payloads must not be emitted as metric attributes.
 

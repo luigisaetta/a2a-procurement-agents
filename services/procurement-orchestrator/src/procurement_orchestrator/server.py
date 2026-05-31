@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    A2A server entry point for the Procurement Orchestrator Agent.
 """
@@ -8,12 +8,20 @@ Description:    A2A server entry point for the Procurement Orchestrator Agent.
 from __future__ import annotations
 
 import argparse
+import os
 
 from locus.a2a import A2AServer, AgentProvider, AgentSkill
+from locus.hooks.builtin.telemetry import create_telemetry_hook
 
 from procurement_orchestrator.config import Settings, load_settings
 from procurement_orchestrator.logging_utils import configure_logging
 from procurement_orchestrator.pipeline import build_workflow_agent
+
+TELEMETRY_ENABLED_ENV = "PROCUREMENT_ORCHESTRATOR_TELEMETRY_ENABLED"
+
+# Telemetry enablement intentionally mirrors other independent agents without
+# introducing shared runtime code between services.
+# pylint: disable=duplicate-code
 
 
 def build_server(settings: Settings) -> A2AServer:
@@ -26,7 +34,11 @@ def build_server(settings: Settings) -> A2AServer:
         Configured Locus A2A server.
     """
 
-    agent = build_workflow_agent(settings)
+    telemetry_hook = create_telemetry_hook(
+        enabled=_telemetry_enabled(),
+        service_name="procurement-orchestrator",
+    )
+    agent = build_workflow_agent(settings, hooks=[telemetry_hook])
     return A2AServer(
         agent=agent,
         name="procurement-orchestrator",
@@ -55,6 +67,13 @@ def build_server(settings: Settings) -> A2AServer:
         ],
         api_key=settings.agent_api_key,
     )
+
+
+def _telemetry_enabled() -> bool:
+    """Return whether Locus telemetry hooks should be enabled."""
+
+    value = os.environ.get(TELEMETRY_ENABLED_ENV, "false").strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 def main() -> None:

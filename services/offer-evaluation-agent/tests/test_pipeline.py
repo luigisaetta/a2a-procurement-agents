@@ -2,19 +2,24 @@
 Tests for Offer Evaluation Agent pipeline checks.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-27
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Verifies response parsing and technical consistency checks.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+from locus.agent.hook_orchestrator import HookOrchestrator
+from pydantic import ValidationError
 
 from test_client import load_jsonc
 
+from offer_evaluation_agent.config import Settings
 from offer_evaluation_agent.models import (
     EvaluationDecision,
     EvaluateOffersRequest,
@@ -53,6 +58,30 @@ def _request() -> EvaluateOffersRequest:
                 valid_until="2026-06-01",
             )
         ],
+    )
+
+
+def _settings() -> Settings:
+    """Build test settings."""
+
+    root = Path(__file__).resolve().parents[3]
+    return Settings(
+        oci_region="us-chicago-1",
+        oci_auth="API_KEY",
+        oci_model_id="openai.gpt-5",
+        oci_compartment_id="ocid1.compartment.oc1..example",
+        agent_port=8001,
+        agent_api_key="secret",
+        oci_profile="DEFAULT",
+        oci_endpoint="https://example.com/openai/v1",
+        policy_file=(
+            root
+            / "services/offer-evaluation-agent/policies"
+            / "standard-urgent-procurement-v1.md"
+        ),
+        request_schema_file=root / "specs/schemas/evaluate-offers-request.schema.json",
+        response_schema_file=root
+        / "specs/schemas/evaluate-offers-response.schema.json",
     )
 
 
@@ -208,6 +237,56 @@ def test_policy_guardrail_selects_lowest_eligible_offer() -> None:
     assert guarded.decision.selected_offer.offer_id == "OFF-002"
 
 
+@pytest.mark.anyio
+async def test_pipeline_runs_locus_hooks_for_success() -> None:
+    """Run Locus lifecycle hooks around a successful offer evaluation."""
+
+    request = _request()
+    response = EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision=EvaluationDecision(
+            status="selected_offer",
+            selected_offer=SelectedOfferPayload.model_validate(
+                request.offers[0].model_dump(mode="json")
+            ),
+            reasons=[],
+        ),
+        explanation="Supplier A was selected.",
+    )
+    hook = _RecordingHook()
+    # pylint: disable=protected-access
+    agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
+    agent._settings = _settings()
+    agent._decision_agent = _FakeDecisionAgent(response)
+    agent._hook_orchestrator = HookOrchestrator([hook])
+
+    events = [event async for event in agent.run(request.model_dump_json())]
+
+    final = json.loads(events[-1].final_message)
+    assert final["decision"]["status"] == "selected_offer"
+    assert hook.after_success == [True]
+    assert hook.after_agent_ids == ["offer-evaluation-agent"]
+
+
+@pytest.mark.anyio
+async def test_pipeline_runs_locus_hooks_for_validation_error() -> None:
+    """Run Locus lifecycle hooks when offer request validation fails."""
+
+    hook = _RecordingHook()
+    # pylint: disable=protected-access
+    agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
+    agent._settings = _settings()
+    agent._decision_agent = _FakeDecisionAgent(None)
+    agent._hook_orchestrator = HookOrchestrator([hook])
+
+    with pytest.raises(ValidationError):
+        async for _event in agent.run("{}"):
+            pass
+
+    assert hook.after_success == [False]
+    assert hook.after_error_counts == [1]
+
+
 def _empty_selected_offer() -> SelectedOfferPayload:
     """Return the placeholder selected offer for no-valid-offers responses."""
 
@@ -222,3 +301,40 @@ def _empty_selected_offer() -> SelectedOfferPayload:
         reliability_score=0,
         valid_until="",
     )
+
+
+class _FakeDecisionAgent:  # pylint: disable=too-few-public-methods
+    """Fake Locus decision agent for pipeline tests."""
+
+    def __init__(self, response: EvaluateOffersResponse | None) -> None:
+        """Initialize the fake decision response."""
+
+        self._response = response
+
+    def run_sync(self, _prompt: str):
+        """Return a fake Locus AgentResult-like object."""
+
+        return SimpleNamespace(parsed=self._response, message="")
+
+
+class _RecordingHook:
+    """Record Locus lifecycle hook calls for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize recorded hook call lists."""
+
+        self.after_success: list[bool] = []
+        self.after_agent_ids: list[str | None] = []
+        self.after_error_counts: list[int] = []
+
+    async def on_before_invocation(self, _prompt, state):
+        """Return state unchanged from before-invocation."""
+
+        return state
+
+    async def on_after_invocation(self, state, success):
+        """Record after-invocation calls."""
+
+        self.after_success.append(success)
+        self.after_agent_ids.append(state.agent_id)
+        self.after_error_counts.append(len(state.errors))

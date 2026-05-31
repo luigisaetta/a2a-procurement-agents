@@ -24,6 +24,15 @@ export OFFER_EVALUATION_AGENT_URL=http://127.0.0.1:8001
 export PURCHASE_ORDER_AGENT_URL=http://127.0.0.1:8002
 ```
 
+Optional Locus telemetry:
+
+```bash
+export PROCUREMENT_ORCHESTRATOR_TELEMETRY_ENABLED=true
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317
+```
+
+The built-in Locus `TelemetryHook` emits native Locus metrics such as `locus.invocations` and `locus.invocation.duration`.
+
 ## Run
 
 Start the downstream agents first, then run the orchestrator from the repository root:

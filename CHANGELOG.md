@@ -4,6 +4,10 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-05-31
 
+- Extended Locus lifecycle telemetry hook integration to the Procurement Orchestrator, Bid Collection Agent, and Offer Evaluation Agent, keeping telemetry opt-in per service and adding hook lifecycle tests.
+- Updated observability documentation to use native Locus telemetry metrics as the initial baseline instead of custom `a2a.procurement.*` metric names.
+- Added OpenTelemetry SDK and OTLP exporter dependencies to the Docker Compose runtime requirements for telemetry-enabled deployments.
+- Added a Purchase Order Agent telemetry pilot that wraps the deterministic workflow with Locus lifecycle hooks and wires the server to the built-in Locus telemetry hook behind an opt-in environment flag.
 - Added the draft Agent Telemetry observability specification for OpenTelemetry-based A2A agent invocation counts, execution duration histograms, error counts, required metric attributes, Locus hook placement, and dashboard requirements.
 - Updated the A2A agent specifications to require Agent Telemetry metrics at the Locus task execution boundary without introducing shared agent business runtime code.
 

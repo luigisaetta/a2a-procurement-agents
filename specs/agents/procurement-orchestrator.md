@@ -498,13 +498,13 @@ The orchestrator must follow the shared Agent Telemetry Specification:
 
 [specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
 
-It must emit OpenTelemetry metrics for:
+It must participate in Locus lifecycle hooks so the built-in Locus `TelemetryHook` can emit native Locus telemetry for:
 
 - `run_procurement_workflow` invocation count
 - workflow execution duration
 - workflow error count
 
-The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+The Locus lifecycle hook bridge must be attached at the A2A workflow execution boundary or the narrowest equivalent local task-handler wrapper.
 
 The orchestrator should propagate OpenTelemetry trace context to downstream A2A calls when supported by Locus and the HTTP transport.
 

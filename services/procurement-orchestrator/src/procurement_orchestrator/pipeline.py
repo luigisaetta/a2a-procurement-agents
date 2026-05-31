@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Deterministic procurement orchestration workflow.
 """
@@ -13,7 +13,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from locus.agent.hook_orchestrator import HookOrchestrator
 from locus.core.events import LocusEvent, TerminateEvent, ThinkEvent
+from locus.core.state import AgentState
 
 from procurement_orchestrator.a2a_client import (
     A2AProcurementAgentClient,
@@ -67,6 +69,10 @@ EMPTY_PURCHASE_ORDER = PurchaseOrderSummary(
     registered_at="",
 )
 
+# The lifecycle wrapper intentionally mirrors the other independent agents
+# without introducing shared runtime code between services.
+# pylint: disable=duplicate-code
+
 
 class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-methods
     """Locus-compatible procurement orchestration workflow agent."""
@@ -76,6 +82,7 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
         settings: Settings,
         agent_client: ProcurementAgentClient | None = None,
         logger: logging.Logger | None = None,
+        hooks: list[Any] | None = None,
     ) -> None:
         """Initialize the workflow agent.
 
@@ -83,6 +90,7 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
             settings: Validated runtime settings.
             agent_client: Optional downstream A2A client wrapper.
             logger: Optional logger for structured step logs.
+            hooks: Optional Locus lifecycle hooks.
         """
 
         self._settings = settings
@@ -93,6 +101,8 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
             api_key=settings.agent_api_key,
         )
         self._logger = logger or logging.getLogger(LOGGER_NAME)
+        self._hooks = hooks or []
+        self._hook_orchestrator = HookOrchestrator(self._hooks)
 
     async def run(self, prompt: str) -> AsyncIterator[LocusEvent]:
         """Run the procurement orchestration workflow.
@@ -103,6 +113,33 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
         Yields:
             Locus events consumed by ``A2AServer``.
         """
+
+        state = await self._hook_orchestrator.run_before_invocation(
+            prompt,
+            AgentState(agent_id="procurement-orchestrator", max_iterations=1),
+        )
+        success = False
+        try:
+            async for event in self._run_workflow(prompt):
+                if isinstance(event, TerminateEvent):
+                    state = state.model_copy(
+                        update={
+                            "iteration": event.iterations_used,
+                            "confidence": event.final_confidence,
+                            "updated_at": datetime.now(UTC),
+                        }
+                    )
+                yield event
+            success = True
+        except Exception as exc:
+            state = state.with_error(type(exc).__name__)
+            raise
+        finally:
+            state = state.model_copy(update={"updated_at": datetime.now(UTC)})
+            await self._hook_orchestrator.run_after_invocation(state, success)
+
+    async def _run_workflow(self, prompt: str) -> AsyncIterator[LocusEvent]:
+        """Run the deterministic procurement orchestration workflow body."""
 
         request = ProcurementOrchestrationRequest.model_validate_json(prompt)
         _validate_unique_part_ids(request)
@@ -483,13 +520,16 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
         )
 
 
-def build_workflow_agent(settings: Settings) -> ProcurementOrchestratorWorkflowAgent:
+def build_workflow_agent(
+    settings: Settings,
+    hooks: list[Any] | None = None,
+) -> ProcurementOrchestratorWorkflowAgent:
     """Build the Locus-compatible deterministic workflow agent."""
 
     _ensure_file_exists(settings.request_schema_file)
     _ensure_file_exists(settings.event_schema_file)
     _ensure_file_exists(settings.response_schema_file)
-    return ProcurementOrchestratorWorkflowAgent(settings)
+    return ProcurementOrchestratorWorkflowAgent(settings, hooks=hooks)
 
 
 # The event factory mirrors the canonical event schema.

@@ -2,7 +2,7 @@
 Deterministic workflow for LLM-driven offer evaluation.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-27
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Implements the fixed sequence of validation, policy loading,
                 LLM invocation, output validation, and consistency checks.
@@ -13,10 +13,14 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from locus.agent import Agent, AgentConfig
+from locus.agent.hook_orchestrator import HookOrchestrator
 from locus.core.events import LocusEvent, TerminateEvent, ThinkEvent
+from locus.core.state import AgentState
 
 from offer_evaluation_agent.config import Settings
 from offer_evaluation_agent.model_factory import build_model
@@ -34,18 +38,25 @@ Return only a JSON object matching the provided EvaluateOffersResponse schema.
 Do not wrap the JSON in Markdown fences.
 """
 
+# The lifecycle wrapper intentionally mirrors the other independent agents
+# without introducing shared runtime code between services.
+# pylint: disable=duplicate-code
+
 
 class OfferEvaluationWorkflowAgent:
     """Locus-compatible agent wrapper with deterministic pre/post steps."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, hooks: list[Any] | None = None) -> None:
         """Initialize the workflow agent.
 
         Args:
             settings: Validated runtime settings.
+            hooks: Optional Locus lifecycle hooks.
         """
 
         self._settings = settings
+        self._hooks = hooks or []
+        self._hook_orchestrator = HookOrchestrator(self._hooks)
         self._decision_agent = Agent(
             config=AgentConfig(
                 model=build_model(settings),
@@ -66,6 +77,33 @@ class OfferEvaluationWorkflowAgent:
         Yields:
             Locus events consumed by ``A2AServer``.
         """
+
+        state = await self._hook_orchestrator.run_before_invocation(
+            prompt,
+            AgentState(agent_id="offer-evaluation-agent", max_iterations=5),
+        )
+        success = False
+        try:
+            async for event in self._run_workflow(prompt):
+                if isinstance(event, TerminateEvent):
+                    state = state.model_copy(
+                        update={
+                            "iteration": event.iterations_used,
+                            "confidence": event.final_confidence,
+                            "updated_at": datetime.now(UTC),
+                        }
+                    )
+                yield event
+            success = True
+        except Exception as exc:
+            state = state.with_error(type(exc).__name__)
+            raise
+        finally:
+            state = state.model_copy(update={"updated_at": datetime.now(UTC)})
+            await self._hook_orchestrator.run_after_invocation(state, success)
+
+    async def _run_workflow(self, prompt: str) -> AsyncIterator[LocusEvent]:
+        """Run the deterministic offer evaluation workflow body."""
 
         yield ThinkEvent(iteration=1, reasoning="Validating EvaluateOffersRequest.")
         request = EvaluateOffersRequest.model_validate_json(prompt)
@@ -325,11 +363,15 @@ def _no_valid_offers_response(
     )
 
 
-def build_workflow_agent(settings: Settings) -> OfferEvaluationWorkflowAgent:
+def build_workflow_agent(
+    settings: Settings,
+    hooks: list[Any] | None = None,
+) -> OfferEvaluationWorkflowAgent:
     """Build the Locus-compatible deterministic workflow agent.
 
     Args:
         settings: Validated runtime settings.
+        hooks: Optional Locus lifecycle hooks.
 
     Returns:
         Configured offer evaluation workflow agent.
@@ -337,7 +379,7 @@ def build_workflow_agent(settings: Settings) -> OfferEvaluationWorkflowAgent:
 
     _ensure_file_exists(settings.policy_file)
     _ensure_file_exists(settings.response_schema_file)
-    return OfferEvaluationWorkflowAgent(settings)
+    return OfferEvaluationWorkflowAgent(settings, hooks=hooks)
 
 
 def _ensure_file_exists(path: Path) -> None:

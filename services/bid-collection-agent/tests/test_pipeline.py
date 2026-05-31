@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-05-31
 License: MIT
 Description:    Tests for the Bid Collection Agent deterministic workflow.
 """
@@ -92,6 +92,7 @@ def _request_json() -> str:
 async def test_pipeline_collects_bids_from_mcp_suppliers() -> None:
     """Collect supplier offers using suppliers discovered through MCP."""
 
+    hook = _RecordingHook()
     discovery = FakeMcpSupplierDiscoveryProvider(
         [
             IdentifiedSupplier(
@@ -113,10 +114,13 @@ async def test_pipeline_collects_bids_from_mcp_suppliers() -> None:
     agent = BidCollectionWorkflowAgent(
         _settings(),
         supplier_discovery_provider=discovery,
+        hooks=[hook],
     )
 
     events = [event async for event in agent.run(_request_json())]
 
+    assert hook.after_success == [True]
+    assert hook.after_agent_ids == ["bid-collection-agent"]
     assert discovery.calls == [("PART-001", 10.0)]
     final = json.loads(events[-1].final_message)
     assert final["request_id"] == "REQ-2026-0001"
@@ -152,13 +156,41 @@ async def test_pipeline_returns_failed_when_mcp_finds_no_suppliers() -> None:
 async def test_pipeline_rejects_duplicate_part_ids() -> None:
     """Reject duplicate requested part IDs."""
 
+    hook = _RecordingHook()
     payload = json.loads(_request_json())
     payload["parts"].append(payload["parts"][0])
     agent = BidCollectionWorkflowAgent(
         _settings(),
         supplier_discovery_provider=FakeMcpSupplierDiscoveryProvider([]),
+        hooks=[hook],
     )
 
     with pytest.raises(ValueError, match="duplicate part_id"):
         async for _event in agent.run(json.dumps(payload)):
             pass
+
+    assert hook.after_success == [False]
+    assert hook.after_error_counts == [1]
+
+
+class _RecordingHook:
+    """Record Locus lifecycle hook calls for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize recorded hook call lists."""
+
+        self.after_success: list[bool] = []
+        self.after_agent_ids: list[str | None] = []
+        self.after_error_counts: list[int] = []
+
+    async def on_before_invocation(self, _prompt, state):
+        """Return state unchanged from before-invocation."""
+
+        return state
+
+    async def on_after_invocation(self, state, success):
+        """Record after-invocation calls."""
+
+        self.after_success.append(success)
+        self.after_agent_ids.append(state.agent_id)
+        self.after_error_counts.append(len(state.errors))
