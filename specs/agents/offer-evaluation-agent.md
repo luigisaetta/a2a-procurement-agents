@@ -271,7 +271,19 @@ Structured JSON logs.
 
 ## Tracing
 
-Distributed tracing support.
+The agent must follow the shared Agent Telemetry Specification:
+
+[specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
+
+It must emit OpenTelemetry metrics for:
+
+- `evaluate_offers` invocation count
+- offer evaluation execution duration
+- offer evaluation error count
+
+The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+
+LLM prompt text, supplier commercial terms, and full request payloads must not be emitted as metric attributes.
 
 ## Checkpointing
 

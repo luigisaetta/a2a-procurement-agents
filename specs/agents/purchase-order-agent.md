@@ -220,7 +220,19 @@ Structured JSON logs.
 
 ## Tracing
 
-Future distributed tracing support.
+The agent must follow the shared Agent Telemetry Specification:
+
+[specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
+
+It must emit OpenTelemetry metrics for:
+
+- `create_purchase_order` invocation count
+- purchase order registration execution duration
+- purchase order registration error count
+
+The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+
+Purchase order IDs, supplier IDs, and backend system references must not be used as metric attributes.
 
 ## Persistence
 

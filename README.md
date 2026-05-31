@@ -97,6 +97,7 @@ Specifications define the contract before implementation:
 - workflows
 - events
 - policies
+- observability contracts
 - agent capabilities
 - task semantics
 - error behavior
@@ -108,6 +109,7 @@ Implementation must follow the specifications. When behavior changes, the specif
 ```text
 specs/
   agents/
+  observability/
   schemas/
   events/
   workflows/

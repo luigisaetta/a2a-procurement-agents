@@ -398,9 +398,21 @@ Structured JSON logs.
 
 ## Tracing
 
-Future distributed tracing support.
+The agent must follow the shared Agent Telemetry Specification:
+
+[specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
+
+It must emit OpenTelemetry metrics for:
+
+- `collect_bids` invocation count
+- bid collection execution duration
+- bid collection error count
+
+The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
 
 Bid request IDs should be stable and included in logs to support traceability across supplier calls.
+
+Bid request IDs, supplier IDs, and supplier response IDs must not be used as metric attributes.
 
 ## Persistence
 

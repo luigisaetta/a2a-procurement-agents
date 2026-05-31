@@ -2,6 +2,11 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-05-31
+
+- Added the draft Agent Telemetry observability specification for OpenTelemetry-based A2A agent invocation counts, execution duration histograms, error counts, required metric attributes, Locus hook placement, and dashboard requirements.
+- Updated the A2A agent specifications to require Agent Telemetry metrics at the Locus task execution boundary without introducing shared agent business runtime code.
+
 ## 2026-05-29
 
 - Updated the agent catalog and conversational intake specification to reflect the implemented Procurement Intake Web UI and multi-field clarification behavior.

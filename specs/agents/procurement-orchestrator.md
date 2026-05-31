@@ -494,7 +494,28 @@ Structured JSON logs.
 
 ## Tracing
 
-Future distributed tracing support.
+The orchestrator must follow the shared Agent Telemetry Specification:
+
+[specs/observability/agent-telemetry.md](../observability/agent-telemetry.md)
+
+It must emit OpenTelemetry metrics for:
+
+- `run_procurement_workflow` invocation count
+- workflow execution duration
+- workflow error count
+
+The telemetry hook must be attached at the Locus A2A task execution boundary or the narrowest equivalent local task-handler wrapper.
+
+The orchestrator should propagate OpenTelemetry trace context to downstream A2A calls when supported by Locus and the HTTP transport.
+
+The orchestrator should create child spans or equivalent trace events for:
+
+- bid collection
+- offer evaluation
+- purchase order creation
+- total orchestration runtime
+
+Metrics must not use `request_id`, A2A task ID, supplier ID, purchase order ID, or other per-execution identifiers as attributes.
 
 ## Security
 

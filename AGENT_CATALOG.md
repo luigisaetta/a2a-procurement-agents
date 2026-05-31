@@ -9,6 +9,7 @@ The README keeps only a short public-facing list. This document provides the dee
 | Component | Type | Status | Service Folder | Purpose |
 | --- | --- | --- | --- | --- |
 | Procurement Intake Web UI | Next.js web application | Initial implementation | `services/procurement-intake-ui` | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
+| Agent Telemetry Layer | Cross-cutting observability contract | Draft specification | N/A | Defines OpenTelemetry metrics and Locus task-boundary instrumentation rules for A2A agent invocations, execution duration, and errors. |
 | Conversational Procurement Intake Layer | HTTP application layer | Initial HTTP implementation | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
 | Procurement Orchestrator | A2A agent | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | A2A agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
@@ -57,6 +58,22 @@ The UI does not:
 - call A2A agents directly
 - call MCP tools directly
 - expose raw protocol details in the primary user experience
+
+---
+
+## Agent Telemetry Layer
+
+Status: Draft specification
+
+Type: Cross-cutting observability contract, not an A2A agent
+
+Specification: [specs/observability/agent-telemetry.md](specs/observability/agent-telemetry.md)
+
+The Agent Telemetry Layer defines the shared operational contract for collecting A2A agent metrics with OpenTelemetry.
+
+It standardizes metric names, units, low-cardinality attributes, error categories, and the preferred Locus task-boundary hook placement without introducing shared business runtime code between agents.
+
+Initial metrics cover invocation count, execution duration, and error count for the Procurement Orchestrator, Bid Collection Agent, Offer Evaluation Agent, and Purchase Order Agent.
 
 ---
 

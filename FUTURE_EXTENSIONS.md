@@ -8,6 +8,8 @@ The list is intentionally lightweight. Items here are not committed roadmap prom
 
 Integrate Langfuse to improve observability for agent execution and LLM-driven decisions.
 
+The baseline agent telemetry contract is now specified in [specs/observability/agent-telemetry.md](specs/observability/agent-telemetry.md). Any Langfuse integration should build on that OpenTelemetry-first contract instead of replacing it.
+
 Potential goals:
 
 - trace each A2A task across agent boundaries
