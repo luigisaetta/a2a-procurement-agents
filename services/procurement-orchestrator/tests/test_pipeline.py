@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Tests for the Procurement Orchestrator deterministic workflow.
 """
@@ -116,12 +116,13 @@ class FakeProcurementAgentClient:  # pylint: disable=too-few-public-methods
         """Return a deterministic purchase order response."""
 
         self.purchase_order_calls.append({"payload": payload, "timeout": timeout})
+        purchase_order_id = payload.get("purchase_order_id") or "PO-2026-000001"
         return {
             "request_id": payload["request_id"],
             "status": "registered",
             "purchase_order": {
-                "purchase_order_id": payload["purchase_order_id"],
-                "external_reference": f"ERP-{payload['purchase_order_id']}",
+                "purchase_order_id": purchase_order_id,
+                "external_reference": f"ERP-{purchase_order_id}",
                 "registered_at": "2026-05-28T15:00:00Z",
             },
             "message": "Registered.",
@@ -213,6 +214,7 @@ async def test_orchestrator_creates_purchase_order() -> None:
     assert len(client.collect_calls) == 1
     assert len(client.evaluate_calls) == 1
     assert len(client.purchase_order_calls) == 1
+    assert "purchase_order_id" not in client.purchase_order_calls[0]["payload"]
 
 
 @pytest.mark.anyio

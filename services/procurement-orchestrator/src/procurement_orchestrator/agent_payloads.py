@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Pydantic models for downstream agent payloads used by orchestration.
 """
@@ -110,7 +110,7 @@ class CreatePurchaseOrderRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: str
-    purchase_order_id: str
+    purchase_order_id: str | None = None
     plant_code: str
     supplier: dict
     line_items: list[dict]

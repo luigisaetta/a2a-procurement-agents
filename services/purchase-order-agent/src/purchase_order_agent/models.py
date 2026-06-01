@@ -2,7 +2,7 @@
 Typed request and response models for purchase order registration.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Pydantic models mirroring the canonical JSON Schemas used
                 by the Purchase Order Agent.
@@ -56,7 +56,7 @@ class CreatePurchaseOrderRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: str = Field(min_length=1)
-    purchase_order_id: str = Field(min_length=1)
+    purchase_order_id: str | None = Field(default=None, min_length=1)
     plant_code: str = Field(min_length=1)
     supplier: Supplier
     line_items: list[PurchaseOrderLineItem] = Field(min_length=1)

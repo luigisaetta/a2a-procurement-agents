@@ -2,7 +2,7 @@
 Deterministic workflow for purchase order registration.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Implements validation, fake purchase order system invocation,
                 and output serialization for the Purchase Order Agent.
@@ -128,7 +128,11 @@ def build_workflow_agent(
 
     _ensure_file_exists(settings.request_schema_file)
     _ensure_file_exists(settings.response_schema_file)
-    return PurchaseOrderWorkflowAgent(settings, hooks=hooks)
+    return PurchaseOrderWorkflowAgent(
+        settings,
+        po_system_client=PurchaseOrderSystemClient.from_settings(settings),
+        hooks=hooks,
+    )
 
 
 def _ensure_file_exists(path: Path) -> None:

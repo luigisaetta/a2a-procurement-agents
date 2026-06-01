@@ -30,7 +30,7 @@ The UI container is optional because it requires the Node base image from Docker
 - OCI API key configuration for the Offer Evaluation Agent
 - access to the Oracle Locus SDK package used by the runtime image
 
-The Purchase Order Agent does not call an LLM, but it keeps the same runtime environment contract for consistency with the rest of the platform.
+The Purchase Order Agent does not call an LLM, but it keeps the same runtime environment contract for consistency with the rest of the platform. In this deployment it persists registered purchase orders to MySQL.
 
 MySQL is used as a local demo data store for the minimal procurement data model. It is initialized with the synthetic automotive seed CSV files from [../../specs/examples/data](../../specs/examples/data).
 
@@ -224,7 +224,7 @@ The MySQL service creates the `procurement_demo` schema on first startup and loa
 - `suppliers`
 - `supplier_parts`
 
-The workflow tables `procurement_requests`, `supplier_offers`, and `purchase_orders` are created empty.
+The workflow tables `procurement_requests`, `supplier_offers`, `purchase_order_sequences`, and `purchase_orders` are created empty.
 
 ## End-to-End Client
 

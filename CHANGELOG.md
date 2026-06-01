@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Implemented Docker Compose MySQL persistence for the Purchase Order Agent, including lazy schema creation, idempotent registration, database-backed purchase order numbering, deployment wiring, and tests.
 - Specified Docker Compose MySQL persistence, lazy schema creation, idempotency, and database-backed purchase order numbering for the Purchase Order Agent.
 - Added the A2A Procurement Agents overview image to the main README.
 - Added inline review editing in the Procurement Intake Web UI for bid deadline, part delivery dates, and quantities, and allowed the intake confirmation API to submit the reviewed orchestration request.

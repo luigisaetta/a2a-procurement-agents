@@ -118,30 +118,36 @@ CREATE TABLE supplier_offers (
     CHECK (total_cost = parts_cost + shipping_cost)
 );
 
+CREATE TABLE purchase_order_sequences (
+  sequence_name VARCHAR(64) NOT NULL,
+  next_value BIGINT NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (sequence_name)
+);
+
 CREATE TABLE purchase_orders (
   purchase_order_id VARCHAR(32) NOT NULL,
   request_id VARCHAR(32) NOT NULL,
   offer_id VARCHAR(32) NOT NULL,
   supplier_id VARCHAR(32) NOT NULL,
-  plant_id VARCHAR(32) NOT NULL,
-  part_id VARCHAR(32) NOT NULL,
+  supplier_name VARCHAR(128) NOT NULL,
+  plant_code VARCHAR(32) NOT NULL,
+  material_code VARCHAR(64) NOT NULL,
+  material_description VARCHAR(255) NOT NULL,
   quantity DECIMAL(18,4) NOT NULL,
+  unit_of_measure VARCHAR(16) NOT NULL,
+  unit_price DECIMAL(18,2) NOT NULL,
   total_amount DECIMAL(18,2) NOT NULL,
   currency CHAR(3) NOT NULL,
-  status ENUM('created', 'registered', 'failed', 'cancelled') NOT NULL,
-  external_reference VARCHAR(128),
+  requested_delivery_date DATE NOT NULL,
+  confirmed_delivery_date DATE NOT NULL,
+  status ENUM('registered', 'failed', 'cancelled') NOT NULL,
+  external_reference VARCHAR(128) NOT NULL,
   registered_at TIMESTAMP NULL,
-  created_at TIMESTAMP NOT NULL,
-  updated_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (purchase_order_id),
-  CONSTRAINT fk_purchase_orders_request
-    FOREIGN KEY (request_id) REFERENCES procurement_requests (request_id),
-  CONSTRAINT fk_purchase_orders_offer
-    FOREIGN KEY (offer_id) REFERENCES supplier_offers (offer_id),
-  CONSTRAINT fk_purchase_orders_supplier
-    FOREIGN KEY (supplier_id) REFERENCES suppliers (supplier_id),
-  CONSTRAINT fk_purchase_orders_plant
-    FOREIGN KEY (plant_id) REFERENCES plants (plant_id),
-  CONSTRAINT fk_purchase_orders_part
-    FOREIGN KEY (part_id) REFERENCES parts (part_id)
+  UNIQUE KEY uq_purchase_orders_request_offer (request_id, offer_id)
 );

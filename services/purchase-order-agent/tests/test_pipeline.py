@@ -2,7 +2,7 @@
 Tests for Purchase Order Agent workflow.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Verifies request validation and deterministic registration output.
 """
@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from locus.agent.hook_orchestrator import HookOrchestrator
@@ -66,6 +68,89 @@ def test_po_system_registers_purchase_order() -> None:
     assert response.purchase_order.external_reference == "ERP-PO-2026-0001"
     assert response.purchase_order.registered_at.endswith("Z")
     assert response.error.code == ""
+
+
+def test_po_system_registers_purchase_order_without_supplied_id() -> None:
+    """Allocate a deterministic fake purchase order id when omitted."""
+
+    payload = _payload()
+    payload.pop("purchase_order_id")
+    request = CreatePurchaseOrderRequest.model_validate(payload)
+    response = PurchaseOrderSystemClient().register_purchase_order(request)
+
+    assert response.status == "registered"
+    assert response.purchase_order.purchase_order_id.startswith("PO-")
+    assert response.purchase_order.external_reference == (
+        f"ERP-{response.purchase_order.purchase_order_id}"
+    )
+
+
+def test_mysql_po_system_persists_with_database_sequence() -> None:
+    """Persist a purchase order through the MySQL backend."""
+
+    connection = _FakeConnection(sequence_value=42)
+    payload = _payload()
+    payload.pop("purchase_order_id")
+    request = CreatePurchaseOrderRequest.model_validate(payload)
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=lambda: connection,
+    )
+
+    response = client.register_purchase_order(request)
+
+    assert response.status == "registered"
+    assert response.purchase_order.purchase_order_id == "PO-2026-000042"
+    assert response.purchase_order.external_reference == "ERP-PO-2026-000042"
+    assert response.purchase_order.registered_at.endswith("Z")
+    assert connection.commits == 1
+    assert connection.rollbacks == 0
+    assert connection.closed
+    assert connection.inserted_purchase_order is not None
+    inserted_purchase_order = cast(tuple[Any, ...], connection.inserted_purchase_order)
+    # pylint: disable-next=unsubscriptable-object
+    assert inserted_purchase_order[0] == "PO-2026-000042"
+
+
+def test_mysql_po_system_returns_existing_idempotent_registration() -> None:
+    """Return an existing row for duplicate idempotent requests."""
+
+    payload = _payload()
+    existing = _existing_purchase_order_row(payload)
+    connection = _FakeConnection(existing_purchase_order=existing)
+    request = CreatePurchaseOrderRequest.model_validate(payload)
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=lambda: connection,
+    )
+
+    response = client.register_purchase_order(request)
+
+    assert response.status == "registered"
+    assert response.purchase_order.purchase_order_id == "PO-2026-0001"
+    assert response.purchase_order.external_reference == "ERP-PO-2026-0001"
+    assert connection.inserted_purchase_order is None
+
+
+def test_mysql_po_system_rejects_idempotency_conflict() -> None:
+    """Return a failed response when duplicate content conflicts."""
+
+    payload = _payload()
+    existing = _existing_purchase_order_row(payload)
+    existing["quantity"] = 5
+    connection = _FakeConnection(existing_purchase_order=existing)
+    request = CreatePurchaseOrderRequest.model_validate(payload)
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=lambda: connection,
+    )
+
+    response = client.register_purchase_order(request)
+
+    assert response.status == "failed"
+    assert response.error.code == "IDEMPOTENCY_CONFLICT"
+    assert connection.rollbacks == 1
+    assert connection.inserted_purchase_order is None
 
 
 def test_request_validation_rejects_negative_quantity() -> None:
@@ -175,3 +260,102 @@ class _RecordingHook:
         self.after_success.append(success)
         self.after_agent_ids.append(state.agent_id)
         self.after_error_counts.append(len(state.errors))
+
+
+def _existing_purchase_order_row(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a persisted purchase order row matching a payload."""
+
+    line_item = payload["line_items"][0]
+    return {
+        "purchase_order_id": payload.get("purchase_order_id", "PO-2026-000001"),
+        "request_id": payload["request_id"],
+        "offer_id": payload["source_offer"]["offer_id"],
+        "supplier_id": payload["supplier"]["supplier_id"],
+        "supplier_name": payload["supplier"]["supplier_name"],
+        "plant_code": payload["plant_code"],
+        "material_code": line_item["material_code"],
+        "material_description": line_item["material_description"],
+        "quantity": line_item["quantity"],
+        "unit_of_measure": line_item["unit_of_measure"],
+        "unit_price": line_item["unit_price"],
+        "total_amount": payload["source_offer"]["price"],
+        "currency": payload["source_offer"]["currency"],
+        "requested_delivery_date": line_item["requested_delivery_date"],
+        "confirmed_delivery_date": line_item["confirmed_delivery_date"],
+        "external_reference": f"ERP-{payload.get('purchase_order_id', 'PO-2026-000001')}",
+        "registered_at": datetime(2026, 6, 1, 12, 0, 0),
+    }
+
+
+class _FakeConnection:
+    """Small DB-API fake for MySQL wrapper tests."""
+
+    def __init__(
+        self,
+        *,
+        sequence_value: int = 1,
+        existing_purchase_order: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize fake connection state."""
+
+        self.sequence_value = sequence_value
+        self.existing_purchase_order = existing_purchase_order
+        self.inserted_purchase_order: tuple[Any, ...] | None = None
+        self.commits = 0
+        self.rollbacks = 0
+        self.closed = False
+
+    def cursor(self, dictionary: bool = False):
+        """Return a fake cursor."""
+
+        return _FakeCursor(self, dictionary)
+
+    def commit(self) -> None:
+        """Record a commit."""
+
+        self.commits += 1
+
+    def rollback(self) -> None:
+        """Record a rollback."""
+
+        self.rollbacks += 1
+
+    def close(self) -> None:
+        """Record connection close."""
+
+        self.closed = True
+
+
+class _FakeCursor:
+    """Small DB-API cursor fake for MySQL wrapper tests."""
+
+    def __init__(self, connection: _FakeConnection, dictionary: bool) -> None:
+        """Initialize fake cursor state."""
+
+        self._connection = connection
+        self._dictionary = dictionary
+        self._last_query = ""
+
+    def __enter__(self):
+        """Enter cursor context."""
+
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        """Exit cursor context."""
+
+    def execute(self, query: str, params: tuple[Any, ...] = ()) -> None:
+        """Record query execution and insert parameters."""
+
+        self._last_query = " ".join(query.split()).lower()
+        if self._last_query.startswith("insert into purchase_orders"):
+            self._connection.inserted_purchase_order = params
+
+    def fetchone(self):
+        """Return fake rows based on the previous query."""
+
+        if "from purchase_orders" in self._last_query and self._dictionary:
+            return self._connection.existing_purchase_order
+        if "last_insert_id" in self._last_query:
+            return (self._connection.sequence_value,)
+        return None

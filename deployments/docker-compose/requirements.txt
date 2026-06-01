@@ -8,3 +8,4 @@ openai==2.38.0
 oci==2.175.0
 opentelemetry-sdk==1.42.1
 opentelemetry-exporter-otlp==1.42.1
+mysql-connector-python==9.7.0

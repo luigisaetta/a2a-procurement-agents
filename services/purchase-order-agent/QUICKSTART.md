@@ -84,10 +84,20 @@ It returns `application/json` output matching:
 specs/schemas/create-purchase-order-response.schema.json
 ```
 
-The current purchase order system call is a deterministic fake wrapper implemented in:
+The default local purchase order system call is a deterministic fake wrapper implemented in:
 
 ```text
 services/purchase-order-agent/src/purchase_order_agent/po_system.py
+```
+
+When `PURCHASE_ORDER_STORAGE_BACKEND=mysql` is set, the wrapper persists registered purchase orders in MySQL using:
+
+```bash
+PROCUREMENT_DB_HOST=127.0.0.1
+PROCUREMENT_DB_PORT=3306
+PROCUREMENT_DB_NAME=procurement_demo
+PROCUREMENT_DB_USER=procurement_app
+PROCUREMENT_DB_PASSWORD=procurement_app_password
 ```
 
 ## Invoke With Sample Data

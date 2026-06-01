@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Deterministic procurement orchestration workflow.
 """
@@ -456,7 +456,7 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
         po_request = _build_purchase_order_request(request, part, evaluation)
         po_response = CreatePurchaseOrderResponse.model_validate(
             await self._agent_client.create_purchase_order(
-                model_to_payload(po_request),
+                po_request.model_dump(mode="json", exclude_none=True),
                 float(request.timeouts.purchase_order_seconds),
             )
         )
@@ -713,10 +713,8 @@ def _build_purchase_order_request(
     selected = evaluation.decision.selected_offer
     price = float(selected["price"])
     unit_price = round(price / part.quantity, 6)
-    purchase_order_id = f"PO-{request.request_id}-{part.part_id}"
     return CreatePurchaseOrderRequest(
         request_id=request.request_id,
-        purchase_order_id=purchase_order_id,
         plant_code=part.plant_code,
         supplier={
             "supplier_id": selected["supplier_id"],
