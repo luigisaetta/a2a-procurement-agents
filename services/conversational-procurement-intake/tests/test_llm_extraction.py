@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Tests for LLM-backed conversational intake extraction.
 """
@@ -138,8 +138,8 @@ async def test_llm_extractor_asks_all_missing_fields() -> None:
 
 
 @pytest.mark.anyio
-async def test_llm_extractor_does_not_fill_empty_candidate_fields() -> None:
-    """Keep the LLM responsible for extraction in default mode."""
+async def test_llm_extractor_grounds_empty_references_from_conversation_text() -> None:
+    """Ground references from text without inventing other empty fields."""
 
     extractor = LLMIntakeExtractor(
         FakeLLMClient(
@@ -171,8 +171,6 @@ async def test_llm_extractor_does_not_fill_empty_candidate_fields() -> None:
 
     assert result.orchestration_request is None
     assert result.missing_fields == [
-        "parts[0].material_code",
-        "parts[0].plant_code",
         "parts[0].quantity",
         "parts[0].required_delivery_date",
         "response_deadline",

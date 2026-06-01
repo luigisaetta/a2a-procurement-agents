@@ -1,16 +1,25 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Tests for deterministic conversational intake extraction.
 """
 
 from __future__ import annotations
 
+from datetime import UTC, date, datetime
+
 import pytest
 
-from conversational_procurement_intake.extraction import DeterministicIntakeExtractor
-from conversational_procurement_intake.master_data import StaticMasterDataResolver
+from conversational_procurement_intake.extraction import (
+    CandidateIntakeFields,
+    DeterministicIntakeExtractor,
+    build_extraction_result,
+)
+from conversational_procurement_intake.master_data import (
+    McpMasterDataResolver,
+    StaticMasterDataResolver,
+)
 
 
 @pytest.mark.anyio
@@ -129,3 +138,122 @@ async def test_extractor_reads_quantity_from_units_clarification() -> None:
     request = result.orchestration_request
     assert request is not None
     assert request.parts[0].quantity == 10
+
+
+@pytest.mark.anyio
+async def test_extractor_resolves_full_demo_catalog_from_mcp() -> None:
+    """Resolve parts beyond the static fallback catalog through MCP data."""
+
+    extractor = DeterministicIntakeExtractor(
+        McpMasterDataResolver(
+            "http://mcp.example/mcp",
+            client_factory=_FakeMcpClient,
+        )
+    )
+
+    result = await extractor.extract(
+        (
+            "I need 16 units of EV-DC-DC-009, High Voltage DC DC Converter, "
+            "for the Turin plant IT-TOR. The required delivery date is "
+            "2026-07-25. The bid response deadline is 2026-06-15 at 17:00 UTC. "
+            "Create the final purchase order."
+        ),
+        "operator@example.com",
+        10,
+    )
+
+    request = result.orchestration_request
+    assert request is not None
+    assert request.auto_create_purchase_order is True
+    assert request.parts[0].part_id == "PART-009"
+    assert request.parts[0].material_code == "EV-DC-DC-009"
+    assert request.parts[0].plant_code == "IT-TOR"
+
+
+@pytest.mark.anyio
+async def test_extraction_falls_back_to_conversation_text_for_grounding() -> None:
+    """Ground part and plant codes even if candidate references are empty."""
+
+    result = await build_extraction_result(
+        CandidateIntakeFields(
+            quantity=16,
+            required_delivery_date=date(2026, 7, 25),
+            response_deadline=datetime(2026, 6, 15, 17, 0, tzinfo=UTC),
+            auto_create_purchase_order=True,
+        ),
+        McpMasterDataResolver(
+            "http://mcp.example/mcp",
+            client_factory=_FakeMcpClient,
+        ),
+        "operator@example.com",
+        11,
+        ("Please start a tender for EV-DC-DC-009 at IT-TOR with final PO " "creation."),
+    )
+
+    request = result.orchestration_request
+    assert request is not None
+    assert request.parts[0].part_id == "PART-009"
+    assert request.parts[0].plant_code == "IT-TOR"
+
+
+class _FakeMcpResult:
+    """Fake FastMCP result carrying structured content."""
+
+    def __init__(self, structured_content: dict) -> None:
+        """Initialize the fake result."""
+
+        self.structuredContent = structured_content
+
+
+class _FakeMcpClient:
+    """Fake async MCP client for resolver tests."""
+
+    def __init__(self, mcp_url: str, timeout: float) -> None:
+        """Accept the same constructor shape as FastMCP Client."""
+
+        self.mcp_url = mcp_url
+        self.timeout = timeout
+
+    async def __aenter__(self) -> "_FakeMcpClient":
+        """Enter the fake async context manager."""
+
+        return self
+
+    async def __aexit__(self, *_args) -> None:
+        """Exit the fake async context manager."""
+
+    async def call_tool(self, name: str, _arguments: dict) -> _FakeMcpResult:
+        """Return fake master data tool responses."""
+
+        if name == "list_parts":
+            return _FakeMcpResult(
+                {
+                    "items": [
+                        {
+                            "part_id": "PART-009",
+                            "part_code": "EV-DC-DC-009",
+                            "part_name": "High Voltage DC DC Converter",
+                            "description": "Converter for HV to low voltage systems",
+                            "category": "power electronics",
+                            "unit_of_measure": "EA",
+                            "is_active": True,
+                        }
+                    ]
+                }
+            )
+        if name == "list_plants":
+            return _FakeMcpResult(
+                {
+                    "items": [
+                        {
+                            "plant_id": "PLANT-002",
+                            "plant_code": "IT-TOR",
+                            "plant_name": "LuxEV Turin Assembly Plant",
+                            "city": "Turin",
+                            "country_code": "IT",
+                            "is_active": True,
+                        }
+                    ]
+                }
+            )
+        raise AssertionError(f"Unexpected tool call: {name}")

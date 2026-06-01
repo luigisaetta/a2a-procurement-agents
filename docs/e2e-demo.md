@@ -41,6 +41,13 @@ Edit `deployments/docker-compose/.env` and confirm these values:
 - `OCI_CONFIG_DIR`
 - `AGENT_API_KEY`
 
+The conversational intake layer grounds plants and parts through the Procurement Data MCP Server when `PROCUREMENT_DATA_MCP_URL` is set. The Docker Compose default is:
+
+```env
+PROCUREMENT_DATA_MCP_URL=http://procurement-data-mcp:8011/mcp
+PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS=10
+```
+
 For observability, the `start_demo.sh --observability` helper enables these values for the current run:
 
 ```env
@@ -203,10 +210,10 @@ A2A Procurement / A2A Procurement Agent Telemetry
 After at least one workflow invocation, confirm:
 
 - the Prometheus datasource is available
-- the Collector scrape health panel is healthy
 - invocation metrics appear for the agents that executed
 - error rate remains empty or zero for successful runs
 - average invocation duration updates after workflow traffic
+- completed workflow and orchestrated purchase order counters update after successful runs
 
 ## Port Map
 
@@ -294,6 +301,8 @@ If the LLM-backed services fail, confirm OCI settings and mounted credentials:
 - `OCI_MODEL_ID`
 - `OCI_COMPARTMENT_ID`
 - `OCI_CONFIG_DIR`
+
+If the UI repeatedly asks which material or part you need, verify that the Procurement Data MCP Server is running and that `PROCUREMENT_DATA_MCP_URL` points to `http://procurement-data-mcp:8011/mcp` inside Docker Compose.
 
 ## Stop And Reset
 

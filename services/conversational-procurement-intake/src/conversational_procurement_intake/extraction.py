@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Intake extraction contracts and deterministic implementation.
 """
@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
-from typing import Protocol
+from typing import Awaitable, Callable, Protocol, TypeVar
 
 from conversational_procurement_intake.master_data import MasterDataResolver
 from conversational_procurement_intake.models import (
@@ -24,6 +24,7 @@ from conversational_procurement_intake.models import (
 from pydantic import BaseModel, ConfigDict, Field
 
 CURRENT_YEAR = 2026
+ResolvedRecordT = TypeVar("ResolvedRecordT")
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,7 @@ class DeterministicIntakeExtractor:  # pylint: disable=too-few-public-methods
             self._master_data_resolver,
             requested_by,
             session_ordinal,
+            text,
         )
 
 
@@ -109,6 +111,7 @@ async def build_extraction_result(
     master_data_resolver: MasterDataResolver,
     requested_by: str,
     session_ordinal: int,
+    conversation_text: str = "",
 ) -> ExtractionResult:
     """Ground candidate fields and build an orchestration request if possible.
 
@@ -117,6 +120,7 @@ async def build_extraction_result(
         master_data_resolver: Resolver used to ground plants and parts.
         requested_by: User identifier associated with the session.
         session_ordinal: Monotonic ordinal used to generate stable request IDs.
+        conversation_text: Full conversation text used as grounding fallback.
 
     Returns:
         Valid extraction result for the current conversation state.
@@ -133,8 +137,10 @@ async def build_extraction_result(
     if candidate.response_deadline is None:
         missing.append("response_deadline")
 
-    part_candidates = await master_data_resolver.resolve_part(
-        candidate.material_reference
+    part_candidates = await _resolve_with_fallback(
+        master_data_resolver.resolve_part,
+        candidate.material_reference,
+        conversation_text,
     )
     if not part_candidates:
         missing.append("parts[0].material_code")
@@ -154,8 +160,10 @@ async def build_extraction_result(
             )
         )
 
-    plant_candidates = await master_data_resolver.resolve_plant(
-        candidate.plant_reference
+    plant_candidates = await _resolve_with_fallback(
+        master_data_resolver.resolve_plant,
+        candidate.plant_reference,
+        conversation_text,
     )
     if not plant_candidates:
         missing.append("parts[0].plant_code")
@@ -315,6 +323,20 @@ def _default_values(candidate: CandidateIntakeFields) -> list[DefaultApplied]:
     return defaults
 
 
+async def _resolve_with_fallback(
+    resolver: Callable[[str], Awaitable[list[ResolvedRecordT]]],
+    primary_reference: str,
+    conversation_text: str,
+) -> list[ResolvedRecordT]:
+    """Resolve a reference, falling back to the complete conversation text."""
+
+    candidates = await resolver(primary_reference)
+    fallback = conversation_text.strip()
+    if candidates or not fallback or fallback == primary_reference.strip():
+        return candidates
+    return await resolver(fallback)
+
+
 def _extract_quantity(text: str) -> float | None:
     """Extract a positive numeric quantity from text."""
 
@@ -350,6 +372,15 @@ def _quantity_evidence_matches(text: str) -> list[str]:
 def _extract_delivery_date(text: str) -> date | None:
     """Extract the required delivery date from text."""
 
+    iso_match = re.search(
+        r"\b(?:required\s+)?delivery\s+(?:by|date)\s+(?:is\s+)?"
+        r"(\d{4}-\d{2}-\d{2})\b",
+        text,
+        re.IGNORECASE,
+    )
+    if iso_match:
+        return date.fromisoformat(iso_match.group(1))
+
     match = re.search(r"\bby\s+([A-Za-z]+)\s+(\d{1,2})\b", text, re.IGNORECASE)
     if not match:
         match = re.search(
@@ -365,6 +396,18 @@ def _extract_delivery_date(text: str) -> date | None:
 
 def _extract_response_deadline(text: str) -> datetime | None:
     """Extract a bid response deadline from text."""
+
+    iso_match = re.search(
+        r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?(\d{4}-\d{2}-\d{2})"
+        r"(?:\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?)?",
+        text,
+        re.IGNORECASE,
+    )
+    if iso_match:
+        deadline_date = date.fromisoformat(iso_match.group(1))
+        hour = int(iso_match.group(2) or "17")
+        minute = int(iso_match.group(3) or "0")
+        return datetime.combine(deadline_date, time(hour, minute), tzinfo=UTC)
 
     today_match = re.search(
         r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?today"

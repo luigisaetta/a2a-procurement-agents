@@ -18,6 +18,8 @@ The agents are built as independent containers and communicate through their A2A
 
 The Conversational Procurement Intake Layer is not an A2A agent. It serves the UI through HTTP, uses an LLM extractor by default, calls the Procurement Orchestrator through an A2A client, and relays orchestration progress to the UI through Server-Sent Events.
 
+The Conversational Procurement Intake Layer grounds plant and part references through the Procurement Data MCP Server when `PROCUREMENT_DATA_MCP_URL` is configured.
+
 The Procurement Intake Web UI is a Next.js application. It proxies browser requests to the Conversational Procurement Intake Layer through `/api/intake` and renders workflow progress in real time.
 
 The UI container is optional because it requires the Node base image from Docker Hub. If Docker Hub access is blocked by a corporate TLS proxy, start the backend stack with Compose and run the UI locally with npm.

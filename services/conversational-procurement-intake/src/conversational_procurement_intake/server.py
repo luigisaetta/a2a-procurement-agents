@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    FastAPI entry point for the conversational procurement intake
                 HTTP service.
@@ -20,7 +20,10 @@ from conversational_procurement_intake.llm_extraction import (
     LLMIntakeExtractor,
     LocusIntakeLLMClient,
 )
-from conversational_procurement_intake.master_data import StaticMasterDataResolver
+from conversational_procurement_intake.master_data import (
+    McpMasterDataResolver,
+    StaticMasterDataResolver,
+)
 from conversational_procurement_intake.model_factory import build_model
 from conversational_procurement_intake.models import (
     ConfirmSessionRequest,
@@ -127,7 +130,13 @@ def build_app(service: IntakeApplicationService | None = None) -> FastAPI:
 def _build_default_service(settings: Settings) -> IntakeApplicationService:
     """Build the default application service graph."""
 
-    master_data_resolver = StaticMasterDataResolver()
+    if settings.procurement_data_mcp_url:
+        master_data_resolver = McpMasterDataResolver(
+            settings.procurement_data_mcp_url,
+            settings.procurement_data_mcp_timeout_seconds,
+        )
+    else:
+        master_data_resolver = StaticMasterDataResolver()
     if settings.extractor_mode == "llm":
         extractor = LLMIntakeExtractor(
             LocusIntakeLLMClient(build_model(settings)),

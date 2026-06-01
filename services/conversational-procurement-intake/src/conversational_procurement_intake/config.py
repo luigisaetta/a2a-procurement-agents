@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Runtime configuration for the conversational procurement
                 intake HTTP service.
@@ -27,6 +27,8 @@ class Settings:
     Attributes:
         service_port: Local TCP port used by the HTTP API.
         orchestrator_url: Base URL of the Procurement Orchestrator A2A server.
+        procurement_data_mcp_url: Procurement Data MCP streamable HTTP URL.
+        procurement_data_mcp_timeout_seconds: Timeout for MCP master-data calls.
         agent_api_key: Bearer token used for A2A calls.
         extractor_mode: Extractor implementation to use.
         oci_region: OCI region hosting Generative AI inference.
@@ -39,6 +41,8 @@ class Settings:
 
     service_port: int
     orchestrator_url: str
+    procurement_data_mcp_url: str
+    procurement_data_mcp_timeout_seconds: float
     agent_api_key: str
     extractor_mode: str
     oci_region: str
@@ -68,6 +72,18 @@ def load_settings() -> Settings:
 
     if service_port <= 0 or service_port > 65535:
         raise RuntimeError("CONVERSATIONAL_INTAKE_PORT must be between 1 and 65535.")
+
+    try:
+        procurement_data_mcp_timeout_seconds = float(
+            os.environ.get("PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS", "10").strip()
+        )
+    except ValueError as exc:
+        raise RuntimeError(
+            "PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS must be a number."
+        ) from exc
+
+    if procurement_data_mcp_timeout_seconds <= 0:
+        raise RuntimeError("PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS must be positive.")
 
     extractor_mode = os.environ.get(
         "CONVERSATIONAL_INTAKE_EXTRACTOR_MODE", "llm"
@@ -111,6 +127,8 @@ def load_settings() -> Settings:
         orchestrator_url=os.environ.get(
             "PROCUREMENT_ORCHESTRATOR_URL", "http://127.0.0.1:8003"
         ).strip(),
+        procurement_data_mcp_url=os.environ.get("PROCUREMENT_DATA_MCP_URL", "").strip(),
+        procurement_data_mcp_timeout_seconds=procurement_data_mcp_timeout_seconds,
         agent_api_key=os.environ.get("AGENT_API_KEY", "").strip(),
         extractor_mode=extractor_mode,
         oci_region=oci_region,

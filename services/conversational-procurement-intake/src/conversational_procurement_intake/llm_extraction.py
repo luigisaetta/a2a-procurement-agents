@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    LLM-backed conversational intake extraction.
 """
@@ -124,6 +124,7 @@ class LLMIntakeExtractor:  # pylint: disable=too-few-public-methods
             self._master_data_resolver,
             requested_by,
             session_ordinal,
+            text,
         )
 
 

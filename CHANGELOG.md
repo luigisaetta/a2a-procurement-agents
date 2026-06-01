@@ -4,6 +4,10 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Connected the Conversational Procurement Intake Layer to the Procurement Data MCP Server for plant and part grounding, keeping the static resolver as a local fallback and using the full conversation text when LLM candidate references are incomplete.
+- Bounded the Grafana purchase order business counter by successful orchestrations so technical PO-agent invocations cannot exceed completed workflow counts.
+- Replaced the Grafana collector health panel with business-facing completed workflow and purchase order counters.
+- Changed the Grafana invocation duration panel to show a five-minute rolling average instead of a cumulative average.
 - Simplified Grafana dashboard legends to avoid repeated agent names.
 - Configured telemetry-enabled A2A agent servers to initialize OpenTelemetry SDK OTLP metric and trace exporters before creating Locus telemetry hooks.
 - Added Docker daemon preflight checks and Docker context selection support to the demo helper scripts.
