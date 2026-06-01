@@ -9,7 +9,7 @@ The README keeps only a short public-facing list. This document provides the dee
 | Component | Type | Status | Service Folder | Purpose |
 | --- | --- | --- | --- | --- |
 | Procurement Intake Web UI | Next.js web application | Initial implementation | `services/procurement-intake-ui` | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
-| Agent Telemetry Layer | Cross-cutting observability contract | Draft specification | N/A | Defines OpenTelemetry metrics and Locus task-boundary instrumentation rules for A2A agent invocations, execution duration, and errors. |
+| Agent Telemetry Layer | Cross-cutting observability layer | Initial implementation | A2A agent services; `deployments/docker-compose` | Implements opt-in Locus/OpenTelemetry telemetry for A2A agents and provides a local Collector, Prometheus, and Grafana stack. |
 | Conversational Procurement Intake Layer | HTTP application layer | Initial HTTP implementation | `services/conversational-procurement-intake` | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
 | Procurement Orchestrator | A2A agent | Initial A2A server implementation | `services/procurement-orchestrator` | Coordinates the end-to-end procurement workflow across specialized A2A agents. |
 | Bid Collection Agent | A2A agent | Initial A2A server implementation | `services/bid-collection-agent` | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
@@ -63,17 +63,23 @@ The UI does not:
 
 ## Agent Telemetry Layer
 
-Status: Draft specification
+Status: Initial implementation
 
-Type: Cross-cutting observability contract, not an A2A agent
+Type: Cross-cutting observability layer, not an A2A agent
 
 Specification: [specs/observability/agent-telemetry.md](specs/observability/agent-telemetry.md)
 
-The Agent Telemetry Layer defines the shared operational contract for collecting A2A agent metrics with the built-in Locus telemetry hook.
+Implementation guide: [deployments/docker-compose/OBSERVABILITY.md](deployments/docker-compose/OBSERVABILITY.md)
+
+The Agent Telemetry Layer defines and implements the shared operational path for collecting A2A agent metrics with the built-in Locus telemetry hook.
 
 It standardizes the use of Locus lifecycle hooks, Locus-native telemetry metrics, low-cardinality attributes, error categories, and the preferred A2A workflow-boundary hook placement without introducing shared business runtime code between agents.
 
-Initial metrics cover invocation count, execution duration, and error count for the Procurement Orchestrator, Bid Collection Agent, Offer Evaluation Agent, and Purchase Order Agent.
+The initial implementation is opt-in per service and is wired for the Procurement Orchestrator, Bid Collection Agent, Offer Evaluation Agent, and Purchase Order Agent. When telemetry is enabled, the agents configure OpenTelemetry OTLP metric and trace exporters before creating the Locus telemetry hook.
+
+The Docker Compose `observability` profile provides a local OpenTelemetry Collector, Prometheus, and Grafana deployment. The demo helper enables all four A2A agent telemetry flags automatically when started with `./start_demo.sh --observability`, and Grafana includes a provisioned A2A Procurement Agent Telemetry dashboard.
+
+Initial metrics cover invocation count, execution duration, and error count through Locus-native telemetry exported to Prometheus.
 
 ---
 

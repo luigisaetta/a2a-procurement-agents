@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Updated the agent catalog to reflect that the Agent Telemetry observability layer has an initial implementation, not only a draft specification.
 - Added a dedicated 20-case Offer Evaluation Agent accuracy suite with recorded expected winners and workflow-level result comparison.
 - Implemented Docker Compose MySQL persistence for the Purchase Order Agent, including lazy schema creation, idempotent registration, database-backed purchase order numbering, deployment wiring, and tests.
 - Specified Docker Compose MySQL persistence, lazy schema creation, idempotency, and database-backed purchase order numbering for the Purchase Order Agent.
