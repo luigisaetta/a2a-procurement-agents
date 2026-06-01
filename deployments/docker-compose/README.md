@@ -91,6 +91,22 @@ docker compose build procurement-orchestrator
 
 ## Start
 
+From the repository root, the recommended demo helper is:
+
+```bash
+./start_demo.sh
+```
+
+To include the UI and observability stack:
+
+```bash
+./start_demo.sh --ui --observability
+```
+
+When `--observability` is used, the helper enables telemetry for all four A2A agents for that run.
+
+For a full end-to-end validation checklist, see [../../docs/e2e-demo.md](../../docs/e2e-demo.md).
+
 Run the backend stack:
 
 ```bash
@@ -279,6 +295,20 @@ curl -i http://127.0.0.1:8011/mcp
 The endpoint is an MCP streamable HTTP endpoint, so a plain browser or curl request may return a protocol-level error. A reachable HTTP response confirms that the service is running.
 
 ## Stop
+
+From the repository root:
+
+```bash
+./stop_demo.sh
+```
+
+To remove Docker Compose volumes as well:
+
+```bash
+./stop_demo.sh --volumes
+```
+
+Or run Docker Compose directly:
 
 ```bash
 cd deployments/docker-compose

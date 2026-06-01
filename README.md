@@ -71,6 +71,40 @@ Reference link:
 
 - [Oracle Locus on GitHub](https://github.com/oracle-samples/locus)
 
+## Quick Demo Start
+
+Start the local Docker Compose demo from the repository root:
+
+```bash
+./start_demo.sh
+```
+
+Include the web UI:
+
+```bash
+./start_demo.sh --ui
+```
+
+Include the observability stack. This also enables Locus telemetry for all A2A agents for the current run:
+
+```bash
+./start_demo.sh --observability
+```
+
+Include both optional profiles:
+
+```bash
+./start_demo.sh --ui --observability
+```
+
+Stop the demo:
+
+```bash
+./stop_demo.sh
+```
+
+For the full end-to-end checklist covering environment setup, health checks, client invocation, UI, Grafana, and troubleshooting, see [docs/e2e-demo.md](docs/e2e-demo.md).
+
 ## System Components
 
 Development proceeds component by component. This first draft roadmap defines the initial procurement system.

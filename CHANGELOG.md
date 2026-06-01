@@ -4,6 +4,8 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Added an end-to-end demo checklist covering environment setup, startup, health checks, workflow invocation, UI verification, Grafana validation, logs, and troubleshooting.
+- Added root-level `start_demo.sh` and `stop_demo.sh` helpers for the Docker Compose demo, including automatic A2A agent telemetry enablement when `--observability` is used.
 - Added an OpenTelemetry observability badge to the main README.
 - Extended the Docker Compose `observability` profile with Prometheus and Grafana, including provisioned Prometheus scraping, Grafana datasource configuration, and a starter A2A agent telemetry dashboard.
 - Added dedicated Docker Compose observability documentation covering telemetry enablement, port mapping, startup, verification, Grafana access, and troubleshooting.

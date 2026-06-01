@@ -87,17 +87,25 @@ OTEL_RESOURCE_ATTRIBUTES=deployment.environment=local
 
 ## Start
 
-Run from the Docker Compose folder:
+From the repository root, use the demo helper:
 
 ```bash
-cd deployments/docker-compose
-docker compose --profile observability up -d --build
+./start_demo.sh --observability
 ```
+
+This starts the `observability` profile and sets the four A2A agent telemetry flags to `true` for the current run.
 
 To include the web UI as well:
 
 ```bash
-docker compose --profile observability --profile ui up -d --build
+./start_demo.sh --ui --observability
+```
+
+You can also run Docker Compose directly from the Docker Compose folder:
+
+```bash
+cd deployments/docker-compose
+docker compose --profile observability up -d --build
 ```
 
 ## Generate Metrics
@@ -169,11 +177,11 @@ PROMETHEUS_PORT=9091
 Stop the stack:
 
 ```bash
-docker compose --profile observability down
+./stop_demo.sh
 ```
 
 To remove Prometheus and Grafana local volumes:
 
 ```bash
-docker compose --profile observability down -v
+./stop_demo.sh --volumes
 ```
