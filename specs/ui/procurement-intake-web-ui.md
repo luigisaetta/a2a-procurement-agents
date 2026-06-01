@@ -154,6 +154,7 @@ The UI must provide:
 
 - a clear confirm action
 - a way to continue the conversation and change details before confirming
+- inline editing for user-reviewable extracted values, initially quantity, required delivery date, and bid response deadline
 - a clear indication that confirmation launches the procurement workflow
 
 The UI should not show the raw `ProcurementOrchestrationRequest` by default.
@@ -169,6 +170,8 @@ POST /sessions/{session_id}/confirm
 ```
 
 The UI must call this endpoint only after the user explicitly confirms the structured request.
+
+When the operator edits reviewable fields inline, the UI must send the reviewed structured request in the confirmation call so the launched workflow uses the corrected values.
 
 After confirmation succeeds, the UI must:
 

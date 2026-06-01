@@ -1,19 +1,25 @@
+import type { ReactNode } from "react";
+
 import type { DefaultApplied, OrchestrationRequest } from "../lib/types";
 
 interface RequestSummaryProps {
   request: OrchestrationRequest | null;
+  reviewRequest: OrchestrationRequest | null;
   defaults: DefaultApplied[];
   canConfirm: boolean;
   isSubmitting: boolean;
   onConfirm: () => void;
+  onRequestChange: (request: OrchestrationRequest) => void;
 }
 
 export function RequestSummary({
   request,
+  reviewRequest,
   defaults,
   canConfirm,
   isSubmitting,
   onConfirm,
+  onRequestChange,
 }: RequestSummaryProps) {
   if (!request) {
     return (
@@ -29,6 +35,30 @@ export function RequestSummary({
     );
   }
 
+  const displayedRequest = reviewRequest ?? request;
+  const isEditable = canConfirm && !isSubmitting;
+
+  function updateResponseDeadline(value: string) {
+    onRequestChange({
+      ...displayedRequest,
+      response_deadline: value
+        ? new Date(value).toISOString()
+        : displayedRequest.response_deadline,
+    });
+  }
+
+  function updatePart(
+    index: number,
+    patch: Partial<OrchestrationRequest["parts"][number]>,
+  ) {
+    onRequestChange({
+      ...displayedRequest,
+      parts: displayedRequest.parts.map((part, partIndex) =>
+        partIndex === index ? { ...part, ...patch } : part,
+      ),
+    });
+  }
+
   return (
     <section className="panel">
       <div className="panelHeader">
@@ -36,30 +66,63 @@ export function RequestSummary({
         <h2>Procurement request</h2>
       </div>
       <div className="summaryGrid">
-        <SummaryItem label="Request ID" value={request.request_id} />
-        <SummaryItem label="Currency" value={request.currency} />
-        <SummaryItem label="Bid deadline" value={formatDate(request.response_deadline)} />
+        <SummaryItem label="Request ID" value={displayedRequest.request_id} />
+        <SummaryItem label="Currency" value={displayedRequest.currency} />
+        <EditableSummaryItem label="Bid deadline">
+          <input
+            aria-label="Bid deadline"
+            className="summaryInput"
+            disabled={!isEditable}
+            onChange={(event) => updateResponseDeadline(event.target.value)}
+            type="datetime-local"
+            value={toDateTimeLocalValue(displayedRequest.response_deadline)}
+          />
+        </EditableSummaryItem>
         <SummaryItem
           label="Auto PO"
-          value={request.auto_create_purchase_order ? "Enabled" : "Disabled"}
+          value={displayedRequest.auto_create_purchase_order ? "Enabled" : "Disabled"}
         />
       </div>
       <div className="partList">
-        {request.parts.map((part) => (
+        {displayedRequest.parts.map((part, index) => (
           <div className="partRow" key={`${part.part_id}-${part.plant_code}`}>
             <div>
               <strong>{part.material_description}</strong>
               <span>{part.material_code}</span>
             </div>
             <div>
-              <strong>
-                {part.quantity} {part.unit_of_measure}
-              </strong>
+              <label className="editableField">
+                <span>Quantity</span>
+                <div className="quantityControl">
+                  <input
+                    aria-label={`Quantity for ${part.material_description}`}
+                    disabled={!isEditable}
+                    min="0.01"
+                    onChange={(event) =>
+                      updatePart(index, { quantity: Number(event.target.value) })
+                    }
+                    step="0.01"
+                    type="number"
+                    value={String(part.quantity)}
+                  />
+                  <strong>{part.unit_of_measure}</strong>
+                </div>
+              </label>
               <span>{part.plant_code}</span>
             </div>
             <div>
-              <strong>{formatDate(part.required_delivery_date)}</strong>
-              <span>Required delivery</span>
+              <label className="editableField">
+                <span>Required delivery</span>
+                <input
+                  aria-label={`Required delivery date for ${part.material_description}`}
+                  disabled={!isEditable}
+                  onChange={(event) =>
+                    updatePart(index, { required_delivery_date: event.target.value })
+                  }
+                  type="date"
+                  value={toDateValue(part.required_delivery_date)}
+                />
+              </label>
             </div>
           </div>
         ))}
@@ -67,17 +130,17 @@ export function RequestSummary({
       <div className="summaryGrid compact">
         <SummaryItem
           label="Supplier count"
-          value={String(request.sourcing_constraints.max_suppliers_per_part)}
+          value={String(displayedRequest.sourcing_constraints.max_suppliers_per_part)}
         />
         <SummaryItem
           label="Regions"
           value={
-            request.sourcing_constraints.allowed_regions.length
-              ? request.sourcing_constraints.allowed_regions.join(", ")
+            displayedRequest.sourcing_constraints.allowed_regions.length
+              ? displayedRequest.sourcing_constraints.allowed_regions.join(", ")
               : "No restriction"
           }
         />
-        <SummaryItem label="Policy" value={request.evaluation_policy_id} />
+        <SummaryItem label="Policy" value={displayedRequest.evaluation_policy_id} />
       </div>
       {defaults.length > 0 && (
         <div className="defaultsBox">
@@ -110,15 +173,32 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatDate(value: string): string {
+function EditableSummaryItem({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <div className="summaryItem editableSummaryItem">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function toDateValue(value: string): string {
+  return value.slice(0, 10);
+}
+
+function toDateTimeLocalValue(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return value;
+    return value.slice(0, 16);
   }
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: value.includes("T") ? "short" : undefined,
-  }).format(date);
+  const offsetMilliseconds = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMilliseconds).toISOString().slice(0, 16);
 }
 
 function humanize(value: string): string {

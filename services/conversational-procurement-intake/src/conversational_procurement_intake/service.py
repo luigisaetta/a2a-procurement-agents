@@ -109,6 +109,11 @@ class IntakeApplicationService:
             session.message = "The procurement request is not ready for confirmation."
             await self._session_store.update_timestamp(session)
             return _to_response(session)
+        if request.orchestration_request is not None:
+            session.orchestration_request = request.orchestration_request
+            session.confirmation_summary = _confirmation_summary(
+                request.orchestration_request
+            )
         session.state = "submitted"
         session.message = "The procurement workflow was submitted."
         session.orchestration_id = f"ORCH-{session.orchestration_request.request_id}"

@@ -141,6 +141,7 @@ class ConfirmSessionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     confirmed: bool = True
+    orchestration_request: ProcurementOrchestrationRequest | None = None
 
 
 class IntakeSessionResponse(BaseModel):

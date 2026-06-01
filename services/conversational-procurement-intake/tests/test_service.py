@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -112,6 +112,44 @@ async def test_service_prepares_request_and_relay_events() -> None:
     assert events_response.events[0].event_type == "accepted"
     assert events_response.terminal_result is not None
     assert events_response.terminal_result.status == "completed_without_purchase_orders"
+
+
+@pytest.mark.anyio
+async def test_confirm_session_accepts_reviewed_request() -> None:
+    """Confirmed sessions can submit a user-reviewed orchestration request."""
+
+    service = _service()
+    started = await service.start_session(
+        StartSessionRequest(requested_by="operator@example.com")
+    )
+    prepared = await service.add_user_message(
+        started.session_id,
+        UserMessageRequest(
+            message=(
+                "We need 10 high density battery modules for Munich by June 15. "
+                "Bid deadline May 29 at 12."
+            )
+        ),
+    )
+
+    assert prepared.orchestration_request is not None
+    reviewed_request = prepared.orchestration_request.model_copy(deep=True)
+    reviewed_request.parts[0].quantity = 12
+    reviewed_request.parts[0].required_delivery_date = date(2026, 6, 18)
+
+    submitted = await service.confirm_session(
+        started.session_id,
+        ConfirmSessionRequest(
+            confirmed=True,
+            orchestration_request=reviewed_request,
+        ),
+    )
+
+    assert submitted.orchestration_request is not None
+    assert submitted.orchestration_request.parts[0].quantity == 12
+    assert submitted.orchestration_request.parts[0].required_delivery_date == date(
+        2026, 6, 18
+    )
 
 
 @pytest.mark.anyio

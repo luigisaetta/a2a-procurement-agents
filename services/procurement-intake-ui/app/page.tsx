@@ -8,6 +8,7 @@ import type {
   ChatMessage,
   IntakeSessionResponse,
   OrchestrationEvent,
+  OrchestrationRequest,
   OrchestrationResponse,
 } from "../lib/types";
 
@@ -28,12 +29,17 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [events, setEvents] = useState<OrchestrationEvent[]>([]);
   const [terminalResult, setTerminalResult] = useState<OrchestrationResponse | null>(null);
+  const [reviewRequest, setReviewRequest] = useState<OrchestrationRequest | null>(null);
   const [sseConnected, setSseConnected] = useState(false);
   const [error, setError] = useState("");
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const canConfirm = session?.state === "ready_for_confirmation";
   const request = session?.orchestration_request ?? null;
+
+  useEffect(() => {
+    setReviewRequest(request);
+  }, [request]);
 
   useEffect(() => {
     return () => {
@@ -84,7 +90,7 @@ export default function Home() {
     setBusy(true);
     setError("");
     try {
-      const response = await confirmSession(session.session_id);
+      const response = await confirmSession(session.session_id, reviewRequest);
       setSession(response);
       appendMessage("system", "The workflow has been launched. Progress updates will appear live.");
       openEventStream(response.session_id);
@@ -100,6 +106,7 @@ export default function Home() {
     setSession(null);
     setEvents([]);
     setTerminalResult(null);
+    setReviewRequest(null);
     setSseConnected(false);
     setError("");
     setDraft("");
@@ -232,7 +239,9 @@ export default function Home() {
             defaults={session?.defaults_applied ?? []}
             isSubmitting={busy && canConfirm}
             onConfirm={handleConfirm}
+            onRequestChange={setReviewRequest}
             request={request}
+            reviewRequest={reviewRequest}
           />
           <ProgressTimeline
             connected={sseConnected}

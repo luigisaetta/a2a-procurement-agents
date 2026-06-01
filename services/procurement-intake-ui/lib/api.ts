@@ -1,5 +1,6 @@
 import type {
   IntakeSessionResponse,
+  OrchestrationRequest,
   PollEventsResponse,
 } from "./types";
 
@@ -36,10 +37,16 @@ export function sendMessage(
   });
 }
 
-export function confirmSession(sessionId: string): Promise<IntakeSessionResponse> {
+export function confirmSession(
+  sessionId: string,
+  orchestrationRequest?: OrchestrationRequest | null,
+): Promise<IntakeSessionResponse> {
   return requestJson<IntakeSessionResponse>(`/sessions/${sessionId}/confirm`, {
     method: "POST",
-    body: JSON.stringify({ confirmed: true }),
+    body: JSON.stringify({
+      confirmed: true,
+      ...(orchestrationRequest ? { orchestration_request: orchestrationRequest } : {}),
+    }),
   });
 }
 

@@ -93,7 +93,7 @@ The initial API should be JSON-based and session-oriented. Exact endpoint names 
 | Get session status | Retrieve current session state, known fields, missing fields, and latest response. |
 | Get orchestration status | Retrieve orchestration events and final result after submission. |
 
-The HTTP API must never require the UI to construct a `ProcurementOrchestrationRequest` directly. The UI sends natural-language messages, user confirmations, and session commands. The layer owns extraction, grounding, validation, and final orchestration payload assembly.
+The HTTP API must never require the UI to construct a `ProcurementOrchestrationRequest` directly from scratch. The UI sends natural-language messages, user confirmations, session commands, and may send a reviewed version of the layer-generated candidate payload when the operator edits explicitly reviewable fields before confirmation. The layer owns extraction, grounding, validation, and final orchestration payload assembly.
 
 Suggested request shape for a user message:
 
@@ -125,6 +125,8 @@ Suggested response shape:
 ```
 
 When the state is `ready_for_confirmation`, the response should include a confirmation summary and the candidate orchestration payload for review.
+
+The confirmation request may include a reviewed `orchestration_request` derived from the candidate payload. The layer must validate this reviewed payload before submission and must submit the reviewed payload rather than the original candidate when validation succeeds.
 
 The HTTP API must support returning orchestration progress after submission. The preferred first implementation is Server-Sent Events for real-time live updates, with polling as a fallback for clients or deployments that cannot keep streaming HTTP connections open.
 
