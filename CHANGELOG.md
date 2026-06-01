@@ -5,6 +5,7 @@ All meaningful changes to this project are documented in this file.
 ## 2026-06-01
 
 - Connected the Conversational Procurement Intake Layer to the Procurement Data MCP Server for plant and part grounding, keeping the static resolver as a local fallback and using the full conversation text when LLM candidate references are incomplete.
+- Moved the Grafana agent error panel to the bottom of the dashboard so operational and business counters stay first.
 - Changed the Grafana business counter panels to instant Prometheus queries so restart-era historical samples do not mask the current live counters.
 - Bounded the Grafana purchase order business counter by successful orchestrations so technical PO-agent invocations cannot exceed completed workflow counts.
 - Replaced the Grafana collector health panel with business-facing completed workflow and purchase order counters.

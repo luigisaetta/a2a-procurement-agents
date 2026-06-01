@@ -156,8 +156,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 0
+        "x": 0,
+        "y": 16
       },
       "id": 2,
       "options": {
@@ -247,8 +247,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 8
+        "x": 12,
+        "y": 0
       },
       "id": 3,
       "options": {
@@ -308,8 +308,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
-        "x": 12,
+        "w": 12,
+        "x": 0,
         "y": 8
       },
       "id": 4,
@@ -372,8 +372,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
-        "x": 18,
+        "w": 12,
+        "x": 12,
         "y": 8
       },
       "id": 5,
@@ -431,6 +431,6 @@
   "timezone": "browser",
   "title": "A2A Procurement Agent Telemetry",
   "uid": "a2a-procurement-agent-telemetry",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }
