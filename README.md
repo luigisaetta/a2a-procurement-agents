@@ -7,6 +7,8 @@
 [![A2A](https://img.shields.io/badge/protocol-A2A%20v1-orange.svg)](https://github.com/a2aproject/A2A)
 [![OpenTelemetry](https://img.shields.io/badge/observability-OpenTelemetry-ff6f00.svg)](https://opentelemetry.io/)
 
+![A2A Procurement Agents overview](images/image01.png)
+
 Enterprise procurement is becoming too fast, too distributed, and too policy-heavy for a single monolithic assistant.
 
 This project explores a different shape: a network of independently deployable AI agents that collaborate over open A2A contracts to handle urgent procurement workflows.

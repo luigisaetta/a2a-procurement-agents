@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Added the A2A Procurement Agents overview image to the main README.
 - Added inline review editing in the Procurement Intake Web UI for bid deadline, part delivery dates, and quantities, and allowed the intake confirmation API to submit the reviewed orchestration request.
 - Added a root-level presenter runbook for the full UI and observability demo, including startup, health checks, sample requests, Grafana review, troubleshooting, and shutdown.
 - Connected the Conversational Procurement Intake Layer to the Procurement Data MCP Server for plant and part grounding, keeping the static resolver as a local fallback and using the full conversation text when LLM candidate references are incomplete.
