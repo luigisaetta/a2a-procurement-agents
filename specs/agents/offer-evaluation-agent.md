@@ -237,6 +237,29 @@ The evaluation result must include:
 
 ---
 
+# Accuracy Regression Suite
+
+The implementation must include a dedicated accuracy regression suite for the
+standard urgent procurement policy.
+
+The suite must contain representative offer sets with recorded expected
+outcomes and must compare the workflow result against those expected outcomes.
+
+The baseline suite covers:
+
+- eligible lowest-cost selection
+- currency exclusions
+- late-delivery exclusions
+- price, reliability, and delivery-date tie-breakers
+- no-valid-offers decisions
+- fields that are present in the schema but ignored by the policy version
+
+Current baseline fixture:
+
+- [services/offer-evaluation-agent/tests/accuracy/offer-evaluation-accuracy-cases.json](../../services/offer-evaluation-agent/tests/accuracy/offer-evaluation-accuracy-cases.json)
+
+---
+
 # Error Handling
 
 The agent must return structured errors for:

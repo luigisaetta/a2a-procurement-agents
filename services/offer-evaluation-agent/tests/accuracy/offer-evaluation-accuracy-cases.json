@@ -1,0 +1,995 @@
+[
+  {
+    "case_id": "ACC-001-lowest-price-basic",
+    "description": "Select the lowest priced offer among eligible EUR offers.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-001-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-001",
+      "plant_code": "PLANT-01",
+      "material_code": "MAT-PUMP-001",
+      "material_description": "Industrial pump replacement kit",
+      "quantity": 10,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-15",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-001-OFF-001",
+          "supplier_id": "SUP-001",
+          "supplier_name": "Aster Components",
+          "price": 12000.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-10",
+          "quality_score": 92,
+          "reliability_score": 88,
+          "valid_until": "2026-06-05"
+        },
+        {
+          "offer_id": "ACC-001-OFF-002",
+          "supplier_id": "SUP-002",
+          "supplier_name": "Brava Industrial",
+          "price": 11300.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-14",
+          "quality_score": 87,
+          "reliability_score": 81,
+          "valid_until": "2026-06-06"
+        },
+        {
+          "offer_id": "ACC-001-OFF-003",
+          "supplier_id": "SUP-003",
+          "supplier_name": "Cobalt Supply",
+          "price": 11850.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-12",
+          "quality_score": 91,
+          "reliability_score": 90,
+          "valid_until": "2026-06-07"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-002-exclude-late-cheapest",
+    "description": "Exclude the cheapest offer because it misses the required delivery date.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-002-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-002",
+      "plant_code": "PLANT-02",
+      "material_code": "MAT-SENSOR-002",
+      "material_description": "Pressure sensor assembly",
+      "quantity": 24,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-07-01",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-002-OFF-001",
+          "supplier_id": "SUP-004",
+          "supplier_name": "Delta Mechanics",
+          "price": 4200.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-03",
+          "quality_score": 94,
+          "reliability_score": 96,
+          "valid_until": "2026-06-20"
+        },
+        {
+          "offer_id": "ACC-002-OFF-002",
+          "supplier_id": "SUP-005",
+          "supplier_name": "Eon Parts",
+          "price": 4450.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-29",
+          "quality_score": 88,
+          "reliability_score": 84,
+          "valid_until": "2026-06-21"
+        },
+        {
+          "offer_id": "ACC-002-OFF-003",
+          "supplier_id": "SUP-006",
+          "supplier_name": "Faro Components",
+          "price": 4700.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-30",
+          "quality_score": 89,
+          "reliability_score": 86,
+          "valid_until": "2026-06-22"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-003-exclude-currency-mismatch",
+    "description": "Exclude cheaper USD offers when the request currency is EUR.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-003-OFF-003"
+    },
+    "request": {
+      "request_id": "ACC-REQ-003",
+      "plant_code": "PLANT-03",
+      "material_code": "MAT-VALVE-003",
+      "material_description": "Hydraulic control valve",
+      "quantity": 6,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-25",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-003-OFF-001",
+          "supplier_id": "SUP-007",
+          "supplier_name": "Gala Hydraulics",
+          "price": 2100.0,
+          "currency": "USD",
+          "delivery_date": "2026-06-20",
+          "quality_score": 93,
+          "reliability_score": 93,
+          "valid_until": "2026-06-12"
+        },
+        {
+          "offer_id": "ACC-003-OFF-002",
+          "supplier_id": "SUP-008",
+          "supplier_name": "Helio Systems",
+          "price": 2250.0,
+          "currency": "USD",
+          "delivery_date": "2026-06-21",
+          "quality_score": 90,
+          "reliability_score": 91,
+          "valid_until": "2026-06-12"
+        },
+        {
+          "offer_id": "ACC-003-OFF-003",
+          "supplier_id": "SUP-009",
+          "supplier_name": "Ion Industrial",
+          "price": 2400.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-23",
+          "quality_score": 86,
+          "reliability_score": 79,
+          "valid_until": "2026-06-12"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-004-price-tie-reliability",
+    "description": "Use reliability as the first tie-breaker when eligible prices match.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-004-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-004",
+      "plant_code": "PLANT-04",
+      "material_code": "MAT-BEARING-004",
+      "material_description": "High load bearing set",
+      "quantity": 40,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-08-10",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-004-OFF-001",
+          "supplier_id": "SUP-010",
+          "supplier_name": "Juno Bearings",
+          "price": 7800.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-06",
+          "quality_score": 95,
+          "reliability_score": 85,
+          "valid_until": "2026-07-29"
+        },
+        {
+          "offer_id": "ACC-004-OFF-002",
+          "supplier_id": "SUP-011",
+          "supplier_name": "Kappa Motion",
+          "price": 7800.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-08",
+          "quality_score": 88,
+          "reliability_score": 92,
+          "valid_until": "2026-07-29"
+        },
+        {
+          "offer_id": "ACC-004-OFF-003",
+          "supplier_id": "SUP-012",
+          "supplier_name": "Lumen Works",
+          "price": 7950.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-05",
+          "quality_score": 97,
+          "reliability_score": 98,
+          "valid_until": "2026-07-29"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-005-price-reliability-tie-delivery",
+    "description": "Use earliest delivery date after price and reliability are tied.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-005-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-005",
+      "plant_code": "PLANT-05",
+      "material_code": "MAT-CABLE-005",
+      "material_description": "Shielded power cable spool",
+      "quantity": 120,
+      "unit_of_measure": "M",
+      "currency": "EUR",
+      "required_delivery_date": "2026-07-20",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-005-OFF-001",
+          "supplier_id": "SUP-013",
+          "supplier_name": "Metro Cable",
+          "price": 3100.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-19",
+          "quality_score": 91,
+          "reliability_score": 89,
+          "valid_until": "2026-07-01"
+        },
+        {
+          "offer_id": "ACC-005-OFF-002",
+          "supplier_id": "SUP-014",
+          "supplier_name": "Nova Wire",
+          "price": 3100.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-16",
+          "quality_score": 90,
+          "reliability_score": 89,
+          "valid_until": "2026-07-01"
+        },
+        {
+          "offer_id": "ACC-005-OFF-003",
+          "supplier_id": "SUP-015",
+          "supplier_name": "Orion Conductors",
+          "price": 3300.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-15",
+          "quality_score": 99,
+          "reliability_score": 99,
+          "valid_until": "2026-07-01"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-006-required-date-boundary",
+    "description": "Treat delivery on the required date as eligible.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-006-OFF-001"
+    },
+    "request": {
+      "request_id": "ACC-REQ-006",
+      "plant_code": "PLANT-06",
+      "material_code": "MAT-FILTER-006",
+      "material_description": "Air filtration cartridge",
+      "quantity": 18,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-30",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-006-OFF-001",
+          "supplier_id": "SUP-016",
+          "supplier_name": "Prism Filters",
+          "price": 1600.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-30",
+          "quality_score": 84,
+          "reliability_score": 80,
+          "valid_until": "2026-06-15"
+        },
+        {
+          "offer_id": "ACC-006-OFF-002",
+          "supplier_id": "SUP-017",
+          "supplier_name": "Quanta Air",
+          "price": 1700.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-28",
+          "quality_score": 94,
+          "reliability_score": 95,
+          "valid_until": "2026-06-15"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-007-all-late-no-valid",
+    "description": "Return no valid offers when every offer is late.",
+    "expected": {
+      "status": "no_valid_offers",
+      "offer_id": null
+    },
+    "request": {
+      "request_id": "ACC-REQ-007",
+      "plant_code": "PLANT-07",
+      "material_code": "MAT-SEAL-007",
+      "material_description": "Thermal sealing kit",
+      "quantity": 12,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-10",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-007-OFF-001",
+          "supplier_id": "SUP-018",
+          "supplier_name": "Radian Seals",
+          "price": 900.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-11",
+          "quality_score": 90,
+          "reliability_score": 91,
+          "valid_until": "2026-06-02"
+        },
+        {
+          "offer_id": "ACC-007-OFF-002",
+          "supplier_id": "SUP-019",
+          "supplier_name": "Solace Parts",
+          "price": 850.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-12",
+          "quality_score": 88,
+          "reliability_score": 87,
+          "valid_until": "2026-06-02"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-008-all-currency-mismatch-no-valid",
+    "description": "Return no valid offers when every offer uses a different currency.",
+    "expected": {
+      "status": "no_valid_offers",
+      "offer_id": null
+    },
+    "request": {
+      "request_id": "ACC-REQ-008",
+      "plant_code": "PLANT-08",
+      "material_code": "MAT-GEAR-008",
+      "material_description": "Precision gear assembly",
+      "quantity": 5,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-09-01",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-008-OFF-001",
+          "supplier_id": "SUP-020",
+          "supplier_name": "Tera Gear",
+          "price": 5400.0,
+          "currency": "USD",
+          "delivery_date": "2026-08-22",
+          "quality_score": 96,
+          "reliability_score": 94,
+          "valid_until": "2026-08-10"
+        },
+        {
+          "offer_id": "ACC-008-OFF-002",
+          "supplier_id": "SUP-021",
+          "supplier_name": "Umbra Drive",
+          "price": 5250.0,
+          "currency": "GBP",
+          "delivery_date": "2026-08-25",
+          "quality_score": 92,
+          "reliability_score": 90,
+          "valid_until": "2026-08-10"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-009-mixed-invalid-valid",
+    "description": "Ignore late and wrong-currency offers and select the lowest remaining valid offer.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-009-OFF-003"
+    },
+    "request": {
+      "request_id": "ACC-REQ-009",
+      "plant_code": "PLANT-09",
+      "material_code": "MAT-HOSE-009",
+      "material_description": "Coolant hose bundle",
+      "quantity": 30,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-07-12",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-009-OFF-001",
+          "supplier_id": "SUP-022",
+          "supplier_name": "Vector Hose",
+          "price": 1400.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-15",
+          "quality_score": 93,
+          "reliability_score": 93,
+          "valid_until": "2026-07-01"
+        },
+        {
+          "offer_id": "ACC-009-OFF-002",
+          "supplier_id": "SUP-023",
+          "supplier_name": "Westline Flow",
+          "price": 1300.0,
+          "currency": "USD",
+          "delivery_date": "2026-07-09",
+          "quality_score": 91,
+          "reliability_score": 91,
+          "valid_until": "2026-07-01"
+        },
+        {
+          "offer_id": "ACC-009-OFF-003",
+          "supplier_id": "SUP-024",
+          "supplier_name": "Zenith Tubing",
+          "price": 1500.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-10",
+          "quality_score": 86,
+          "reliability_score": 82,
+          "valid_until": "2026-07-01"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-010-quality-ignored",
+    "description": "Do not select a higher-priced offer only because it has a better quality score.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-010-OFF-001"
+    },
+    "request": {
+      "request_id": "ACC-REQ-010",
+      "plant_code": "PLANT-10",
+      "material_code": "MAT-CONTROLLER-010",
+      "material_description": "Motor controller module",
+      "quantity": 8,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-08-05",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-010-OFF-001",
+          "supplier_id": "SUP-025",
+          "supplier_name": "Arc Controls",
+          "price": 6400.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-01",
+          "quality_score": 70,
+          "reliability_score": 78,
+          "valid_until": "2026-07-20"
+        },
+        {
+          "offer_id": "ACC-010-OFF-002",
+          "supplier_id": "SUP-026",
+          "supplier_name": "Beacon Automation",
+          "price": 6900.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-30",
+          "quality_score": 100,
+          "reliability_score": 99,
+          "valid_until": "2026-07-20"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-011-valid-until-ignored",
+    "description": "Do not exclude an otherwise eligible offer because valid_until is earlier.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-011-OFF-001"
+    },
+    "request": {
+      "request_id": "ACC-REQ-011",
+      "plant_code": "PLANT-11",
+      "material_code": "MAT-FASTENER-011",
+      "material_description": "Titanium fastener pack",
+      "quantity": 200,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-18",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-011-OFF-001",
+          "supplier_id": "SUP-027",
+          "supplier_name": "Crest Fasteners",
+          "price": 980.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-14",
+          "quality_score": 82,
+          "reliability_score": 81,
+          "valid_until": "2026-06-01"
+        },
+        {
+          "offer_id": "ACC-011-OFF-002",
+          "supplier_id": "SUP-028",
+          "supplier_name": "Dove Metals",
+          "price": 1040.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-13",
+          "quality_score": 91,
+          "reliability_score": 92,
+          "valid_until": "2026-06-30"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-012-single-valid-among-many",
+    "description": "Select the only eligible offer among multiple excluded offers.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-012-OFF-004"
+    },
+    "request": {
+      "request_id": "ACC-REQ-012",
+      "plant_code": "PLANT-12",
+      "material_code": "MAT-ROTOR-012",
+      "material_description": "Rotor balancing kit",
+      "quantity": 3,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-07-08",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-012-OFF-001",
+          "supplier_id": "SUP-029",
+          "supplier_name": "Eagle Rotors",
+          "price": 8000.0,
+          "currency": "USD",
+          "delivery_date": "2026-07-01",
+          "quality_score": 95,
+          "reliability_score": 95,
+          "valid_until": "2026-06-25"
+        },
+        {
+          "offer_id": "ACC-012-OFF-002",
+          "supplier_id": "SUP-030",
+          "supplier_name": "Fjord Balance",
+          "price": 7800.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-09",
+          "quality_score": 96,
+          "reliability_score": 96,
+          "valid_until": "2026-06-25"
+        },
+        {
+          "offer_id": "ACC-012-OFF-003",
+          "supplier_id": "SUP-031",
+          "supplier_name": "Globe Systems",
+          "price": 7600.0,
+          "currency": "GBP",
+          "delivery_date": "2026-07-06",
+          "quality_score": 94,
+          "reliability_score": 94,
+          "valid_until": "2026-06-25"
+        },
+        {
+          "offer_id": "ACC-012-OFF-004",
+          "supplier_id": "SUP-032",
+          "supplier_name": "Halo Precision",
+          "price": 8200.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-07",
+          "quality_score": 83,
+          "reliability_score": 80,
+          "valid_until": "2026-06-25"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-013-usd-request",
+    "description": "Use the request currency when it is USD instead of EUR.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-013-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-013",
+      "plant_code": "PLANT-13",
+      "material_code": "MAT-BATTERY-013",
+      "material_description": "Auxiliary battery module",
+      "quantity": 16,
+      "unit_of_measure": "EA",
+      "currency": "USD",
+      "required_delivery_date": "2026-08-18",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-013-OFF-001",
+          "supplier_id": "SUP-033",
+          "supplier_name": "Iris Energy",
+          "price": 15600.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-10",
+          "quality_score": 92,
+          "reliability_score": 90,
+          "valid_until": "2026-08-01"
+        },
+        {
+          "offer_id": "ACC-013-OFF-002",
+          "supplier_id": "SUP-034",
+          "supplier_name": "Jade Battery",
+          "price": 15800.0,
+          "currency": "USD",
+          "delivery_date": "2026-08-14",
+          "quality_score": 87,
+          "reliability_score": 86,
+          "valid_until": "2026-08-01"
+        },
+        {
+          "offer_id": "ACC-013-OFF-003",
+          "supplier_id": "SUP-035",
+          "supplier_name": "Keystone Cells",
+          "price": 16200.0,
+          "currency": "USD",
+          "delivery_date": "2026-08-12",
+          "quality_score": 96,
+          "reliability_score": 98,
+          "valid_until": "2026-08-01"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-014-decimal-prices",
+    "description": "Compare decimal prices precisely enough to select the lower price.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-014-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-014",
+      "plant_code": "PLANT-14",
+      "material_code": "MAT-GASKET-014",
+      "material_description": "Micro gasket assortment",
+      "quantity": 75,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-28",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-014-OFF-001",
+          "supplier_id": "SUP-036",
+          "supplier_name": "Lattice Seals",
+          "price": 1000.25,
+          "currency": "EUR",
+          "delivery_date": "2026-06-25",
+          "quality_score": 88,
+          "reliability_score": 94,
+          "valid_until": "2026-06-15"
+        },
+        {
+          "offer_id": "ACC-014-OFF-002",
+          "supplier_id": "SUP-037",
+          "supplier_name": "Matrix Elastomers",
+          "price": 1000.24,
+          "currency": "EUR",
+          "delivery_date": "2026-06-26",
+          "quality_score": 86,
+          "reliability_score": 80,
+          "valid_until": "2026-06-15"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-015-zero-price-eligible",
+    "description": "Allow and select a zero-price eligible offer because the schema permits price zero.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-015-OFF-001"
+    },
+    "request": {
+      "request_id": "ACC-REQ-015",
+      "plant_code": "PLANT-15",
+      "material_code": "MAT-SAMPLE-015",
+      "material_description": "Qualification sample kit",
+      "quantity": 1,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-20",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-015-OFF-001",
+          "supplier_id": "SUP-038",
+          "supplier_name": "North Trial Supply",
+          "price": 0.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-18",
+          "quality_score": 72,
+          "reliability_score": 70,
+          "valid_until": "2026-06-12"
+        },
+        {
+          "offer_id": "ACC-015-OFF-002",
+          "supplier_id": "SUP-039",
+          "supplier_name": "Oak Materials",
+          "price": 50.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-17",
+          "quality_score": 99,
+          "reliability_score": 99,
+          "valid_until": "2026-06-12"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-016-lower-price-beats-faster-delivery",
+    "description": "Select lower price even when another eligible offer delivers earlier.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-016-OFF-002"
+    },
+    "request": {
+      "request_id": "ACC-REQ-016",
+      "plant_code": "PLANT-16",
+      "material_code": "MAT-COUPLING-016",
+      "material_description": "Flexible shaft coupling",
+      "quantity": 14,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-07-22",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-016-OFF-001",
+          "supplier_id": "SUP-040",
+          "supplier_name": "Pioneer Couplings",
+          "price": 2600.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-12",
+          "quality_score": 93,
+          "reliability_score": 96,
+          "valid_until": "2026-07-05"
+        },
+        {
+          "offer_id": "ACC-016-OFF-002",
+          "supplier_id": "SUP-041",
+          "supplier_name": "Quartz Motion",
+          "price": 2400.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-21",
+          "quality_score": 82,
+          "reliability_score": 78,
+          "valid_until": "2026-07-05"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-017-lower-price-beats-reliability",
+    "description": "Select lower price even when another eligible offer is more reliable.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-017-OFF-001"
+    },
+    "request": {
+      "request_id": "ACC-REQ-017",
+      "plant_code": "PLANT-17",
+      "material_code": "MAT-INVERTER-017",
+      "material_description": "Inverter cabinet",
+      "quantity": 2,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-09-15",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-017-OFF-001",
+          "supplier_id": "SUP-042",
+          "supplier_name": "Relay Power",
+          "price": 22100.0,
+          "currency": "EUR",
+          "delivery_date": "2026-09-12",
+          "quality_score": 80,
+          "reliability_score": 70,
+          "valid_until": "2026-09-01"
+        },
+        {
+          "offer_id": "ACC-017-OFF-002",
+          "supplier_id": "SUP-043",
+          "supplier_name": "Summit Drives",
+          "price": 23000.0,
+          "currency": "EUR",
+          "delivery_date": "2026-09-10",
+          "quality_score": 98,
+          "reliability_score": 100,
+          "valid_until": "2026-09-01"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-018-four-offer-tie-break",
+    "description": "Apply tie-breakers across a larger set of eligible offers.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-018-OFF-003"
+    },
+    "request": {
+      "request_id": "ACC-REQ-018",
+      "plant_code": "PLANT-18",
+      "material_code": "MAT-RAIL-018",
+      "material_description": "Linear guide rail",
+      "quantity": 9,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-08-28",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-018-OFF-001",
+          "supplier_id": "SUP-044",
+          "supplier_name": "Terra Rails",
+          "price": 6100.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-24",
+          "quality_score": 89,
+          "reliability_score": 87,
+          "valid_until": "2026-08-10"
+        },
+        {
+          "offer_id": "ACC-018-OFF-002",
+          "supplier_id": "SUP-045",
+          "supplier_name": "Unity Motion",
+          "price": 5900.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-20",
+          "quality_score": 94,
+          "reliability_score": 88,
+          "valid_until": "2026-08-10"
+        },
+        {
+          "offer_id": "ACC-018-OFF-003",
+          "supplier_id": "SUP-046",
+          "supplier_name": "Vista Linear",
+          "price": 5900.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-26",
+          "quality_score": 92,
+          "reliability_score": 91,
+          "valid_until": "2026-08-10"
+        },
+        {
+          "offer_id": "ACC-018-OFF-004",
+          "supplier_id": "SUP-047",
+          "supplier_name": "Wave Mechanics",
+          "price": 5900.0,
+          "currency": "EUR",
+          "delivery_date": "2026-08-18",
+          "quality_score": 90,
+          "reliability_score": 85,
+          "valid_until": "2026-08-10"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-019-equal-final-tie-deterministic",
+    "description": "When final policy criteria are tied, the guardrail deterministically selects the lowest offer_id.",
+    "expected": {
+      "status": "selected_offer",
+      "offer_id": "ACC-019-OFF-001"
+    },
+    "request": {
+      "request_id": "ACC-REQ-019",
+      "plant_code": "PLANT-19",
+      "material_code": "MAT-BRACKET-019",
+      "material_description": "Mounting bracket set",
+      "quantity": 32,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-07-30",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-019-OFF-002",
+          "supplier_id": "SUP-048",
+          "supplier_name": "Xenon Fabrication",
+          "price": 2700.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-25",
+          "quality_score": 88,
+          "reliability_score": 86,
+          "valid_until": "2026-07-12"
+        },
+        {
+          "offer_id": "ACC-019-OFF-001",
+          "supplier_id": "SUP-049",
+          "supplier_name": "Yarrow Frames",
+          "price": 2700.0,
+          "currency": "EUR",
+          "delivery_date": "2026-07-25",
+          "quality_score": 91,
+          "reliability_score": 86,
+          "valid_until": "2026-07-12"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "ACC-020-no-valid-mixed-reasons",
+    "description": "Return no valid offers when each offer is excluded by currency, lateness, or both.",
+    "expected": {
+      "status": "no_valid_offers",
+      "offer_id": null
+    },
+    "request": {
+      "request_id": "ACC-REQ-020",
+      "plant_code": "PLANT-20",
+      "material_code": "MAT-ENCLOSURE-020",
+      "material_description": "Sealed electrical enclosure",
+      "quantity": 7,
+      "unit_of_measure": "EA",
+      "currency": "EUR",
+      "required_delivery_date": "2026-06-22",
+      "evaluation_policy_id": "standard-urgent-procurement-v1",
+      "offers": [
+        {
+          "offer_id": "ACC-020-OFF-001",
+          "supplier_id": "SUP-050",
+          "supplier_name": "Zephyr Boxes",
+          "price": 3300.0,
+          "currency": "USD",
+          "delivery_date": "2026-06-20",
+          "quality_score": 93,
+          "reliability_score": 93,
+          "valid_until": "2026-06-10"
+        },
+        {
+          "offer_id": "ACC-020-OFF-002",
+          "supplier_id": "SUP-051",
+          "supplier_name": "Atlas Enclosures",
+          "price": 3200.0,
+          "currency": "EUR",
+          "delivery_date": "2026-06-23",
+          "quality_score": 91,
+          "reliability_score": 91,
+          "valid_until": "2026-06-10"
+        },
+        {
+          "offer_id": "ACC-020-OFF-003",
+          "supplier_id": "SUP-052",
+          "supplier_name": "Boreal Housings",
+          "price": 3100.0,
+          "currency": "GBP",
+          "delivery_date": "2026-06-24",
+          "quality_score": 89,
+          "reliability_score": 89,
+          "valid_until": "2026-06-10"
+        }
+      ]
+    }
+  }
+]
+
