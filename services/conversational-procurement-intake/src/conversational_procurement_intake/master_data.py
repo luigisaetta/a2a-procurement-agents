@@ -126,23 +126,38 @@ class StaticMasterDataResolver:
     async def resolve_part(self, text: str) -> list[PartRecord]:
         """Resolve a part reference against static records."""
 
-        normalized = _normalize(text)
-        return [
-            part
-            for part in self._parts
-            if part.is_active
-            and (
-                _normalize(part.part_code) in normalized
-                or _normalize(part.part_name) in normalized
-                or _normalize(part.category) in normalized
-            )
-        ]
+        return _ranked_part_matches(text, self._parts)
 
 
 def _normalize(value: str) -> str:
     """Normalize text for simple deterministic matching."""
 
     return value.casefold().replace("-", " ").strip()
+
+
+def _ranked_part_matches(text: str, parts: list[PartRecord]) -> list[PartRecord]:
+    """Resolve parts from specific identifiers before broad categories."""
+
+    normalized = _normalize(text)
+    active_parts = [part for part in parts if part.is_active]
+
+    code_matches = [
+        part for part in active_parts if _normalize(part.part_code) in normalized
+    ]
+    if code_matches:
+        return code_matches
+
+    name_matches = [
+        part for part in active_parts if _normalize(part.part_name) in normalized
+    ]
+    if name_matches:
+        return name_matches
+
+    return [
+        part
+        for part in active_parts
+        if _normalize(part.category) and _normalize(part.category) in normalized
+    ]
 
 
 class McpMasterDataResolver:
@@ -187,18 +202,8 @@ class McpMasterDataResolver:
     async def resolve_part(self, text: str) -> list[PartRecord]:
         """Resolve a part reference against MCP master data."""
 
-        normalized = _normalize(text)
         parts = await self._load_parts()
-        return [
-            part
-            for part in parts
-            if part.is_active
-            and (
-                _normalize(part.part_code) in normalized
-                or _normalize(part.part_name) in normalized
-                or _normalize(part.category) in normalized
-            )
-        ]
+        return _ranked_part_matches(text, parts)
 
     async def _load_parts(self) -> list[PartRecord]:
         """Load active parts from MCP once per service process."""

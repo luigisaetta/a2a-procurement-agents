@@ -332,9 +332,15 @@ async def _resolve_with_fallback(
 
     candidates = await resolver(primary_reference)
     fallback = conversation_text.strip()
-    if candidates or not fallback or fallback == primary_reference.strip():
+    if len(candidates) == 1 or not fallback or fallback == primary_reference.strip():
         return candidates
-    return await resolver(fallback)
+
+    fallback_candidates = await resolver(fallback)
+    if len(fallback_candidates) == 1:
+        return fallback_candidates
+    if not candidates:
+        return fallback_candidates
+    return candidates
 
 
 def _extract_quantity(text: str) -> float | None:

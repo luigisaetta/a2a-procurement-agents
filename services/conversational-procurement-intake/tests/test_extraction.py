@@ -187,7 +187,7 @@ async def test_extraction_falls_back_to_conversation_text_for_grounding() -> Non
         ),
         "operator@example.com",
         11,
-        ("Please start a tender for EV-DC-DC-009 at IT-TOR with final PO " "creation."),
+        "Please start a tender for EV-DC-DC-009 at IT-TOR with final PO creation.",
     )
 
     request = result.orchestration_request
@@ -196,13 +196,48 @@ async def test_extraction_falls_back_to_conversation_text_for_grounding() -> Non
     assert request.parts[0].plant_code == "IT-TOR"
 
 
-class _FakeMcpResult:
+@pytest.mark.anyio
+async def test_extraction_prefers_specific_part_name_over_category_matches() -> None:
+    """Resolve the UI sample part even when several active battery parts exist."""
+
+    result = await build_extraction_result(
+        CandidateIntakeFields(
+            material_reference="battery modules",
+            plant_reference="Munich plant",
+            quantity=10,
+            required_delivery_date=date(2026, 6, 15),
+            response_deadline=datetime(2026, 5, 29, 12, 0, tzinfo=UTC),
+            auto_create_purchase_order=True,
+            max_suppliers_per_part=3,
+            allowed_regions=["Europe"],
+        ),
+        McpMasterDataResolver(
+            "http://mcp.example/mcp",
+            client_factory=_FakeBatteryCatalogMcpClient,
+        ),
+        "operator@example.com",
+        12,
+        (
+            "We need 10 high density battery modules for the Munich plant by "
+            "June 15. Bid deadline May 29 at 12. Ask up to 3 European suppliers "
+            "and create the purchase order automatically."
+        ),
+    )
+
+    request = result.orchestration_request
+    assert request is not None
+    assert result.ambiguities == []
+    assert request.parts[0].part_id == "PART-001"
+    assert request.parts[0].material_code == "EV-BAT-MOD-001"
+
+
+class _FakeMcpResult:  # pylint: disable=too-few-public-methods
     """Fake FastMCP result carrying structured content."""
 
     def __init__(self, structured_content: dict) -> None:
         """Initialize the fake result."""
 
-        self.structuredContent = structured_content
+        setattr(self, "structuredContent", structured_content)
 
 
 class _FakeMcpClient:
@@ -251,6 +286,57 @@ class _FakeMcpClient:
                             "plant_name": "LuxEV Turin Assembly Plant",
                             "city": "Turin",
                             "country_code": "IT",
+                            "is_active": True,
+                        }
+                    ]
+                }
+            )
+        raise AssertionError(f"Unexpected tool call: {name}")
+
+
+class _FakeBatteryCatalogMcpClient(
+    _FakeMcpClient
+):  # pylint: disable=too-few-public-methods
+    """Fake MCP client with multiple battery category matches."""
+
+    async def call_tool(self, name: str, _arguments: dict) -> _FakeMcpResult:
+        """Return fake master data with an exact part-name match and broad matches."""
+
+        if name == "list_parts":
+            return _FakeMcpResult(
+                {
+                    "items": [
+                        {
+                            "part_id": "PART-001",
+                            "part_code": "EV-BAT-MOD-001",
+                            "part_name": "High Density Battery Module",
+                            "description": "Modular lithium battery pack segment",
+                            "category": "battery",
+                            "unit_of_measure": "EA",
+                            "is_active": True,
+                        },
+                        {
+                            "part_id": "PART-002",
+                            "part_code": "EV-BAT-CELL-002",
+                            "part_name": "Prismatic Battery Cell",
+                            "description": "High energy density prismatic cell",
+                            "category": "battery",
+                            "unit_of_measure": "EA",
+                            "is_active": True,
+                        },
+                    ]
+                }
+            )
+        if name == "list_plants":
+            return _FakeMcpResult(
+                {
+                    "items": [
+                        {
+                            "plant_id": "PLANT-001",
+                            "plant_code": "DE-MUN",
+                            "plant_name": "LuxEV Munich Assembly Plant",
+                            "city": "Munich",
+                            "country_code": "DE",
                             "is_active": True,
                         }
                     ]
