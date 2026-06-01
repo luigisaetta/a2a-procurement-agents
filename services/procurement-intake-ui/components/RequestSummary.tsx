@@ -97,13 +97,13 @@ export function RequestSummary({
                   <input
                     aria-label={`Quantity for ${part.material_description}`}
                     disabled={!isEditable}
-                    min="0.01"
+                    min="1"
                     onChange={(event) =>
-                      updatePart(index, { quantity: Number(event.target.value) })
+                      updatePart(index, { quantity: toPositiveInteger(event.target.value) })
                     }
-                    step="0.01"
+                    step="1"
                     type="number"
-                    value={String(part.quantity)}
+                    value={String(Math.trunc(part.quantity))}
                   />
                   <strong>{part.unit_of_measure}</strong>
                 </div>
@@ -199,6 +199,14 @@ function toDateTimeLocalValue(value: string): string {
   }
   const offsetMilliseconds = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offsetMilliseconds).toISOString().slice(0, 16);
+}
+
+function toPositiveInteger(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed < 1) {
+    return 1;
+  }
+  return parsed;
 }
 
 function humanize(value: string): string {
