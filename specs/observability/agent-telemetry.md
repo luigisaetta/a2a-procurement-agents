@@ -232,6 +232,23 @@ Telemetry must be disabled by default for local development and tests.
 
 Tests must be able to run without an external OpenTelemetry Collector.
 
+## Local Docker Compose Collector
+
+The Docker Compose deployment provides an optional `observability` profile that runs a local OpenTelemetry Collector, Prometheus, and Grafana.
+
+The collector accepts OTLP traffic on:
+
+- gRPC port `4317`
+- HTTP port `4318`
+
+The collector exposes a Prometheus metrics endpoint on port `9464`.
+
+Prometheus scrapes that collector endpoint and is exposed locally on port `9090`.
+
+Grafana is exposed locally on port `3001` with a preconfigured Prometheus datasource and starter agent telemetry dashboard.
+
+This collector is a deployment boundary only. Agents remain coupled to Locus and OpenTelemetry contracts, not to a specific dashboard or backend.
+
 ---
 
 # Error Categories

@@ -41,6 +41,11 @@ services:
       OCI_COMPARTMENT_ID: ${OCI_COMPARTMENT_ID}
       OCI_PROFILE: ${OCI_PROFILE:-DEFAULT}
       OFFER_EVALUATION_AGENT_PORT: ${OFFER_EVALUATION_AGENT_PORT:-8001}
+      OFFER_EVALUATION_AGENT_TELEMETRY_ENABLED: ${OFFER_EVALUATION_AGENT_TELEMETRY_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-otlp}
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=local}
       AGENT_API_KEY: ${AGENT_API_KEY}
     ports:
       - "${OFFER_EVALUATION_AGENT_PORT:-8001}:${OFFER_EVALUATION_AGENT_PORT:-8001}"
@@ -57,6 +62,11 @@ services:
     image: a2a-procurement/procurement-orchestrator:local
     environment:
       PROCUREMENT_ORCHESTRATOR_PORT: ${PROCUREMENT_ORCHESTRATOR_PORT:-8003}
+      PROCUREMENT_ORCHESTRATOR_TELEMETRY_ENABLED: ${PROCUREMENT_ORCHESTRATOR_TELEMETRY_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-otlp}
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=local}
       AGENT_API_KEY: ${AGENT_API_KEY:-}
       BID_COLLECTION_AGENT_URL: ${BID_COLLECTION_AGENT_URL:-http://bid-collection-agent:8000}
       OFFER_EVALUATION_AGENT_URL: ${OFFER_EVALUATION_AGENT_URL:-http://offer-evaluation-agent:8001}
@@ -124,6 +134,11 @@ services:
     image: a2a-procurement/bid-collection-agent:local
     environment:
       BID_COLLECTION_AGENT_PORT: ${BID_COLLECTION_AGENT_PORT:-8000}
+      BID_COLLECTION_AGENT_TELEMETRY_ENABLED: ${BID_COLLECTION_AGENT_TELEMETRY_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-otlp}
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=local}
       AGENT_API_KEY: ${AGENT_API_KEY:-}
       PROCUREMENT_DATA_MCP_URL: ${PROCUREMENT_DATA_MCP_URL:-http://procurement-data-mcp:8011/mcp}
       PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS: ${PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS:-10}
@@ -168,9 +183,65 @@ services:
       OCI_MODEL_ID: ${OCI_MODEL_ID}
       OCI_COMPARTMENT_ID: ${OCI_COMPARTMENT_ID}
       PURCHASE_ORDER_AGENT_PORT: ${PURCHASE_ORDER_AGENT_PORT:-8002}
+      PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED: ${PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-otlp}
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=local}
       AGENT_API_KEY: ${AGENT_API_KEY}
     ports:
       - "${PURCHASE_ORDER_AGENT_PORT:-8002}:${PURCHASE_ORDER_AGENT_PORT:-8002}"
 
+  otel-collector:
+    profiles:
+      - observability
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    command:
+      - "--config=/etc/otelcol-contrib/config.yaml"
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+      - "${OTEL_PROMETHEUS_PORT:-9464}:9464"
+
+  prometheus:
+    profiles:
+      - observability
+    image: prom/prometheus:v2.55.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  grafana:
+    profiles:
+      - observability
+    image: grafana/grafana:11.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+
 volumes:
   mysql-data:
+  prometheus-data:
+  grafana-data:

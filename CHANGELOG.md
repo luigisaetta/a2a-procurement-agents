@@ -2,6 +2,14 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-06-01
+
+- Extended the Docker Compose `observability` profile with Prometheus and Grafana, including provisioned Prometheus scraping, Grafana datasource configuration, and a starter A2A agent telemetry dashboard.
+- Added dedicated Docker Compose observability documentation covering telemetry enablement, startup, verification, Grafana access, and troubleshooting.
+- Added an optional Docker Compose OpenTelemetry Collector profile with OTLP gRPC/HTTP receivers, debug export, and a Prometheus metrics endpoint for Locus-native agent telemetry.
+- Wired Docker Compose telemetry environment variables for the Procurement Orchestrator, Bid Collection Agent, Offer Evaluation Agent, and Purchase Order Agent while keeping telemetry disabled by default.
+- Updated the Agent Telemetry specification with the local Docker Compose collector deployment boundary.
+
 ## 2026-05-31
 
 - Extended Locus lifecycle telemetry hook integration to the Procurement Orchestrator, Bid Collection Agent, and Offer Evaluation Agent, keeping telemetry opt-in per service and adding hook lifecycle tests.

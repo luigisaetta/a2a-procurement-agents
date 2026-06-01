@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: A2A Procurement Agents
+    orgId: 1
+    folder: A2A Procurement
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

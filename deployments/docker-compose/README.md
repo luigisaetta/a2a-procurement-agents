@@ -12,6 +12,7 @@ The current compose stack runs:
 - Procurement Orchestrator on port `8003`
 - Conversational Procurement Intake Layer on port `8012`
 - Procurement Intake Web UI on port `3000` when the optional `ui` profile is enabled
+- OpenTelemetry Collector, Prometheus, and Grafana when the optional `observability` profile is enabled
 
 The agents are built as independent containers and communicate through their A2A HTTP contracts. The Bid Collection Agent reads supplier master data through the Procurement Data MCP Server. The Procurement Orchestrator calls the Bid Collection, Offer Evaluation, and Purchase Order agents through A2A.
 
@@ -52,6 +53,17 @@ For the end-to-end demo, update:
 `OCI_CONFIG_DIR` must point to the local directory containing the OCI config and API key files. The compose stack mounts it read-only at `/root/.oci` for the Offer Evaluation Agent and Conversational Procurement Intake Layer.
 
 The remaining values in `.env.example` have local-demo defaults. Override them only when a port, database password, or internal service URL conflicts with your environment.
+
+Telemetry is disabled by default. To enable the Locus-native OpenTelemetry metrics for the four A2A agents, set the relevant service flags to `true`:
+
+```env
+PROCUREMENT_ORCHESTRATOR_TELEMETRY_ENABLED=true
+BID_COLLECTION_AGENT_TELEMETRY_ENABLED=true
+OFFER_EVALUATION_AGENT_TELEMETRY_ENABLED=true
+PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED=true
+```
+
+The default OTLP endpoint is `http://otel-collector:4317`, which is available when the `observability` Compose profile is running. See [OBSERVABILITY.md](OBSERVABILITY.md) for the full Collector, Prometheus, and Grafana setup.
 
 The end-to-end demo client needs only:
 
@@ -98,6 +110,18 @@ To include the UI container as well:
 docker compose --profile ui up -d --build
 ```
 
+To include the local OpenTelemetry Collector as well:
+
+```bash
+docker compose --profile observability up -d --build
+```
+
+To include both optional profiles:
+
+```bash
+docker compose --profile observability --profile ui up -d --build
+```
+
 For the recommended local UI test when Docker Hub cannot pull `node:22-slim`, start the backend stack with Compose and run the UI from the repository root in a second shell:
 
 ```bash
@@ -139,6 +163,26 @@ The Procurement Intake Web UI is available at this URL when either the `ui` Comp
 
 ```text
 http://127.0.0.1:3000
+```
+
+When the `observability` profile is running, the OpenTelemetry Collector accepts OTLP traffic on:
+
+```text
+http://127.0.0.1:4317
+http://127.0.0.1:4318
+```
+
+It also exposes collected metrics in Prometheus format at:
+
+```text
+http://127.0.0.1:9464/metrics
+```
+
+Prometheus and Grafana are available at:
+
+```text
+http://127.0.0.1:9090
+http://127.0.0.1:3001
 ```
 
 The MCP endpoint is available at:
@@ -273,6 +317,12 @@ docker compose logs -f \
   bid-collection-agent \
   offer-evaluation-agent \
   purchase-order-agent
+```
+
+Follow the OpenTelemetry Collector output when the `observability` profile is enabled:
+
+```bash
+docker compose --profile observability logs -f otel-collector
 ```
 
 ## Notes
