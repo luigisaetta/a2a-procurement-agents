@@ -34,6 +34,28 @@ admin / admin
 
 Override them through `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`.
 
+## Port Map
+
+The base Compose stack plus the `observability` profile uses these host ports by default:
+
+| Host port | Service | Profile | Purpose | Environment variable |
+| --- | --- | --- | --- | --- |
+| `3306` | MySQL | base | Demo procurement database | `MYSQL_PORT` |
+| `8011` | Procurement Data MCP Server | base | MCP streamable HTTP endpoint | `PROCUREMENT_DATA_MCP_PORT` |
+| `8000` | Bid Collection Agent | base | A2A HTTP endpoint | `BID_COLLECTION_AGENT_PORT` |
+| `8001` | Offer Evaluation Agent | base | A2A HTTP endpoint | `OFFER_EVALUATION_AGENT_PORT` |
+| `8002` | Purchase Order Agent | base | A2A HTTP endpoint | `PURCHASE_ORDER_AGENT_PORT` |
+| `8003` | Procurement Orchestrator | base | A2A HTTP endpoint | `PROCUREMENT_ORCHESTRATOR_PORT` |
+| `8012` | Conversational Procurement Intake | base | HTTP API and SSE | `CONVERSATIONAL_INTAKE_PORT` |
+| `3000` | Procurement Intake UI | `ui` | Next.js web UI | `PROCUREMENT_INTAKE_UI_PORT` |
+| `4317` | OpenTelemetry Collector | `observability` | OTLP gRPC receiver | `OTEL_GRPC_PORT` |
+| `4318` | OpenTelemetry Collector | `observability` | OTLP HTTP receiver | `OTEL_HTTP_PORT` |
+| `9464` | OpenTelemetry Collector | `observability` | Prometheus metrics exporter | `OTEL_PROMETHEUS_PORT` |
+| `9090` | Prometheus | `observability` | Prometheus UI and query API | `PROMETHEUS_PORT` |
+| `3001` | Grafana | `observability` | Grafana web UI | `GRAFANA_PORT` |
+
+The `ui` profile is independent from `observability`. Use both profiles when you want the browser UI and the observability stack in the same run.
+
 ## Configuration
 
 Copy the example environment file if needed:
