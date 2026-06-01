@@ -305,7 +305,7 @@ When `auto_create_purchase_order` is `true` and a selected offer exists, the orc
 Mapping rules:
 
 - `request_id` comes from the orchestration request
-- `purchase_order_id` is generated deterministically from `request_id` and `part_id`
+- `purchase_order_id` may be omitted so the Purchase Order Agent can allocate the official purchase order number
 - `plant_code` comes from the requested part
 - `supplier` comes from the selected offer
 - `line_items[0].material_code` comes from the requested part

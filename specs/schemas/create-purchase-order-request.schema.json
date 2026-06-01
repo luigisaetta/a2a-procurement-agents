@@ -7,7 +7,6 @@
   "additionalProperties": false,
   "required": [
     "request_id",
-    "purchase_order_id",
     "plant_code",
     "supplier",
     "line_items",
@@ -23,7 +22,7 @@
     "purchase_order_id": {
       "type": "string",
       "minLength": 1,
-      "description": "Internal purchase order identifier provided by the upstream workflow.",
+      "description": "Optional internal purchase order identifier provided by the upstream workflow. When omitted, the Purchase Order Agent allocates one through the configured backend.",
       "examples": ["PO-2026-0001"]
     },
     "plant_code": {
@@ -160,7 +159,6 @@
   "examples": [
     {
       "request_id": "REQ-2026-0001",
-      "purchase_order_id": "PO-2026-0001",
       "plant_code": "PLANT-01",
       "supplier": {
         "supplier_id": "SUP-002",
