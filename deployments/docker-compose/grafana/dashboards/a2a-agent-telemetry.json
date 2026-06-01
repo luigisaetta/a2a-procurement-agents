@@ -89,7 +89,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (agent_id, exported_job) (locus_invocations_total)",
-          "legendFormat": "{{exported_job}} {{agent_id}}",
+          "legendFormat": "{{agent_id}}",
           "range": true,
           "refId": "A"
         }
@@ -180,7 +180,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (agent_id, exported_job) (locus_invocations_total{success=\"False\"}) / sum by (agent_id, exported_job) (locus_invocations_total)",
-          "legendFormat": "{{exported_job}} {{agent_id}}",
+          "legendFormat": "{{agent_id}}",
           "range": true,
           "refId": "A"
         }
@@ -271,7 +271,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (agent_id, exported_job) (locus_invocation_duration_milliseconds_sum) / sum by (agent_id, exported_job) (locus_invocation_duration_milliseconds_count)",
-          "legendFormat": "{{exported_job}} {{agent_id}}",
+          "legendFormat": "{{agent_id}}",
           "range": true,
           "refId": "A"
         }

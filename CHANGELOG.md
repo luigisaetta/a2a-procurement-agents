@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Simplified Grafana dashboard legends to avoid repeated agent names.
 - Configured telemetry-enabled A2A agent servers to initialize OpenTelemetry SDK OTLP metric and trace exporters before creating Locus telemetry hooks.
 - Added Docker daemon preflight checks and Docker context selection support to the demo helper scripts.
 - Added an end-to-end demo checklist covering environment setup, startup, health checks, workflow invocation, UI verification, Grafana validation, logs, and troubleshooting.
