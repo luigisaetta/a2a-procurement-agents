@@ -5,6 +5,7 @@
 [![Pylint](https://img.shields.io/badge/lint-pylint-yellowgreen.svg)](https://github.com/pylint-dev/pylint)
 [![Pytest](https://img.shields.io/badge/tests-pytest-blueviolet.svg)](https://github.com/pytest-dev/pytest)
 [![A2A](https://img.shields.io/badge/protocol-A2A%20v1-orange.svg)](https://github.com/a2aproject/A2A)
+[![OpenTelemetry](https://img.shields.io/badge/observability-OpenTelemetry-ff6f00.svg)](https://opentelemetry.io/)
 
 Enterprise procurement is becoming too fast, too distributed, and too policy-heavy for a single monolithic assistant.
 

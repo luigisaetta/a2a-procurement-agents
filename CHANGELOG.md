@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Added an OpenTelemetry observability badge to the main README.
 - Extended the Docker Compose `observability` profile with Prometheus and Grafana, including provisioned Prometheus scraping, Grafana datasource configuration, and a starter A2A agent telemetry dashboard.
 - Added dedicated Docker Compose observability documentation covering telemetry enablement, port mapping, startup, verification, Grafana access, and troubleshooting.
 - Added an optional Docker Compose OpenTelemetry Collector profile with OTLP gRPC/HTTP receivers, debug export, and a Prometheus metrics endpoint for Locus-native agent telemetry.
