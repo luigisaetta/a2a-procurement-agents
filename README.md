@@ -97,6 +97,12 @@ Include both optional profiles:
 ./start_demo.sh --ui --observability
 ```
 
+If Docker Desktop uses a non-default context:
+
+```bash
+./start_demo.sh --docker-context desktop-linux --ui --observability
+```
+
 Stop the demo:
 
 ```bash

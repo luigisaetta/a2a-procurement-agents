@@ -11,6 +11,7 @@ Options:
   --ui                 Include the Procurement Intake Web UI profile.
   --observability      Include OpenTelemetry Collector, Prometheus, and Grafana.
                        Also enables telemetry for all A2A agents.
+  --docker-context CTX  Use a specific Docker context.
   --no-build           Start without rebuilding images.
   -h, --help           Show this help message.
 
@@ -29,6 +30,7 @@ ENV_FILE="${REPO_ROOT}/deployments/docker-compose/.env"
 INCLUDE_UI=false
 INCLUDE_OBSERVABILITY=false
 BUILD_FLAG="--build"
+DOCKER_CONTEXT_NAME="${DEMO_DOCKER_CONTEXT:-${DOCKER_CONTEXT:-}}"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -37,6 +39,14 @@ while [ "$#" -gt 0 ]; do
       ;;
     --observability)
       INCLUDE_OBSERVABILITY=true
+      ;;
+    --docker-context)
+      if [ "$#" -lt 2 ]; then
+        echo "Missing value for --docker-context." >&2
+        exit 2
+      fi
+      DOCKER_CONTEXT_NAME="$2"
+      shift
       ;;
     --no-build)
       BUILD_FLAG=""
@@ -67,6 +77,11 @@ set -a
 set +a
 
 COMPOSE_ARGS=(-f "${COMPOSE_FILE}")
+DOCKER_CMD=(docker)
+
+if [ -n "${DOCKER_CONTEXT_NAME}" ]; then
+  DOCKER_CMD+=(--context "${DOCKER_CONTEXT_NAME}")
+fi
 
 if [ "${INCLUDE_UI}" = true ]; then
   COMPOSE_ARGS+=(--profile ui)
@@ -89,10 +104,22 @@ if [ "${INCLUDE_OBSERVABILITY}" = true ]; then
   echo "Observability enabled: agent telemetry flags are set to true for this run."
 fi
 
+if ! "${DOCKER_CMD[@]}" info >/dev/null 2>&1; then
+  echo "Docker daemon is not reachable." >&2
+  echo "Start Docker Desktop or select the correct Docker context." >&2
+  echo "Available contexts:" >&2
+  docker context ls >&2 || true
+  echo >&2
+  echo "Examples:" >&2
+  echo "  ./start_demo.sh --docker-context desktop-linux --ui --observability" >&2
+  echo "  DEMO_DOCKER_CONTEXT=desktop-linux ./start_demo.sh --ui --observability" >&2
+  exit 1
+fi
+
 if [ -n "${BUILD_FLAG}" ]; then
-  docker compose "${COMPOSE_ARGS[@]}" up -d "${BUILD_FLAG}"
+  "${DOCKER_CMD[@]}" compose "${COMPOSE_ARGS[@]}" up -d "${BUILD_FLAG}"
 else
-  docker compose "${COMPOSE_ARGS[@]}" up -d
+  "${DOCKER_CMD[@]}" compose "${COMPOSE_ARGS[@]}" up -d
 fi
 
 echo

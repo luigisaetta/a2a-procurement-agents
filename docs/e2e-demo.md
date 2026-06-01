@@ -56,12 +56,24 @@ The default OTLP endpoint should remain:
 OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
 ```
 
+The default metric export interval is tuned for demos:
+
+```env
+OTEL_METRIC_EXPORT_INTERVAL=5000
+```
+
 ## Start Checklist
 
 Start the complete demo with UI and observability:
 
 ```bash
 ./start_demo.sh --ui --observability
+```
+
+If Docker Desktop uses a non-default context:
+
+```bash
+./start_demo.sh --docker-context desktop-linux --ui --observability
 ```
 
 Use this lighter variant when the UI container is not needed:

@@ -85,6 +85,12 @@ The default OpenTelemetry resource attributes are:
 OTEL_RESOURCE_ATTRIBUTES=deployment.environment=local
 ```
 
+The demo exports metrics every five seconds by default:
+
+```env
+OTEL_METRIC_EXPORT_INTERVAL=5000
+```
+
 ## Start
 
 From the repository root, use the demo helper:
@@ -99,6 +105,12 @@ To include the web UI as well:
 
 ```bash
 ./start_demo.sh --ui --observability
+```
+
+If Docker Desktop uses a non-default context:
+
+```bash
+./start_demo.sh --docker-context desktop-linux --ui --observability
 ```
 
 You can also run Docker Compose directly from the Docker Compose folder:

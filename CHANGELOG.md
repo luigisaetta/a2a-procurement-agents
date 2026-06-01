@@ -4,6 +4,8 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Configured telemetry-enabled A2A agent servers to initialize OpenTelemetry SDK OTLP metric and trace exporters before creating Locus telemetry hooks.
+- Added Docker daemon preflight checks and Docker context selection support to the demo helper scripts.
 - Added an end-to-end demo checklist covering environment setup, startup, health checks, workflow invocation, UI verification, Grafana validation, logs, and troubleshooting.
 - Added root-level `start_demo.sh` and `stop_demo.sh` helpers for the Docker Compose demo, including automatic A2A agent telemetry enablement when `--observability` is used.
 - Added an OpenTelemetry observability badge to the main README.

@@ -2,7 +2,7 @@
 A2A server entry point for the Purchase Order Agent.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-01
 License: MIT
 Description:    Builds the deterministic purchase order workflow and exposes
                 it through a Locus A2AServer.
@@ -11,6 +11,7 @@ Description:    Builds the deterministic purchase order workflow and exposes
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 
 from locus.a2a import A2AServer, AgentProvider, AgentSkill
@@ -23,7 +24,7 @@ TELEMETRY_ENABLED_ENV = "PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED"
 
 # Telemetry enablement intentionally mirrors other independent agents without
 # introducing shared runtime code between services.
-# pylint: disable=duplicate-code
+# pylint: disable=duplicate-code,import-outside-toplevel,too-many-locals
 
 
 def build_server(settings: Settings) -> A2AServer:
@@ -36,8 +37,12 @@ def build_server(settings: Settings) -> A2AServer:
         Configured Locus A2A server.
     """
 
+    telemetry_enabled = _telemetry_enabled()
+    if telemetry_enabled:
+        _configure_open_telemetry("purchase-order-agent")
+
     telemetry_hook = create_telemetry_hook(
-        enabled=_telemetry_enabled(),
+        enabled=telemetry_enabled,
         service_name="purchase-order-agent",
     )
     agent = build_workflow_agent(settings, hooks=[telemetry_hook])
@@ -78,6 +83,54 @@ def _telemetry_enabled() -> bool:
 
     value = os.environ.get(TELEMETRY_ENABLED_ENV, "false").strip().lower()
     return value in {"1", "true", "yes", "on"}
+
+
+def _configure_open_telemetry(service_name: str) -> None:
+    """Configure OpenTelemetry OTLP exporters for Locus telemetry."""
+
+    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
+    if not endpoint:
+        return
+
+    try:
+        from opentelemetry import metrics, trace
+        from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
+            OTLPMetricExporter,
+        )
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
+        from opentelemetry.sdk.metrics import MeterProvider
+        from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    except ImportError as exc:
+        logging.getLogger(__name__).warning(
+            "OpenTelemetry exporter unavailable: %s", exc
+        )
+        return
+
+    resource = Resource.create(
+        {"service.name": os.environ.get("OTEL_SERVICE_NAME", service_name)}
+    )
+    insecure = not endpoint.startswith("https://")
+    export_interval = int(os.environ.get("OTEL_METRIC_EXPORT_INTERVAL", "5000"))
+
+    metric_exporter = OTLPMetricExporter(endpoint=endpoint, insecure=insecure)
+    metric_reader = PeriodicExportingMetricReader(
+        metric_exporter,
+        export_interval_millis=export_interval,
+    )
+    metrics.set_meter_provider(
+        MeterProvider(resource=resource, metric_readers=[metric_reader])
+    )
+
+    trace_provider = TracerProvider(resource=resource)
+    trace_provider.add_span_processor(
+        BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint, insecure=insecure))
+    )
+    trace.set_tracer_provider(trace_provider)
 
 
 def main() -> None:

@@ -223,6 +223,7 @@ Required variables:
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP collector endpoint. If unset, telemetry export may be disabled locally. |
 | `OTEL_METRICS_EXPORTER` | `otlp` when endpoint is set | OpenTelemetry metrics exporter selection. |
 | `OTEL_TRACES_EXPORTER` | `otlp` when endpoint is set | OpenTelemetry traces exporter selection. |
+| `OTEL_METRIC_EXPORT_INTERVAL` | `5000` in Docker Compose | Metric export interval in milliseconds for local demo visibility. |
 | `OTEL_RESOURCE_ATTRIBUTES` | unset | Additional OpenTelemetry resource attributes. |
 | `DEPLOYMENT_ENVIRONMENT` | `local` | Value used for `deployment.environment`. |
 

@@ -103,6 +103,12 @@ To include the UI and observability stack:
 ./start_demo.sh --ui --observability
 ```
 
+If Docker Desktop uses a non-default context:
+
+```bash
+./start_demo.sh --docker-context desktop-linux --ui --observability
+```
+
 When `--observability` is used, the helper enables telemetry for all four A2A agents for that run.
 
 For a full end-to-end validation checklist, see [../../docs/e2e-demo.md](../../docs/e2e-demo.md).

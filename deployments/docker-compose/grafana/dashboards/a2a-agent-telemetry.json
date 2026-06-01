@@ -88,8 +88,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (agent_id, service_name) (increase(locus_invocations_total[5m]))",
-          "legendFormat": "{{service_name}} {{agent_id}}",
+          "expr": "sum by (agent_id, exported_job) (locus_invocations_total)",
+          "legendFormat": "{{exported_job}} {{agent_id}}",
           "range": true,
           "refId": "A"
         }
@@ -179,8 +179,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (agent_id, service_name) (increase(locus_invocations_total{success=\"False\"}[5m])) / sum by (agent_id, service_name) (increase(locus_invocations_total[5m]))",
-          "legendFormat": "{{service_name}} {{agent_id}}",
+          "expr": "sum by (agent_id, exported_job) (locus_invocations_total{success=\"False\"}) / sum by (agent_id, exported_job) (locus_invocations_total)",
+          "legendFormat": "{{exported_job}} {{agent_id}}",
           "range": true,
           "refId": "A"
         }
@@ -270,8 +270,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (agent_id, service_name) (rate(locus_invocation_duration_milliseconds_sum[5m])) / sum by (agent_id, service_name) (rate(locus_invocation_duration_milliseconds_count[5m]))",
-          "legendFormat": "{{service_name}} {{agent_id}}",
+          "expr": "sum by (agent_id, exported_job) (locus_invocation_duration_milliseconds_sum) / sum by (agent_id, exported_job) (locus_invocation_duration_milliseconds_count)",
+          "legendFormat": "{{exported_job}} {{agent_id}}",
           "range": true,
           "refId": "A"
         }
@@ -367,6 +367,6 @@
   "timezone": "browser",
   "title": "A2A Procurement Agent Telemetry",
   "uid": "a2a-procurement-agent-telemetry",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
