@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
+- Added a root-level presenter runbook for the full UI and observability demo, including startup, health checks, sample requests, Grafana review, troubleshooting, and shutdown.
 - Connected the Conversational Procurement Intake Layer to the Procurement Data MCP Server for plant and part grounding, keeping the static resolver as a local fallback and using the full conversation text when LLM candidate references are incomplete.
 - Moved the Grafana agent error panel to the bottom of the dashboard so operational and business counters stay first.
 - Changed the Grafana business counter panels to instant Prometheus queries so restart-era historical samples do not mask the current live counters.
