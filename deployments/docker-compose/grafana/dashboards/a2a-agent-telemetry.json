@@ -338,8 +338,9 @@
           },
           "editorMode": "code",
           "expr": "sum(locus_invocation_duration_milliseconds_count{agent_id=\"procurement-orchestrator\",success=\"True\"})",
+          "instant": true,
           "legendFormat": "workflows",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -401,8 +402,9 @@
           },
           "editorMode": "code",
           "expr": "clamp_max(sum(locus_invocation_duration_milliseconds_count{agent_id=\"purchase-order-agent\",success=\"True\"}), scalar(sum(locus_invocation_duration_milliseconds_count{agent_id=\"procurement-orchestrator\",success=\"True\"})))",
+          "instant": true,
           "legendFormat": "orchestrated purchase orders",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -429,6 +431,6 @@
   "timezone": "browser",
   "title": "A2A Procurement Agent Telemetry",
   "uid": "a2a-procurement-agent-telemetry",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
