@@ -2,6 +2,10 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-06-02
+
+- Added pragmatic A2A JSON Schema discovery endpoints to all A2A agents, documented the convention, and added tests for discovery mappings and served schemas.
+
 ## 2026-06-01
 
 - Fixed Purchase Order Agent MySQL schema handling by creating the current `purchase_orders` table shape from the start, widening persisted request and offer identifiers for generated workflow IDs, and rejecting incompatible legacy tables instead of recreating them implicitly.
