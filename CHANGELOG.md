@@ -4,7 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-01
 
-- Fixed Purchase Order Agent MySQL startup compatibility by lazily replacing an empty legacy `purchase_orders` table whose schema predates the current database-backed PO registration model and widening persisted request and offer identifiers for generated workflow IDs.
+- Fixed Purchase Order Agent MySQL schema handling by creating the current `purchase_orders` table shape from the start, widening persisted request and offer identifiers for generated workflow IDs, and rejecting incompatible legacy tables instead of recreating them implicitly.
 - Fixed conversational intake part grounding so the UI sample request resolves the specific High Density Battery Module instead of becoming ambiguous against all active battery parts.
 - Updated the agent catalog to reflect that the Agent Telemetry observability layer has an initial implementation, not only a draft specification.
 - Added a dedicated 20-case Offer Evaluation Agent accuracy suite with recorded expected winners and workflow-level result comparison.

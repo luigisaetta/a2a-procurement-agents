@@ -157,36 +157,11 @@ def test_mysql_po_system_rejects_idempotency_conflict() -> None:
     assert connection.inserted_purchase_order is None
 
 
-def test_mysql_po_system_recreates_empty_legacy_purchase_order_table() -> None:
-    """Replace an empty legacy purchase order table before persisting."""
-
-    connection = _FakeConnection(
-        sequence_value=43,
-        purchase_order_columns={"purchase_order_id", "request_id", "plant_id"},
-        purchase_order_count=0,
-    )
-    payload = _payload()
-    payload.pop("purchase_order_id")
-    request = CreatePurchaseOrderRequest.model_validate(payload)
-    client = PurchaseOrderSystemClient(
-        storage_backend="mysql",
-        connection_factory=lambda: connection,
-    )
-
-    response = client.register_purchase_order(request)
-
-    assert response.status == "registered"
-    assert connection.purchase_orders_dropped is True
-    assert connection.purchase_orders_created is True
-    assert connection.inserted_purchase_order is not None
-
-
-def test_mysql_po_system_rejects_non_empty_legacy_purchase_order_table() -> None:
-    """Avoid destructive migration when a legacy purchase order table has data."""
+def test_mysql_po_system_rejects_legacy_purchase_order_table() -> None:
+    """Reject a legacy purchase order table instead of recreating it implicitly."""
 
     connection = _FakeConnection(
         purchase_order_columns={"purchase_order_id", "request_id", "plant_id"},
-        purchase_order_count=1,
     )
     request = CreatePurchaseOrderRequest.model_validate(_payload())
     client = PurchaseOrderSystemClient(
@@ -199,7 +174,7 @@ def test_mysql_po_system_rejects_non_empty_legacy_purchase_order_table() -> None
     assert response.status == "failed"
     assert response.error.code == "STORAGE_UNAVAILABLE"
     assert "incompatible" in response.error.message
-    assert connection.purchase_orders_dropped is False
+    assert "explicit database migration" in response.error.message
     assert connection.inserted_purchase_order is None
 
 
@@ -346,7 +321,6 @@ class _FakeConnection:  # pylint: disable=too-many-instance-attributes
         sequence_value: int = 1,
         existing_purchase_order: dict[str, Any] | None = None,
         purchase_order_columns: set[str] | None = None,
-        purchase_order_count: int = 0,
     ) -> None:
         """Initialize fake connection state."""
 
@@ -355,10 +329,8 @@ class _FakeConnection:  # pylint: disable=too-many-instance-attributes
         self.purchase_order_columns = purchase_order_columns or set(
             _EXPECTED_PURCHASE_ORDER_COLUMNS
         )
-        self.purchase_order_count = purchase_order_count
         self.inserted_purchase_order: tuple[Any, ...] | None = None
         self.purchase_orders_created = False
-        self.purchase_orders_dropped = False
         self.identifier_lengths_altered = False
         self.commits = 0
         self.rollbacks = 0
@@ -409,9 +381,6 @@ class _FakeCursor:
         self._last_query = " ".join(query.split()).lower()
         if self._last_query.startswith("create table if not exists purchase_orders"):
             self._connection.purchase_orders_created = True
-        if self._last_query.startswith("drop table purchase_orders"):
-            self._connection.purchase_orders_dropped = True
-            self._connection.purchase_order_columns = set()
         if self._last_query.startswith("alter table purchase_orders"):
             self._connection.identifier_lengths_altered = True
         if self._last_query.startswith("insert into purchase_orders"):
@@ -422,8 +391,6 @@ class _FakeCursor:
 
         if "from purchase_orders" in self._last_query and self._dictionary:
             return self._connection.existing_purchase_order
-        if self._last_query.startswith("select count(*) from purchase_orders"):
-            return (self._connection.purchase_order_count,)
         if "last_insert_id" in self._last_query:
             return (self._connection.sequence_value,)
         return None

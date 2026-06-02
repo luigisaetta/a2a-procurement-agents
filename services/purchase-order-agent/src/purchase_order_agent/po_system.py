@@ -269,13 +269,11 @@ def _ensure_schema(connection: Any) -> None:
     if not existing_columns:
         _create_purchase_orders_table(connection)
     elif not _EXPECTED_PURCHASE_ORDER_COLUMNS.issubset(existing_columns):
-        if not _purchase_orders_is_empty(connection):
-            raise RuntimeError(
-                "Existing purchase_orders table is incompatible with the current "
-                "Purchase Order Agent schema and contains data."
-            )
-        _drop_purchase_orders_table(connection)
-        _create_purchase_orders_table(connection)
+        raise RuntimeError(
+            "Existing purchase_orders table is incompatible with the current "
+            "Purchase Order Agent schema. Recreate the local MySQL demo volume "
+            "or apply an explicit database migration."
+        )
     _ensure_purchase_order_identifier_lengths(connection)
 
 
@@ -335,24 +333,6 @@ def _purchase_order_table_columns(connection: Any) -> set[str]:
             """)
         rows = cursor.fetchall()
     return {str(row[0]) for row in rows}
-
-
-def _purchase_orders_is_empty(connection: Any) -> bool:
-    """Return whether the existing ``purchase_orders`` table has no rows."""
-
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM purchase_orders")
-        row = cursor.fetchone()
-    if not row:
-        return True
-    return int(row[0]) == 0
-
-
-def _drop_purchase_orders_table(connection: Any) -> None:
-    """Drop an empty incompatible purchase order persistence table."""
-
-    with connection.cursor() as cursor:
-        cursor.execute("DROP TABLE purchase_orders")
 
 
 def _fetch_existing_purchase_order(
