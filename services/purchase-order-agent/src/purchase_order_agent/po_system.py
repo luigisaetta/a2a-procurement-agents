@@ -23,6 +23,29 @@ from purchase_order_agent.models import (
     PurchaseOrderRegistration,
 )
 
+_EXPECTED_PURCHASE_ORDER_COLUMNS = {
+    "purchase_order_id",
+    "request_id",
+    "offer_id",
+    "supplier_id",
+    "supplier_name",
+    "plant_code",
+    "material_code",
+    "material_description",
+    "quantity",
+    "unit_of_measure",
+    "unit_price",
+    "total_amount",
+    "currency",
+    "requested_delivery_date",
+    "confirmed_delivery_date",
+    "status",
+    "external_reference",
+    "registered_at",
+    "created_at",
+    "updated_at",
+}
+
 
 class ConnectionFactory(Protocol):  # pylint: disable=too-few-public-methods
     """Callable that returns a DB-API compatible connection."""
@@ -231,8 +254,8 @@ def _ensure_schema(connection: Any) -> None:
         connection: DB-API compatible connection.
     """
 
-    statements = (
-        """
+    with connection.cursor() as cursor:
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS purchase_order_sequences (
           sequence_name VARCHAR(64) NOT NULL,
           next_value BIGINT NOT NULL,
@@ -240,12 +263,31 @@ def _ensure_schema(connection: Any) -> None:
             ON UPDATE CURRENT_TIMESTAMP,
           PRIMARY KEY (sequence_name)
         )
-        """,
-        """
+        """)
+
+    existing_columns = _purchase_order_table_columns(connection)
+    if not existing_columns:
+        _create_purchase_orders_table(connection)
+    elif not _EXPECTED_PURCHASE_ORDER_COLUMNS.issubset(existing_columns):
+        if not _purchase_orders_is_empty(connection):
+            raise RuntimeError(
+                "Existing purchase_orders table is incompatible with the current "
+                "Purchase Order Agent schema and contains data."
+            )
+        _drop_purchase_orders_table(connection)
+        _create_purchase_orders_table(connection)
+    _ensure_purchase_order_identifier_lengths(connection)
+
+
+def _create_purchase_orders_table(connection: Any) -> None:
+    """Create the current purchase order persistence table."""
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS purchase_orders (
           purchase_order_id VARCHAR(32) NOT NULL,
-          request_id VARCHAR(32) NOT NULL,
-          offer_id VARCHAR(32) NOT NULL,
+          request_id VARCHAR(64) NOT NULL,
+          offer_id VARCHAR(128) NOT NULL,
           supplier_id VARCHAR(32) NOT NULL,
           supplier_name VARCHAR(128) NOT NULL,
           plant_code VARCHAR(32) NOT NULL,
@@ -267,11 +309,50 @@ def _ensure_schema(connection: Any) -> None:
           PRIMARY KEY (purchase_order_id),
           UNIQUE KEY uq_purchase_orders_request_offer (request_id, offer_id)
         )
-        """,
-    )
+        """)
+
+
+def _ensure_purchase_order_identifier_lengths(connection: Any) -> None:
+    """Ensure persisted identifiers fit generated workflow identifiers."""
+
     with connection.cursor() as cursor:
-        for statement in statements:
-            cursor.execute(statement)
+        cursor.execute("""
+            ALTER TABLE purchase_orders
+              MODIFY request_id VARCHAR(64) NOT NULL,
+              MODIFY offer_id VARCHAR(128) NOT NULL
+            """)
+
+
+def _purchase_order_table_columns(connection: Any) -> set[str]:
+    """Return existing ``purchase_orders`` column names."""
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'purchase_orders'
+            """)
+        rows = cursor.fetchall()
+    return {str(row[0]) for row in rows}
+
+
+def _purchase_orders_is_empty(connection: Any) -> bool:
+    """Return whether the existing ``purchase_orders`` table has no rows."""
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM purchase_orders")
+        row = cursor.fetchone()
+    if not row:
+        return True
+    return int(row[0]) == 0
+
+
+def _drop_purchase_orders_table(connection: Any) -> None:
+    """Drop an empty incompatible purchase order persistence table."""
+
+    with connection.cursor() as cursor:
+        cursor.execute("DROP TABLE purchase_orders")
 
 
 def _fetch_existing_purchase_order(

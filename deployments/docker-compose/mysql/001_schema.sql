@@ -128,8 +128,8 @@ CREATE TABLE purchase_order_sequences (
 
 CREATE TABLE purchase_orders (
   purchase_order_id VARCHAR(32) NOT NULL,
-  request_id VARCHAR(32) NOT NULL,
-  offer_id VARCHAR(32) NOT NULL,
+  request_id VARCHAR(64) NOT NULL,
+  offer_id VARCHAR(128) NOT NULL,
   supplier_id VARCHAR(32) NOT NULL,
   supplier_name VARCHAR(128) NOT NULL,
   plant_code VARCHAR(32) NOT NULL,
