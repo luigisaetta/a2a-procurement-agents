@@ -15,6 +15,7 @@ import os
 from locus.a2a import A2AServer, AgentProvider, AgentSkill
 from locus.hooks.builtin.telemetry import create_telemetry_hook
 
+from procurement_orchestrator.business_telemetry import create_business_telemetry_hook
 from procurement_orchestrator.config import Settings, load_settings
 from procurement_orchestrator.logging_utils import configure_logging
 from procurement_orchestrator.pipeline import build_workflow_agent
@@ -44,7 +45,14 @@ def build_server(settings: Settings) -> A2AServer:
         enabled=telemetry_enabled,
         service_name="procurement-orchestrator",
     )
-    agent = build_workflow_agent(settings, hooks=[telemetry_hook])
+    business_telemetry_hook = create_business_telemetry_hook(
+        enabled=telemetry_enabled,
+        service_name="procurement-orchestrator",
+    )
+    agent = build_workflow_agent(
+        settings,
+        hooks=[telemetry_hook, business_telemetry_hook],
+    )
     server = A2AServer(
         agent=agent,
         name="procurement-orchestrator",

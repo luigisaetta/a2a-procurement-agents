@@ -8,6 +8,7 @@ Description:    Deterministic procurement orchestration workflow.
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from pathlib import Path
@@ -462,6 +463,12 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
                 float(request.timeouts.purchase_order_seconds),
             )
         )
+        self._record_purchase_order_business_metrics(
+            part=part,
+            bid_response=bid_response,
+            evaluation=evaluation,
+            po_response=po_response,
+        )
         events.append(
             _event(
                 request,
@@ -520,6 +527,47 @@ class ProcurementOrchestratorWorkflowAgent:  # pylint: disable=too-few-public-me
             status=event.status,
             event_payload=event.payload,
         )
+
+    def _record_purchase_order_business_metrics(
+        self,
+        *,
+        part: PartOrchestrationRequest,
+        bid_response: CollectBidsResponse,
+        evaluation: EvaluateOffersResponse,
+        po_response: CreatePurchaseOrderResponse,
+    ) -> None:
+        """Record optional business telemetry for a created purchase order."""
+
+        if po_response.status != "registered":
+            return
+
+        selected = evaluation.decision.selected_offer
+        total_amount = float(selected.get("price", 0))
+        currency = str(selected.get("currency", ""))
+        if total_amount <= 0 or not currency:
+            return
+
+        shipping_percentage = _percentage(
+            float(selected.get("shipping_cost", 0)),
+            total_amount,
+        )
+        price_deviation_percent = _selected_offer_deviation_percent(
+            selected,
+            _find_part_bid_result(bid_response, part.part_id),
+        )
+
+        for hook in self._hooks:
+            recorder = getattr(hook, "record_purchase_order_created", None)
+            if recorder is None:
+                continue
+            with suppress(Exception):
+                recorder(
+                    plant_code=part.plant_code,
+                    total_amount=total_amount,
+                    currency=currency,
+                    price_deviation_percent=price_deviation_percent,
+                    shipping_percentage=shipping_percentage,
+                )
 
 
 def build_workflow_agent(
@@ -781,6 +829,40 @@ def _purchase_order_result(
         ),
         error=error,
     )
+
+
+def _selected_offer_deviation_percent(
+    selected_offer: dict[str, Any],
+    part_bid: Any,
+) -> float | None:
+    """Return selected parts-cost deviation from average offered parts cost."""
+
+    if part_bid is None or not part_bid.offers:
+        return None
+
+    offer_costs = [
+        float(offer.parts_cost or offer.price)
+        for offer in part_bid.offers
+        if float(offer.parts_cost or offer.price) > 0
+    ]
+    if not offer_costs:
+        return None
+
+    selected_cost = float(
+        selected_offer.get("parts_cost") or selected_offer.get("price", 0)
+    )
+    average_cost = sum(offer_costs) / len(offer_costs)
+    if selected_cost <= 0 or average_cost <= 0:
+        return None
+    return _percentage(selected_cost - average_cost, average_cost)
+
+
+def _percentage(numerator: float, denominator: float) -> float | None:
+    """Return ``numerator / denominator`` as a percentage."""
+
+    if denominator <= 0:
+        return None
+    return round((numerator / denominator) * 100, 4)
 
 
 def _build_final_response(

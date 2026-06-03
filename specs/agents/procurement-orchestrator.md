@@ -504,6 +504,15 @@ It must participate in Locus lifecycle hooks so the built-in Locus `TelemetryHoo
 - workflow execution duration
 - workflow error count
 
+When telemetry is enabled and a purchase order is successfully registered, the
+orchestrator should also emit low-cardinality business metrics through a local
+business telemetry hook for:
+
+- purchase order count
+- purchase order amount by plant and currency
+- selected offer parts-cost deviation from the average offered parts cost by plant
+- selected offer shipping cost percentage by plant
+
 The Locus lifecycle hook bridge must be attached at the A2A workflow execution boundary or the narrowest equivalent local task-handler wrapper.
 
 The orchestrator should propagate OpenTelemetry trace context to downstream A2A calls when supported by Locus and the HTTP transport.

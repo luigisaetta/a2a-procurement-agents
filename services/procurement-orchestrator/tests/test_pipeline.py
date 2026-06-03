@@ -196,10 +196,11 @@ async def test_orchestrator_creates_purchase_order() -> None:
 
     client = FakeProcurementAgentClient()
     hook = _RecordingHook()
+    business_hook = _RecordingBusinessTelemetryHook()
     agent = ProcurementOrchestratorWorkflowAgent(
         _settings(),
         agent_client=client,
-        hooks=[hook],
+        hooks=[hook, business_hook],
     )
 
     events = [event async for event in agent.run(_request())]
@@ -215,6 +216,15 @@ async def test_orchestrator_creates_purchase_order() -> None:
     assert len(client.evaluate_calls) == 1
     assert len(client.purchase_order_calls) == 1
     assert "purchase_order_id" not in client.purchase_order_calls[0]["payload"]
+    assert business_hook.purchase_orders == [
+        {
+            "plant_code": "DE-MUN",
+            "total_amount": 1400.0,
+            "currency": "EUR",
+            "price_deviation_percent": 0.0,
+            "shipping_percentage": 7.1429,
+        }
+    ]
 
 
 @pytest.mark.anyio
@@ -276,6 +286,8 @@ def _offer(request_id: str, part: dict[str, Any]) -> dict[str, Any]:
         "offer_id": f"OFF-{request_id}-{part['part_id']}-SUP-001",
         "supplier_id": "SUP-001",
         "supplier_name": "VoltEdge Components",
+        "parts_cost": 1300.0,
+        "shipping_cost": 100.0,
         "price": 1400.0,
         "currency": "EUR",
         "delivery_date": "2026-06-14",
@@ -292,6 +304,8 @@ def _empty_offer() -> dict[str, Any]:
         "offer_id": "",
         "supplier_id": "",
         "supplier_name": "",
+        "parts_cost": 0,
+        "shipping_cost": 0,
         "price": 0,
         "currency": "",
         "delivery_date": "",
@@ -322,3 +336,34 @@ class _RecordingHook:
         self.after_success.append(success)
         self.after_agent_ids.append(state.agent_id)
         self.after_error_counts.append(len(state.errors))
+
+
+class _RecordingBusinessTelemetryHook(_RecordingHook):
+    """Record business telemetry calls for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize recorded telemetry calls."""
+
+        super().__init__()
+        self.purchase_orders: list[dict[str, Any]] = []
+
+    def record_purchase_order_created(
+        self,
+        *,
+        plant_code: str,
+        total_amount: float,
+        currency: str,
+        price_deviation_percent: float | None,
+        shipping_percentage: float | None,
+    ) -> None:
+        """Record one business purchase order metric call."""
+
+        self.purchase_orders.append(
+            {
+                "plant_code": plant_code,
+                "total_amount": total_amount,
+                "currency": currency,
+                "price_deviation_percent": price_deviation_percent,
+                "shipping_percentage": shipping_percentage,
+            }
+        )

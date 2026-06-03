@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-03
 
+- Added Procurement Orchestrator business telemetry metrics for purchase order count, purchase order amount by plant, selected offer price deviation by plant, and shipping cost percentage, with Grafana dashboard panels and observability documentation.
 - Fixed the Procurement Intake Web UI workflow status badge so it shows completed or failed after the terminal orchestration result arrives instead of returning to waiting.
 - Added part reference unit prices to the procurement data model and changed simulated supplier offer pricing to derive parts cost from MCP-backed reference prices, deterministic price variance, and separate shipping cost.
 - Fixed `run_e2e_demo_test.sh` so it handles empty argument arrays correctly under Bash with strict unset-variable checking.

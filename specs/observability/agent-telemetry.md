@@ -1,6 +1,6 @@
 # Agent Telemetry Specification
 
-Version: 0.1.0
+Version: 0.2.0
 
 Status: Draft
 
@@ -15,6 +15,11 @@ The goal is to make it simple to collect and later visualize operational metrics
 - how many times each agent has been invoked
 - average, minimum, and maximum execution time per agent
 - number of errors per agent
+
+The observability layer also defines a small set of business metrics emitted by
+the Procurement Orchestrator when a purchase order is successfully registered.
+These metrics are meant to enrich the Grafana dashboard with procurement
+outcomes while keeping A2A contracts unchanged.
 
 Telemetry must be emitted through the built-in Oracle Locus telemetry hook so the platform uses the runtime's native instrumentation wherever possible.
 
@@ -97,7 +102,9 @@ The baseline metric names are the native names emitted by the Locus `TelemetryHo
 
 Procurement dashboards must derive their agent-level views from these native Locus metrics and their service-level attributes.
 
-The project does not define custom `a2a.procurement.*` metrics in the initial implementation.
+Custom procurement business metrics may be emitted by a local business telemetry
+hook attached to the Procurement Orchestrator. These metrics must remain
+OpenTelemetry-first and must not be written directly to Grafana or Prometheus.
 
 ## Invocation Counter
 
@@ -150,6 +157,88 @@ Unit: `{error}`
 Description: Counts inbound payload validation failures that prevent normal task execution.
 
 This derived view is optional for the first implementation, but recommended because it explains why rejected requests may appear as failed executions.
+
+## Business Purchase Order Counter
+
+Name: `procurement.purchase_orders`
+
+Type: counter
+
+Unit: `{purchase_order}`
+
+Description: Counts purchase orders that the Procurement Orchestrator observes as successfully registered by the Purchase Order Agent.
+
+Required attributes:
+
+| Attribute | Example | Description |
+| --- | --- | --- |
+| `plant_code` | `DE-MUN` | Destination plant code. |
+| `currency` | `EUR` | Purchase order currency. |
+
+## Business Purchase Order Amount Counter
+
+Name: `procurement.purchase_order.amount`
+
+Type: counter
+
+Unit: `{currency}`
+
+Description: Accumulates the total monetary amount of successfully registered purchase orders.
+
+Required attributes:
+
+| Attribute | Example | Description |
+| --- | --- | --- |
+| `plant_code` | `DE-MUN` | Destination plant code. |
+| `currency` | `EUR` | Purchase order currency. |
+
+## Business Price Deviation Histogram
+
+Name: `procurement.purchase_order.price_deviation_percent`
+
+Type: histogram
+
+Unit: `%`
+
+Description: Records the selected offer parts-cost deviation from the average offered parts cost for the same evaluated part. The current implementation uses the offers already available to the Procurement Orchestrator and does not require the reference part price to be added to orchestration contracts.
+
+Formula:
+
+```text
+((selected_offer.parts_cost - average_offer.parts_cost) / average_offer.parts_cost) * 100
+```
+
+Required attributes:
+
+| Attribute | Example | Description |
+| --- | --- | --- |
+| `plant_code` | `DE-MUN` | Destination plant code. |
+
+Future versions may add a separate reference-price deviation metric when the
+part reference price is included in orchestration context or persisted workflow
+facts.
+
+## Business Shipping Percentage Histogram
+
+Name: `procurement.purchase_order.shipping_percentage`
+
+Type: histogram
+
+Unit: `%`
+
+Description: Records the selected offer shipping cost as a percentage of the selected offer total cost.
+
+Formula:
+
+```text
+(selected_offer.shipping_cost / selected_offer.price) * 100
+```
+
+Required attributes:
+
+| Attribute | Example | Description |
+| --- | --- | --- |
+| `plant_code` | `DE-MUN` | Destination plant code. |
 
 ---
 

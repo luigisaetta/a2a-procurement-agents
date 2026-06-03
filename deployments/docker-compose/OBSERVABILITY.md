@@ -134,7 +134,20 @@ The Locus telemetry hook emits native Locus metrics such as:
 - `locus.invocations`
 - `locus.invocation.duration`
 
+The Procurement Orchestrator also emits business metrics when telemetry is
+enabled and a purchase order is successfully registered:
+
+- `procurement.purchase_orders`
+- `procurement.purchase_order.amount`
+- `procurement.purchase_order.price_deviation_percent`
+- `procurement.purchase_order.shipping_percentage`
+
 When exported to Prometheus, metric names are normalized. For example, dotted names commonly appear with underscores, such as `locus_invocations_total`.
+Business metric examples commonly appear as
+`procurement_purchase_orders_total`,
+`procurement_purchase_order_amount_total`,
+`procurement_purchase_order_price_deviation_percent_sum`, and
+`procurement_purchase_order_shipping_percentage_sum`.
 
 ## Verify
 
