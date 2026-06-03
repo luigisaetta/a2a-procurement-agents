@@ -224,8 +224,22 @@ Core standards include:
 - Python code is formatted with `black`
 - Python code is linted with `pylint`
 - tests are written with `pytest`
+- the Procurement Intake Web UI passes TypeScript type checking
 - Python docstrings use Google docstring format
 - every meaningful change is documented in the changelog
+
+Run the repository quality gate before considering a development step complete:
+
+```bash
+./check.sh
+```
+
+The script runs `black --check`, `pylint`, `pytest`, and the Procurement Intake Web UI TypeScript typecheck. Python checks run through the `a2a-procurement-agents` conda environment. If UI dependencies are missing, install them first:
+
+```bash
+cd services/procurement-intake-ui
+npm ci
+```
 
 ## License
 

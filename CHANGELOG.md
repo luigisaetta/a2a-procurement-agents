@@ -2,6 +2,10 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-06-03
+
+- Added a root-level `check.sh` quality gate for black, pylint, pytest, and Procurement Intake Web UI TypeScript type checking, and documented it in the repository development standards.
+
 ## 2026-06-02
 
 - Added pragmatic A2A JSON Schema discovery endpoints to all A2A agents, documented the convention, and added tests for discovery mappings and served schemas.

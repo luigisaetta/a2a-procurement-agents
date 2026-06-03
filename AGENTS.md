@@ -235,6 +235,25 @@ Every development step must include tests.
 
 ---
 
+## Repository Quality Gate
+
+Run the root-level quality gate before considering a development step complete:
+
+```bash
+./check.sh
+```
+
+The script runs:
+
+- black format checking
+- pylint validation
+- pytest
+- Procurement Intake Web UI TypeScript type checking
+
+Python checks run through the `a2a-procurement-agents` conda environment.
+
+---
+
 # Definition of Done
 
 A task is considered DONE only if:
@@ -245,6 +264,7 @@ A task is considered DONE only if:
 - black passes
 - pylint passes
 - pytest passes
+- `./check.sh` passes
 - changelog updated
 
 ---
