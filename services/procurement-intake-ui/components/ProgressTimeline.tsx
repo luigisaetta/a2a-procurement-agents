@@ -12,6 +12,8 @@ export function ProgressTimeline({
   terminalResult,
   connected,
 }: ProgressTimelineProps) {
+  const badge = statusBadge(terminalResult, connected);
+
   return (
     <section className="panel progressPanel">
       <div className="panelHeader inline">
@@ -19,9 +21,7 @@ export function ProgressTimeline({
           <span className="eyebrow">Progress</span>
           <h2>Workflow status</h2>
         </div>
-        <span className={`connectionBadge ${connected ? "on" : "off"}`}>
-          {connected ? "Live" : "Waiting"}
-        </span>
+        <span className={`connectionBadge ${badge.tone}`}>{badge.label}</span>
       </div>
       {events.length === 0 ? (
         <p className="muted">Progress updates will appear here after launch.</p>
@@ -54,6 +54,18 @@ export function ProgressTimeline({
       )}
     </section>
   );
+}
+
+function statusBadge(
+  terminalResult: OrchestrationResponse | null,
+  connected: boolean,
+): { label: string; tone: "on" | "off" } {
+  if (!terminalResult) {
+    return connected ? { label: "Live", tone: "on" } : { label: "Waiting", tone: "off" };
+  }
+  return terminalResult.status === "failed"
+    ? { label: "Failed", tone: "off" }
+    : { label: "Completed", tone: "on" };
 }
 
 function ResultDetails({ result }: { result: OrchestrationResponse }) {
