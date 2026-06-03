@@ -61,7 +61,7 @@ done
 
 cleanup() {
   if [ "${KEEP_RUNNING}" = false ]; then
-    "${REPO_ROOT}/stop_demo.sh" "${STOP_ARGS[@]}"
+    "${REPO_ROOT}/stop_demo.sh" ${STOP_ARGS[@]+"${STOP_ARGS[@]}"}
   fi
 }
 
@@ -69,6 +69,6 @@ trap cleanup EXIT
 
 cd "${REPO_ROOT}"
 
-"${REPO_ROOT}/start_demo.sh" "${START_ARGS[@]}"
+"${REPO_ROOT}/start_demo.sh" ${START_ARGS[@]+"${START_ARGS[@]}"}
 
 conda run -n "${CONDA_ENV}" pytest -m e2e tests/e2e
