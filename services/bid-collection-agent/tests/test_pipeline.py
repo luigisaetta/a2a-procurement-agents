@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Tests for the Bid Collection Agent deterministic workflow.
 """
@@ -19,6 +19,7 @@ from bid_collection_agent.models import (
     SourcingConstraints,
 )
 from bid_collection_agent.pipeline import BidCollectionWorkflowAgent
+from bid_collection_agent.supplier_discovery_provider import SupplierDiscoveryResult
 
 
 class FakeMcpSupplierDiscoveryProvider:  # pylint: disable=too-few-public-methods
@@ -34,11 +35,15 @@ class FakeMcpSupplierDiscoveryProvider:  # pylint: disable=too-few-public-method
         self,
         part: PartBidRequest,
         constraints: SourcingConstraints,
-    ) -> list[IdentifiedSupplier]:
+    ) -> SupplierDiscoveryResult:
         """Return configured suppliers."""
 
         self.calls.append((part.part_id, part.quantity))
-        return self.suppliers[: constraints.max_suppliers_per_part]
+        return SupplierDiscoveryResult(
+            suppliers=self.suppliers[: constraints.max_suppliers_per_part],
+            reference_unit_price=1450,
+            reference_currency="EUR",
+        )
 
 
 def _settings() -> Settings:
@@ -100,6 +105,7 @@ async def test_pipeline_collects_bids_from_mcp_suppliers() -> None:
                 supplier_name="VoltEdge Components",
                 api_endpoint="mock://suppliers/SUP-001/offers",
                 region="EU",
+                country_code="DE",
                 selection_reason="Preferred supplier for the requested part.",
             ),
             IdentifiedSupplier(
@@ -107,6 +113,7 @@ async def test_pipeline_collects_bids_from_mcp_suppliers() -> None:
                 supplier_name="CellForge Systems",
                 api_endpoint="mock://suppliers/SUP-002/offers",
                 region="EU",
+                country_code="IT",
                 selection_reason="Supplier can provide the requested part.",
             ),
         ]
@@ -128,6 +135,13 @@ async def test_pipeline_collects_bids_from_mcp_suppliers() -> None:
     assert final["part_results"][0]["status"] == "offers_collected"
     assert len(final["part_results"][0]["identified_suppliers"]) == 2
     assert len(final["part_results"][0]["offers"]) == 2
+    first_offer = final["part_results"][0]["offers"][0]
+    assert first_offer["parts_cost"] > 0
+    assert first_offer["shipping_cost"] > 0
+    assert first_offer["price"] == round(
+        first_offer["parts_cost"] + first_offer["shipping_cost"], 2
+    )
+    assert 1450 * 10 * 0.70 <= first_offer["parts_cost"] <= 1450 * 10 * 1.30
     assert final["evaluation_requests"][0]["material_code"] == "EV-BAT-MOD-001"
     assert len(final["evaluation_requests"][0]["offers"]) == 2
 

@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Supplier discovery provider backed by the Procurement Data MCP Server.
 """
@@ -8,6 +8,7 @@ Description:    Supplier discovery provider backed by the Procurement Data MCP S
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from fastmcp import Client
@@ -19,6 +20,15 @@ from bid_collection_agent.models import (
 )
 
 
+@dataclass(frozen=True)
+class SupplierDiscoveryResult:
+    """Supplier discovery result enriched with part reference pricing."""
+
+    suppliers: list[IdentifiedSupplier]
+    reference_unit_price: float
+    reference_currency: str
+
+
 class SupplierDiscoveryProvider(Protocol):  # pylint: disable=too-few-public-methods
     """Supplier discovery provider contract."""
 
@@ -26,7 +36,7 @@ class SupplierDiscoveryProvider(Protocol):  # pylint: disable=too-few-public-met
         self,
         part: PartBidRequest,
         constraints: SourcingConstraints,
-    ) -> list[IdentifiedSupplier]:
+    ) -> SupplierDiscoveryResult:
         """Identify eligible suppliers for one requested part."""
 
 
@@ -48,7 +58,7 @@ class McpSupplierDiscoveryProvider:  # pylint: disable=too-few-public-methods
         self,
         part: PartBidRequest,
         constraints: SourcingConstraints,
-    ) -> list[IdentifiedSupplier]:
+    ) -> SupplierDiscoveryResult:
         """Identify eligible suppliers for one requested part."""
 
         async with Client(self._mcp_url, timeout=self._timeout_seconds) as client:
@@ -75,7 +85,12 @@ class McpSupplierDiscoveryProvider:  # pylint: disable=too-few-public-methods
             for item in payload.get("items", [])
             if item.get("eligible_for_quantity", True)
         ]
-        return _apply_constraints(candidates, constraints)
+        part_payload = payload.get("part", {})
+        return SupplierDiscoveryResult(
+            suppliers=_apply_constraints(candidates, constraints),
+            reference_unit_price=float(part_payload["reference_unit_price"]),
+            reference_currency=str(part_payload["reference_currency"]),
+        )
 
 
 def _extract_structured_content(result: Any) -> dict[str, Any]:
@@ -113,6 +128,7 @@ def _to_identified_supplier(item: dict[str, Any]) -> IdentifiedSupplier:
         supplier_name=item["supplier_name"],
         api_endpoint=item["contact_endpoint"],
         region=_supplier_region(item),
+        country_code=str(item.get("country_code", "")).upper(),
         selection_reason=reason,
     )
 

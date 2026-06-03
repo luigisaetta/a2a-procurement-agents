@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Pydantic models for the Bid Collection Agent contracts.
 """
@@ -69,6 +69,7 @@ class IdentifiedSupplier(BaseModel):
     supplier_name: str = Field(min_length=1)
     api_endpoint: str = Field(min_length=1)
     region: str = ""
+    country_code: str = ""
     selection_reason: str = ""
 
 
@@ -80,6 +81,7 @@ class SupplierBidRequestSupplier(BaseModel):
     supplier_id: str = Field(min_length=1)
     supplier_name: str = Field(min_length=1)
     api_endpoint: str = Field(min_length=1)
+    country_code: str = ""
 
 
 class SupplierBidRequestPart(BaseModel):
@@ -93,6 +95,8 @@ class SupplierBidRequestPart(BaseModel):
     material_description: str = Field(min_length=1)
     quantity: float = Field(gt=0)
     unit_of_measure: str = Field(min_length=1)
+    reference_unit_price: float = Field(gt=0)
+    reference_currency: str = Field(pattern=r"^[A-Z]{3}$")
     required_delivery_date: date
 
 
@@ -117,6 +121,8 @@ class SupplierOffer(BaseModel):
     offer_id: str
     supplier_id: str
     supplier_name: str
+    parts_cost: float = Field(default=0, ge=0)
+    shipping_cost: float = Field(default=0, ge=0)
     price: float = Field(ge=0)
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     delivery_date: date

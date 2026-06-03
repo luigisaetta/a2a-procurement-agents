@@ -2,7 +2,7 @@
 Typed request and response models for offer evaluation.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-27
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Pydantic models mirroring the canonical JSON Schemas used
                 by the Offer Evaluation Agent.
@@ -24,6 +24,8 @@ class SupplierOffer(BaseModel):
     offer_id: str = Field(min_length=1)
     supplier_id: str = Field(min_length=1)
     supplier_name: str = Field(min_length=1)
+    parts_cost: float = Field(default=0, ge=0)
+    shipping_cost: float = Field(default=0, ge=0)
     price: float = Field(ge=0)
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     delivery_date: date
@@ -64,6 +66,8 @@ class SelectedOfferPayload(BaseModel):
     offer_id: str
     supplier_id: str
     supplier_name: str
+    parts_cost: float = 0
+    shipping_cost: float = 0
     price: float
     currency: str
     delivery_date: str

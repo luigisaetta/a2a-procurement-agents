@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Deterministic bid collection workflow using MCP supplier discovery.
 """
@@ -162,10 +162,11 @@ class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
     ) -> tuple[PartBidResult, EvaluateOffersRequestPayload | None]:
         """Collect bids for one requested part."""
 
-        suppliers = await self._supplier_discovery_provider.identify_suppliers(
+        discovery = await self._supplier_discovery_provider.identify_suppliers(
             part,
             request.sourcing_constraints,
         )
+        suppliers = discovery.suppliers
         _validate_unique_supplier_ids(part, suppliers)
 
         offers: list[SupplierOffer] = []
@@ -175,6 +176,7 @@ class BidCollectionWorkflowAgent:  # pylint: disable=too-few-public-methods
                 request,
                 part,
                 supplier,
+                (discovery.reference_unit_price, discovery.reference_currency),
             )
             supplier_response = self._supplier_offer_provider.request_offer(bid_request)
             _validate_supplier_response(
@@ -287,6 +289,11 @@ def _validate_supplier_response(
             raise ValueError("Supplier offer part_id does not match request.")
         if supplier_response.offer.material_code != part.material_code:
             raise ValueError("Supplier offer material_code does not match request.")
+        if supplier_response.offer.price != round(
+            supplier_response.offer.parts_cost + supplier_response.offer.shipping_cost,
+            2,
+        ):
+            raise ValueError("Supplier offer price does not match cost breakdown.")
 
 
 def _part_status(

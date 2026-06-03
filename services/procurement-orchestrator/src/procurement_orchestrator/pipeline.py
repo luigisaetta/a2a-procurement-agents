@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Deterministic procurement orchestration workflow.
 """
@@ -50,6 +50,8 @@ EMPTY_SELECTED_OFFER = SelectedOffer(
     offer_id="",
     supplier_id="",
     supplier_name="",
+    parts_cost=0,
+    shipping_cost=0,
     price=0,
     currency="",
     delivery_date="",
@@ -642,6 +644,8 @@ def _evaluation_summary(evaluation: EvaluateOffersResponse | None) -> Evaluation
             offer_id=str(selected.get("offer_id", "")),
             supplier_id=str(selected.get("supplier_id", "")),
             supplier_name=str(selected.get("supplier_name", "")),
+            parts_cost=float(selected.get("parts_cost", 0)),
+            shipping_cost=float(selected.get("shipping_cost", 0)),
             price=float(selected.get("price", 0)),
             currency=str(selected.get("currency", "")),
             delivery_date=str(selected.get("delivery_date", "")),

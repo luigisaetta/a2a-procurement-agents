@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Builds supplier bid requests and downstream offer evaluation payloads.
 """
@@ -27,9 +27,11 @@ class OfferListProvider:
         request: CollectBidsRequest,
         part: PartBidRequest,
         supplier: IdentifiedSupplier,
+        reference_price: tuple[float, str],
     ) -> SupplierBidRequest:
         """Build one supplier-facing bid request."""
 
+        reference_unit_price, reference_currency = reference_price
         return SupplierBidRequest(
             request_id=request.request_id,
             bid_request_id=(
@@ -39,6 +41,7 @@ class OfferListProvider:
                 supplier_id=supplier.supplier_id,
                 supplier_name=supplier.supplier_name,
                 api_endpoint=supplier.api_endpoint,
+                country_code=supplier.country_code,
             ),
             part=SupplierBidRequestPart(
                 part_id=part.part_id,
@@ -47,6 +50,8 @@ class OfferListProvider:
                 material_description=part.material_description,
                 quantity=part.quantity,
                 unit_of_measure=part.unit_of_measure,
+                reference_unit_price=reference_unit_price,
+                reference_currency=reference_currency,
                 required_delivery_date=part.required_delivery_date,
             ),
             currency=request.currency,

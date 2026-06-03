@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Simulated supplier offer provider for bid collection.
 """
@@ -43,8 +43,18 @@ class SimulatedSupplierOfferProvider:  # pylint: disable=too-few-public-methods
         if seed % 17 == 0:
             return _declined_response(request)
 
-        unit_price = 80 + (seed % 220)
-        price = round(unit_price * request.part.quantity, 2)
+        if request.part.reference_currency != request.currency:
+            return _failed_response(
+                request,
+                "REFERENCE_CURRENCY_MISMATCH",
+                "Reference part price currency does not match the request currency.",
+            )
+
+        variance = _price_variance(seed)
+        unit_price = round(request.part.reference_unit_price * (1 + variance), 2)
+        parts_cost = round(unit_price * request.part.quantity, 2)
+        shipping_cost = round(parts_cost * _shipping_rate(request), 2)
+        price = round(parts_cost + shipping_cost, 2)
         delivery_date = request.part.required_delivery_date - timedelta(days=seed % 5)
         valid_until = request.response_deadline.date() + timedelta(days=7)
 
@@ -59,6 +69,8 @@ class SimulatedSupplierOfferProvider:  # pylint: disable=too-few-public-methods
                 supplier_name=request.supplier.supplier_name,
                 part_id=request.part.part_id,
                 material_code=request.part.material_code,
+                parts_cost=parts_cost,
+                shipping_cost=shipping_cost,
                 price=price,
                 currency=request.currency,
                 delivery_date=delivery_date,
@@ -75,6 +87,24 @@ def _stable_seed(value: str) -> int:
 
     digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
     return int(digest[:8], 16)
+
+
+def _price_variance(seed: int) -> float:
+    """Return a deterministic reference price variance between -30% and +30%."""
+
+    return ((seed % 61) - 30) / 100
+
+
+def _shipping_rate(request: SupplierBidRequest) -> float:
+    """Return a deterministic shipping rate based on supplier and plant country."""
+
+    plant_country = request.part.plant_code.split("-", maxsplit=1)[0].upper()
+    supplier_country = request.supplier.country_code.upper()
+    if supplier_country and supplier_country == plant_country:
+        return 0.02
+    if supplier_country in {"GB", "UK"} or plant_country in {"GB", "UK"}:
+        return 0.08
+    return 0.05
 
 
 def _declined_response(request: SupplierBidRequest) -> SupplierBidResponse:
@@ -117,6 +147,8 @@ def _empty_response(
             supplier_name=request.supplier.supplier_name,
             part_id=request.part.part_id,
             material_code=request.part.material_code,
+            parts_cost=0,
+            shipping_cost=0,
             price=0,
             currency=request.currency,
             delivery_date=request.part.required_delivery_date,

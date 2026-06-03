@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Pydantic models for procurement orchestration contracts.
 """
@@ -128,6 +128,8 @@ class SelectedOffer(BaseModel):
     offer_id: str
     supplier_id: str
     supplier_name: str
+    parts_cost: float = 0
+    shipping_cost: float = 0
     price: float
     currency: str
     delivery_date: str

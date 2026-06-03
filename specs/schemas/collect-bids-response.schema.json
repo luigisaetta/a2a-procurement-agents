@@ -102,6 +102,7 @@
         "supplier_name",
         "api_endpoint",
         "region",
+        "country_code",
         "selection_reason"
       ],
       "properties": {
@@ -128,6 +129,11 @@
           "description": "Supplier operating region used during supplier identification.",
           "examples": ["EU"]
         },
+        "country_code": {
+          "type": "string",
+          "description": "Supplier ISO country code used for simulated shipping-cost calculation.",
+          "examples": ["DE"]
+        },
         "selection_reason": {
           "type": "string",
           "description": "Concise technical reason why the supplier was selected for contact.",
@@ -142,6 +148,8 @@
         "offer_id",
         "supplier_id",
         "supplier_name",
+        "parts_cost",
+        "shipping_cost",
         "price",
         "currency",
         "delivery_date",
@@ -171,8 +179,20 @@
         "price": {
           "type": "number",
           "minimum": 0,
-          "description": "Total offer price for the requested quantity.",
-          "examples": [12000.0]
+          "description": "Total offer price for the requested quantity, including shipping.",
+          "examples": [11850.0]
+        },
+        "parts_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total cost of the requested parts, excluding shipping.",
+          "examples": [11200.0]
+        },
+        "shipping_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated shipping cost to the destination plant.",
+          "examples": [650.0]
         },
         "currency": {
           "type": "string",

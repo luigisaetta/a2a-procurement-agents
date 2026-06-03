@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Pydantic models for downstream agent payloads used by orchestration.
 """
@@ -21,6 +21,8 @@ class SupplierOffer(BaseModel):
     offer_id: str
     supplier_id: str
     supplier_name: str
+    parts_cost: float = Field(default=0, ge=0)
+    shipping_cost: float = Field(default=0, ge=0)
     price: float = Field(ge=0)
     currency: str
     delivery_date: date

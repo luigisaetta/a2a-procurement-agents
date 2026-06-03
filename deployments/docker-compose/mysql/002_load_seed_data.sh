@@ -21,7 +21,7 @@ INTO TABLE parts
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES
-(part_id, part_code, part_name, description, category, unit_of_measure, @is_active, @created_at, @updated_at)
+(part_id, part_code, part_name, description, category, unit_of_measure, reference_unit_price, reference_currency, @is_active, @created_at, @updated_at)
 SET
   is_active = (@is_active = 'true'),
   created_at = STR_TO_DATE(@created_at, '%Y-%m-%dT%H:%i:%sZ'),

@@ -226,6 +226,14 @@ The MySQL service creates the `procurement_demo` schema on first startup and loa
 
 The workflow tables `procurement_requests`, `supplier_offers`, `purchase_order_sequences`, and `purchase_orders` are created empty.
 
+If the demo MySQL volume was created before the current schema, recreate it so
+the `parts` table includes reference pricing columns used by simulated supplier
+offer generation:
+
+```bash
+./stop_demo.sh --volumes
+```
+
 ## End-to-End Client
 
 After the stack is running, invoke the Procurement Orchestrator from the repository root:

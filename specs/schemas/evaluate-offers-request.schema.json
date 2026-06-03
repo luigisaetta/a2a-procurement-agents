@@ -89,6 +89,8 @@
         "offer_id",
         "supplier_id",
         "supplier_name",
+        "parts_cost",
+        "shipping_cost",
         "price",
         "currency",
         "delivery_date",
@@ -118,8 +120,20 @@
         "price": {
           "type": "number",
           "minimum": 0,
-          "description": "Total offer price for the requested quantity.",
-          "examples": [12000.0]
+          "description": "Total offer price for the requested quantity, including shipping.",
+          "examples": [11850.0]
+        },
+        "parts_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total cost of the requested parts, excluding shipping.",
+          "examples": [11200.0]
+        },
+        "shipping_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated shipping cost to the destination plant.",
+          "examples": [650.0]
         },
         "currency": {
           "type": "string",
@@ -172,6 +186,8 @@
           "offer_id": "OFF-001",
           "supplier_id": "SUP-001",
           "supplier_name": "Supplier A",
+          "parts_cost": 11200.0,
+          "shipping_cost": 800.0,
           "price": 12000.0,
           "currency": "EUR",
           "delivery_date": "2026-06-10",

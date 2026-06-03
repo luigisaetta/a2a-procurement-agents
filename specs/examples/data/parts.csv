@@ -1,51 +1,51 @@
-part_id,part_code,part_name,description,category,unit_of_measure,is_active,created_at,updated_at
-PART-001,EV-BAT-MOD-001,High Density Battery Module,Modular lithium battery pack segment,battery,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-002,EV-BAT-CELL-002,Prismatic Battery Cell,High energy density prismatic cell,battery,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-003,EV-BMS-CTRL-003,Battery Management Controller,Controller for monitoring battery state,battery,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-004,EV-BAT-COOL-004,Battery Cooling Plate,Liquid cooling plate for battery modules,thermal,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-005,EV-BAT-HOUS-005,Battery Pack Housing,Structural aluminum battery enclosure,battery,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-006,EV-MTR-ASM-006,Rear Electric Drive Motor,High torque rear axle electric motor,powertrain,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-007,EV-MTR-FRT-007,Front Electric Drive Motor,Compact front axle electric motor,powertrain,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-008,EV-INV-800-008,800V Traction Inverter,Silicon carbide traction inverter,power electronics,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-009,EV-DC-DC-009,High Voltage DC DC Converter,Converter for HV to low voltage systems,power electronics,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-010,EV-OBC-011,On Board Charger,AC charging module for vehicle battery,charging,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-011,EV-PORT-CCS-011,CCS Charging Port,Combined charging connector assembly,charging,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-012,EV-HV-CABLE-012,High Voltage Cable Harness,Orange shielded high voltage harness,electrical,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-013,EV-HV-JBOX-013,High Voltage Junction Box,Power distribution junction box,electrical,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-014,EV-THERM-PUMP-014,Electric Coolant Pump,High efficiency electric coolant pump,thermal,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-015,EV-HEAT-PUMP-015,Vehicle Heat Pump Unit,Integrated heat pump for cabin and battery,thermal,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-016,EV-RAD-LOW-016,Low Temperature Radiator,Radiator for battery and electronics cooling,thermal,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-017,EV-BRAKE-REGEN-017,Regenerative Brake Control Unit,Brake blending control unit,braking,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-018,EV-BRAKE-CAL-018,Lightweight Brake Caliper,Aluminum performance brake caliper,braking,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-019,EV-AIR-SUSP-019,Adaptive Air Suspension Module,Air spring and damper assembly,chassis,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-020,EV-STEER-BY-020,Steer By Wire Actuator,Electronic steering actuator,chassis,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-021,EV-WHL-21-021,21 Inch Aero Wheel,Forged aerodynamic wheel,chassis,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-022,EV-TIRE-LOW-022,Low Rolling Resistance Tire,Performance EV tire,chassis,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-023,EV-ADAS-LID-023,Long Range Lidar Sensor,Forward perception lidar sensor,adas,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-024,EV-ADAS-RAD-024,Corner Radar Sensor,Short range radar sensor,adas,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-025,EV-ADAS-CAM-025,Tri Camera Vision Module,Front camera module for driver assistance,adas,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-026,EV-COMP-AI-026,Autonomous Compute Unit,Central compute unit for ADAS and cockpit,compute,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-027,EV-ECU-ZONE-027,Zonal Gateway ECU,Zonal electrical architecture controller,compute,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-028,EV-DISP-OLED-028,Curved OLED Cockpit Display,Premium dashboard display module,interior electronics,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-029,EV-HUD-AR-029,Augmented Reality HUD,Windshield projection head up display,interior electronics,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-030,EV-AUDIO-030,Immersive Audio Amplifier,High fidelity cabin amplifier,interior electronics,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-031,EV-SEAT-CTRL-031,Smart Seat Control Module,Seat heating ventilation and massage controller,interior,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-032,EV-SEAT-RAIL-032,Powered Seat Rail Assembly,Motorized premium seat rail,interior,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-033,EV-INT-TRIM-033,Recycled Microfiber Trim Set,Sustainable premium interior trim,interior,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-034,EV-GLASS-ROOF-034,Panoramic Smart Glass Roof,Electrochromic panoramic roof,body,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-035,EV-DOOR-ACT-035,Soft Close Door Actuator,Motorized soft close door unit,body,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-036,EV-LIGHT-MTX-036,Matrix LED Headlamp,Adaptive matrix headlamp assembly,lighting,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-037,EV-LIGHT-OLED-037,OLED Tail Lamp Panel,Premium rear OLED lighting panel,lighting,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-038,EV-SENSOR-RAIN-038,Rain Light Sensor Module,Windshield mounted sensor module,sensors,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-039,EV-HVAC-ION-039,Cabin Ionizer Module,Air quality module for premium cabin,hvac,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-040,EV-HVAC-VENT-040,Active Air Vent Assembly,Motorized cabin air vent,hvac,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-041,EV-WIRE-LV-041,Low Voltage Wiring Harness,Vehicle low voltage wiring harness,electrical,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-042,EV-12V-LFP-042,Auxiliary LFP Battery,Low voltage auxiliary battery,electrical,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-043,EV-CHASSIS-CAST-043,Rear Mega Casting,Large aluminum rear body casting,body,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-044,EV-FRAME-CFRP-044,Carbon Fiber Crossmember,Lightweight structural crossmember,body,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-045,EV-SEAL-BAT-045,Battery Pack Seal Set,High voltage enclosure seal kit,battery,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-046,EV-FUSE-HV-046,Pyro Fuse Disconnect,High voltage safety disconnect fuse,electrical,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-047,EV-THERM-VALVE-047,Thermal Octovalve,Integrated thermal routing valve,thermal,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-048,EV-SW-UPD-048,Vehicle Connectivity Gateway,Gateway for OTA updates and telemetry,compute,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-049,EV-ANT-5G-049,5G Roof Antenna Module,Multi band connected vehicle antenna,connectivity,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
-PART-050,EV-KEY-UWB-050,UWB Digital Key Module,Ultra wideband access control module,connectivity,EA,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+part_id,part_code,part_name,description,category,unit_of_measure,reference_unit_price,reference_currency,is_active,created_at,updated_at
+PART-001,EV-BAT-MOD-001,High Density Battery Module,Modular lithium battery pack segment,battery,EA,1450.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-002,EV-BAT-CELL-002,Prismatic Battery Cell,High energy density prismatic cell,battery,EA,1450.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-003,EV-BMS-CTRL-003,Battery Management Controller,Controller for monitoring battery state,battery,EA,1450.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-004,EV-BAT-COOL-004,Battery Cooling Plate,Liquid cooling plate for battery modules,thermal,EA,380.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-005,EV-BAT-HOUS-005,Battery Pack Housing,Structural aluminum battery enclosure,battery,EA,1450.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-006,EV-MTR-ASM-006,Rear Electric Drive Motor,High torque rear axle electric motor,powertrain,EA,2800.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-007,EV-MTR-FRT-007,Front Electric Drive Motor,Compact front axle electric motor,powertrain,EA,2800.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-008,EV-INV-800-008,800V Traction Inverter,Silicon carbide traction inverter,power electronics,EA,980.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-009,EV-DC-DC-009,High Voltage DC DC Converter,Converter for HV to low voltage systems,power electronics,EA,980.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-010,EV-OBC-011,On Board Charger,AC charging module for vehicle battery,charging,EA,520.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-011,EV-PORT-CCS-011,CCS Charging Port,Combined charging connector assembly,charging,EA,520.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-012,EV-HV-CABLE-012,High Voltage Cable Harness,Orange shielded high voltage harness,electrical,EA,240.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-013,EV-HV-JBOX-013,High Voltage Junction Box,Power distribution junction box,electrical,EA,240.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-014,EV-THERM-PUMP-014,Electric Coolant Pump,High efficiency electric coolant pump,thermal,EA,380.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-015,EV-HEAT-PUMP-015,Vehicle Heat Pump Unit,Integrated heat pump for cabin and battery,thermal,EA,380.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-016,EV-RAD-LOW-016,Low Temperature Radiator,Radiator for battery and electronics cooling,thermal,EA,380.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-017,EV-BRAKE-REGEN-017,Regenerative Brake Control Unit,Brake blending control unit,braking,EA,460.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-018,EV-BRAKE-CAL-018,Lightweight Brake Caliper,Aluminum performance brake caliper,braking,EA,460.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-019,EV-AIR-SUSP-019,Adaptive Air Suspension Module,Air spring and damper assembly,chassis,EA,760.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-020,EV-STEER-BY-020,Steer By Wire Actuator,Electronic steering actuator,chassis,EA,760.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-021,EV-WHL-21-021,21 Inch Aero Wheel,Forged aerodynamic wheel,chassis,EA,760.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-022,EV-TIRE-LOW-022,Low Rolling Resistance Tire,Performance EV tire,chassis,EA,760.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-023,EV-ADAS-LID-023,Long Range Lidar Sensor,Forward perception lidar sensor,adas,EA,640.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-024,EV-ADAS-RAD-024,Corner Radar Sensor,Short range radar sensor,adas,EA,640.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-025,EV-ADAS-CAM-025,Tri Camera Vision Module,Front camera module for driver assistance,adas,EA,640.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-026,EV-COMP-AI-026,Autonomous Compute Unit,Central compute unit for ADAS and cockpit,compute,EA,1100.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-027,EV-ECU-ZONE-027,Zonal Gateway ECU,Zonal electrical architecture controller,compute,EA,1100.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-028,EV-DISP-OLED-028,Curved OLED Cockpit Display,Premium dashboard display module,interior electronics,EA,720.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-029,EV-HUD-AR-029,Augmented Reality HUD,Windshield projection head up display,interior electronics,EA,720.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-030,EV-AUDIO-030,Immersive Audio Amplifier,High fidelity cabin amplifier,interior electronics,EA,720.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-031,EV-SEAT-CTRL-031,Smart Seat Control Module,Seat heating ventilation and massage controller,interior,EA,410.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-032,EV-SEAT-RAIL-032,Powered Seat Rail Assembly,Motorized premium seat rail,interior,EA,410.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-033,EV-INT-TRIM-033,Recycled Microfiber Trim Set,Sustainable premium interior trim,interior,EA,410.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-034,EV-GLASS-ROOF-034,Panoramic Smart Glass Roof,Electrochromic panoramic roof,body,EA,890.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-035,EV-DOOR-ACT-035,Soft Close Door Actuator,Motorized soft close door unit,body,EA,890.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-036,EV-LIGHT-MTX-036,Matrix LED Headlamp,Adaptive matrix headlamp assembly,lighting,EA,330.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-037,EV-LIGHT-OLED-037,OLED Tail Lamp Panel,Premium rear OLED lighting panel,lighting,EA,330.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-038,EV-SENSOR-RAIN-038,Rain Light Sensor Module,Windshield mounted sensor module,sensors,EA,95.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-039,EV-HVAC-ION-039,Cabin Ionizer Module,Air quality module for premium cabin,hvac,EA,260.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-040,EV-HVAC-VENT-040,Active Air Vent Assembly,Motorized cabin air vent,hvac,EA,260.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-041,EV-WIRE-LV-041,Low Voltage Wiring Harness,Vehicle low voltage wiring harness,electrical,EA,240.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-042,EV-12V-LFP-042,Auxiliary LFP Battery,Low voltage auxiliary battery,electrical,EA,240.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-043,EV-CHASSIS-CAST-043,Rear Mega Casting,Large aluminum rear body casting,body,EA,890.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-044,EV-FRAME-CFRP-044,Carbon Fiber Crossmember,Lightweight structural crossmember,body,EA,890.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-045,EV-SEAL-BAT-045,Battery Pack Seal Set,High voltage enclosure seal kit,battery,EA,1450.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-046,EV-FUSE-HV-046,Pyro Fuse Disconnect,High voltage safety disconnect fuse,electrical,EA,240.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-047,EV-THERM-VALVE-047,Thermal Octovalve,Integrated thermal routing valve,thermal,EA,380.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-048,EV-SW-UPD-048,Vehicle Connectivity Gateway,Gateway for OTA updates and telemetry,compute,EA,1100.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-049,EV-ANT-5G-049,5G Roof Antenna Module,Multi band connected vehicle antenna,connectivity,EA,180.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z
+PART-050,EV-KEY-UWB-050,UWB Digital Key Module,Ultra wideband access control module,connectivity,EA,180.00,EUR,true,2026-05-28T00:00:00Z,2026-05-28T00:00:00Z

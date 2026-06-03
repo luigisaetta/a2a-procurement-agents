@@ -157,6 +157,8 @@
         "offer_id",
         "supplier_id",
         "supplier_name",
+        "parts_cost",
+        "shipping_cost",
         "price",
         "currency",
         "delivery_date",
@@ -175,6 +177,12 @@
           "type": "string"
         },
         "price": {
+          "type": "number"
+        },
+        "parts_cost": {
+          "type": "number"
+        },
+        "shipping_cost": {
           "type": "number"
         },
         "currency": {

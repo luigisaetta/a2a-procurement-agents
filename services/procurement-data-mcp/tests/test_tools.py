@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Unit tests for the Procurement Data MCP tool layer.
 """
@@ -37,6 +37,8 @@ class FakeRepository:
             "description": "Modular lithium battery pack segment",
             "category": "battery",
             "unit_of_measure": "EA",
+            "reference_unit_price": 1450,
+            "reference_currency": "EUR",
             "is_active": True,
         }
     ]
@@ -184,6 +186,8 @@ def test_find_suppliers_for_part_enriches_quantity_eligibility(
     )
 
     assert result["part"]["part_id"] == "PART-001"
+    assert result["part"]["reference_unit_price"] == 1450
+    assert result["part"]["reference_currency"] == "EUR"
     assert result["plant"]["plant_id"] == "PLANT-001"
     assert result["items"][0]["eligible_for_quantity"] is False
 

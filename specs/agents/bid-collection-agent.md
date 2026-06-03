@@ -254,6 +254,7 @@ Initial behavior:
 
 - call the Procurement Data MCP Server `find_suppliers_for_part` tool over streamable HTTP
 - filter MCP supplier candidates using request-level sourcing constraints
+- use the MCP part summary to load `reference_unit_price` and `reference_currency`
 - keep MCP communication localized to the supplier discovery provider
 - stable supplier selection suitable for tests and audit traces
 
@@ -277,6 +278,7 @@ Initial behavior:
 - deterministic local construction
 - no external network call
 - stable IDs suitable for tests and audit traces
+- each supplier bid request includes the part reference unit price and currency loaded from MCP
 - deterministic offer-list construction from supplier responses
 
 Future behavior:
@@ -298,8 +300,25 @@ Initial behavior:
 
 - deterministic simulated supplier APIs
 - `mock://` supplier endpoints
-- synthetic prices, delivery dates, scores, and validity dates
+- synthetic offer costs derived from the part reference unit price
+- deterministic supplier unit-price variance between `-30%` and `+30%`
+- deterministic shipping cost calculated separately from parts cost
+- synthetic delivery dates, scores, and validity dates
 - controlled declined and failed responses for tests
+
+The simulated supplier offer cost calculation is:
+
+```text
+offered_unit_price = part.reference_unit_price * (1 + deterministic_variance)
+parts_cost = offered_unit_price * requested_quantity
+shipping_cost = parts_cost * deterministic_shipping_rate
+price = parts_cost + shipping_cost
+```
+
+`price` remains the total offer price used by the Offer Evaluation Agent. The
+`parts_cost` and `shipping_cost` fields are preserved so future compliance
+checks can reason about part-price variance and shipping reasonableness
+separately.
 
 Future behavior:
 

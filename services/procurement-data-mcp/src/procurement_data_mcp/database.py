@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    MySQL data access layer for the Procurement Data MCP Server.
 """
@@ -130,7 +130,8 @@ class ProcurementDataRepository:
         return self._fetch_all(
             f"""
             SELECT part_id, part_code, part_name, description, category,
-                   unit_of_measure, is_active
+                   unit_of_measure, reference_unit_price, reference_currency,
+                   is_active
             FROM parts
             {where}
             ORDER BY part_id
@@ -149,7 +150,8 @@ class ProcurementDataRepository:
         return self._fetch_one(
             f"""
             SELECT part_id, part_code, part_name, description, category,
-                   unit_of_measure, is_active
+                   unit_of_measure, reference_unit_price, reference_currency,
+                   is_active
             FROM parts
             WHERE {column} = %s
             """,

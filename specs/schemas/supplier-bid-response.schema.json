@@ -48,6 +48,8 @@
         "supplier_name",
         "part_id",
         "material_code",
+        "parts_cost",
+        "shipping_cost",
         "price",
         "currency",
         "delivery_date",
@@ -81,11 +83,23 @@
           "description": "Internal code of the requested material or item.",
           "examples": ["MAT-12345"]
         },
+        "parts_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total cost of the requested parts, excluding shipping.",
+          "examples": [11200.0]
+        },
+        "shipping_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated shipping cost to the destination plant.",
+          "examples": [650.0]
+        },
         "price": {
           "type": "number",
           "minimum": 0,
-          "description": "Total offer price for the requested quantity.",
-          "examples": [12000.0]
+          "description": "Total offer price for the requested quantity, including shipping.",
+          "examples": [11850.0]
         },
         "currency": {
           "type": "string",

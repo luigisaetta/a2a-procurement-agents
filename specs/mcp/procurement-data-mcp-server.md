@@ -267,6 +267,8 @@ Output:
       "description": "Modular lithium battery pack segment",
       "category": "battery",
       "unit_of_measure": "EA",
+      "reference_unit_price": 1450.0,
+      "reference_currency": "EUR",
       "is_active": true
     }
   ],
@@ -308,6 +310,8 @@ Output:
     "description": "Modular lithium battery pack segment",
     "category": "battery",
     "unit_of_measure": "EA",
+    "reference_unit_price": 1450.0,
+    "reference_currency": "EUR",
     "is_active": true
   }
 }
@@ -424,7 +428,9 @@ Output:
   "part": {
     "part_id": "PART-001",
     "part_code": "EV-BAT-MOD-001",
-    "part_name": "High Density Battery Module"
+    "part_name": "High Density Battery Module",
+    "reference_unit_price": 1450.0,
+    "reference_currency": "EUR"
   },
   "items": [
     {
@@ -531,7 +537,9 @@ Output:
     "part_id": "PART-001",
     "part_code": "EV-BAT-MOD-001",
     "part_name": "High Density Battery Module",
-    "unit_of_measure": "EA"
+    "unit_of_measure": "EA",
+    "reference_unit_price": 1450.0,
+    "reference_currency": "EUR"
   },
   "plant": {
     "plant_id": "PLANT-001",

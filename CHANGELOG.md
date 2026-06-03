@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-03
 
+- Added part reference unit prices to the procurement data model and changed simulated supplier offer pricing to derive parts cost from MCP-backed reference prices, deterministic price variance, and separate shipping cost.
 - Fixed `run_e2e_demo_test.sh` so it handles empty argument arrays correctly under Bash with strict unset-variable checking.
 - Added an opt-in Docker Compose end-to-end demo test with a dedicated `run_e2e_demo_test.sh` runner and README documentation.
 - Added a root-level `check.sh` quality gate for black, pylint, pytest, and Procurement Intake Web UI TypeScript type checking, and documented it in the repository development standards.

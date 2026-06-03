@@ -131,6 +131,8 @@ Represents an automotive part used in vehicle assembly.
 | `description` | string | no | Part description. |
 | `category` | string | no | Part category, such as `braking`, `interior`, `electronics`, or `powertrain`. |
 | `unit_of_measure` | string | yes | Unit of measure, such as `EA`. |
+| `reference_unit_price` | number | yes | Baseline expected unit price used for simulated supplier offers and future price reasonableness checks. |
+| `reference_currency` | string | yes | ISO 4217 currency for the reference unit price. |
 | `is_active` | boolean | yes | Whether the part can be requested. |
 
 Primary key:

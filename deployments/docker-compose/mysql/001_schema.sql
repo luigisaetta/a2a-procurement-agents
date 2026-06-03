@@ -23,6 +23,8 @@ CREATE TABLE parts (
   description VARCHAR(255),
   category VARCHAR(64),
   unit_of_measure VARCHAR(16) NOT NULL,
+  reference_unit_price DECIMAL(18,2) NOT NULL,
+  reference_currency CHAR(3) NOT NULL,
   is_active BOOLEAN NOT NULL,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL,

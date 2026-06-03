@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-28
+Date Last Modified: 2026-06-03
 License: MIT
 Description:    Read-only MCP tool logic for procurement master data.
 """
@@ -246,6 +246,8 @@ class ProcurementDataTools:
             "part": {
                 **_part_summary(part),
                 "unit_of_measure": part["unit_of_measure"],
+                "reference_unit_price": part["reference_unit_price"],
+                "reference_currency": part["reference_currency"],
             },
             "plant": _plant_summary(plant) if plant else None,
             "requested_quantity": requested_quantity,
@@ -379,6 +381,8 @@ def _part_summary(part: dict[str, Any]) -> dict[str, Any]:
         "part_id": part["part_id"],
         "part_code": part["part_code"],
         "part_name": part["part_name"],
+        "reference_unit_price": part.get("reference_unit_price", 0),
+        "reference_currency": part.get("reference_currency", ""),
     }
 
 
