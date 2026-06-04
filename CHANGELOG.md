@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-06-04
 
+- Reworked the main README to describe the current end-to-end procurement demo, implemented components, demo flow, observability, and remaining planned capabilities.
 - Clarified the `AGENTS.md` spec-first guidance with the current `specs` directory layout and repository structure.
 
 ## 2026-06-03

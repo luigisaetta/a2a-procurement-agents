@@ -9,15 +9,97 @@
 
 ![A2A Procurement Agents overview](images/image01.png)
 
-Enterprise procurement is becoming too fast, too distributed, and too policy-heavy for a single monolithic assistant.
+This repository is a working enterprise procurement demo built as a network of
+independent AI agents.
 
-This project explores a different shape: a network of independently deployable AI agents that collaborate over open A2A contracts to handle urgent procurement workflows.
+The demo starts with a natural-language request such as "start an urgent tender
+for this part and create the final purchase order automatically." From there the
+system extracts and validates the request, grounds plants and parts against
+procurement master data, launches an A2A orchestration, collects simulated
+supplier bids, evaluates the offers against policy, persists a purchase order,
+and exposes telemetry in Grafana.
 
-The first scenario is rapid material sourcing. Multiple suppliers submit offers for an urgent request, autonomous agents evaluate those offers against procurement policy, and the system produces a ranked, explainable decision that can later feed orchestration, approval, purchasing, auditing, and fulfillment flows.
+The important point: this is no longer a single-agent prototype. It is an
+end-to-end, containerized multi-agent workflow with UI, MCP-backed data lookup,
+A2A Agent Cards, JSON Schema discovery, persistence, streaming progress events,
+OpenTelemetry metrics, tests, and a root-level quality gate.
+
+## What The Demo Does Today
+
+The current local demo runs this path:
+
+```text
+Procurement Intake Web UI
+  -> Conversational Procurement Intake Layer
+  -> Procurement Data MCP Server
+  -> Procurement Orchestrator
+  -> Bid Collection Agent
+  -> Offer Evaluation Agent
+  -> Purchase Order Agent
+  -> MySQL purchase order persistence
+  -> OpenTelemetry Collector
+  -> Prometheus
+  -> Grafana
+```
+
+In practical terms, a user can:
+
+- describe an urgent procurement need in natural language
+- clarify missing information through the intake conversation
+- review and edit the structured request before launch
+- confirm the workflow explicitly
+- watch real-time orchestration progress in the browser
+- see eligible suppliers and simulated supplier bids discovered from demo data
+- get a policy-based winning offer decision with explanation
+- create a persisted purchase order automatically
+- inspect operational and business telemetry in Grafana
+
+The demo is intentionally small enough to run locally, but it models real
+enterprise boundaries: user intake, master-data grounding, A2A service
+contracts, workflow orchestration, policy evaluation, purchasing, and
+observability.
+
+## Current Status
+
+The platform has an integrated implementation for the main urgent procurement
+scenario.
+
+Implemented and wired into the Docker Compose demo:
+
+- Next.js Procurement Intake Web UI with chat, structured request review,
+  editable fields, confirmation, and real-time workflow timeline
+- Conversational Procurement Intake Layer with LLM-backed extraction,
+  deterministic fallback, validation, MCP-backed grounding, A2A submission, SSE
+  event relay, and polling fallback
+- Procurement Data MCP Server backed by MySQL seed data for plants, parts,
+  suppliers, and supplier-part relationships
+- Procurement Orchestrator A2A agent with downstream A2A calls, streaming
+  progress events, retry handling, and final result aggregation
+- Bid Collection Agent A2A server with MCP-backed supplier discovery and
+  simulated supplier offer collection
+- Offer Evaluation Agent A2A server with deterministic policy guardrails,
+  structured decisions, and an accuracy test suite
+- Purchase Order Agent A2A server with MySQL-backed purchase order persistence,
+  idempotent registration, and database-generated purchase order numbers
+- JSON Schema discovery endpoints for all A2A agents
+- Optional OpenTelemetry, Prometheus, and Grafana stack with provisioned A2A
+  Procurement Agent Telemetry dashboard
+- Root-level demo helpers, runbook, end-to-end checklist, opt-in e2e demo test,
+  and repository quality gate
+
+Still planned or intentionally future-facing:
+
+- Compliance Agent
+- authentication and authorization beyond the local demo bearer-token boundary
+- distributed checkpointing and resumable workflow persistence
+- production-grade supplier API integrations
+- broader policy packs and approval workflows
 
 ## Why This Project Exists
 
-Most multi-agent demos are tightly coupled: agents share runtime objects, hidden memory, framework internals, or direct function calls. That is convenient for a demo, but it is not how enterprise systems usually evolve.
+Most multi-agent demos are tightly coupled: agents share runtime objects, hidden
+memory, framework internals, or direct function calls. That is convenient for a
+toy demo, but it is not how enterprise systems usually evolve.
 
 This repository is intentionally different.
 
@@ -30,13 +112,17 @@ Each agent is treated as a black box:
 - reachable over HTTP
 - integrated only through A2A protocol contracts
 
-The goal is to demonstrate agent interoperability, not framework coupling.
+The goal is to demonstrate agent interoperability, not framework coupling. Each
+agent owns its implementation; the contract is the boundary.
 
 ## The A2A Model
 
-The platform uses the Agent2Agent protocol, also known as A2A, as the communication boundary between agents.
+The platform uses the Agent2Agent protocol, also known as A2A, as the
+communication boundary between agents.
 
-A2A is the contract layer that lets one agent discover what another agent can do, send it a task, exchange structured messages, and receive task results without knowing how the remote agent is implemented.
+A2A is the contract layer that lets one agent discover what another agent can do,
+send it a task, exchange structured messages, stream progress, and receive task
+results without knowing how the remote agent is implemented.
 
 In this project, A2A communication means:
 
@@ -44,9 +130,13 @@ In this project, A2A communication means:
 - **Transport:** HTTP
 - **Message format:** JSON-RPC 2.0
 - **Discovery:** Agent Cards
+- **Schema discovery:** JSON Schema endpoints for A2A task contracts
 - **Integration rule:** no agent depends on another agent's internal code
 
-This matters because procurement workflows are naturally cross-domain. Evaluation, supplier communication, compliance, purchase order generation, audit, and orchestration can each evolve at different speeds. A2A gives those agents a common language while preserving independent ownership.
+This matters because procurement workflows are naturally cross-domain.
+Evaluation, supplier communication, compliance, purchase order generation, audit,
+and orchestration can each evolve at different speeds. A2A gives those agents a
+common language while preserving independent ownership.
 
 Reference links:
 
@@ -55,7 +145,8 @@ Reference links:
 
 ## Runtime Foundation
 
-Agents are implemented with [Oracle Locus](https://locusagents.oracle.com/), used as the runtime layer for agent execution and A2A infrastructure.
+Agents are implemented with [Oracle Locus](https://locusagents.oracle.com/),
+used as the runtime layer for agent execution and A2A infrastructure.
 
 Locus provides the mechanics this project needs:
 
@@ -67,7 +158,8 @@ Locus provides the mechanics this project needs:
 - model-provider abstraction
 - observability and checkpointing foundations
 
-Business behavior remains owned by each agent. Locus is used for runtime support, not as a shared business-code dependency between agents.
+Business behavior remains owned by each agent. Locus is used for runtime
+support, not as a shared business-code dependency between agents.
 
 Reference link:
 
@@ -75,25 +167,8 @@ Reference link:
 
 ## Quick Demo Start
 
-Start the local Docker Compose demo from the repository root:
-
-```bash
-./start_demo.sh
-```
-
-Include the web UI:
-
-```bash
-./start_demo.sh --ui
-```
-
-Include the observability stack. This also enables Locus telemetry for all A2A agents for the current run:
-
-```bash
-./start_demo.sh --observability
-```
-
-Include both optional profiles:
+Start the complete local demo with UI and observability from the repository
+root:
 
 ```bash
 ./start_demo.sh --ui --observability
@@ -105,66 +180,121 @@ If Docker Desktop uses a non-default context:
 ./start_demo.sh --docker-context desktop-linux --ui --observability
 ```
 
+For a backend-only run:
+
+```bash
+./start_demo.sh
+```
+
 Stop the demo:
 
 ```bash
 ./stop_demo.sh
 ```
 
-For the full end-to-end checklist covering environment setup, health checks, client invocation, UI, Grafana, and troubleshooting, see [docs/e2e-demo.md](docs/e2e-demo.md).
+Main local surfaces:
+
+| Surface | URL |
+| --- | --- |
+| Procurement Intake UI | `http://127.0.0.1:3000` |
+| Grafana | `http://127.0.0.1:3001` |
+| Prometheus | `http://127.0.0.1:9090` |
+| Collector metrics | `http://127.0.0.1:9464/metrics` |
+| Conversational Intake Layer | `http://127.0.0.1:8012` |
+| Procurement Orchestrator | `http://127.0.0.1:8003` |
+
+For the full end-to-end checklist covering environment setup, health checks,
+client invocation, UI, Grafana, and troubleshooting, see
+[docs/e2e-demo.md](docs/e2e-demo.md). For the presenter path, see
+[RUNBOOK.md](RUNBOOK.md).
 
 ## System Components
 
-Development proceeds component by component. This first draft roadmap defines the initial procurement system.
+| Component | Type | Current state | Description |
+| --- | --- | --- | --- |
+| Procurement Intake Web UI | Next.js web application | Implemented | Browser entry point for intake conversation, request review, workflow launch, and real-time progress. |
+| Conversational Procurement Intake Layer | HTTP application layer | Implemented | Converts natural language into validated orchestration JSON, grounds entities through MCP, and calls the orchestrator through A2A. |
+| Procurement Data MCP Server | MCP server | Implemented | Exposes read-only procurement master-data lookup tools backed by MySQL demo data. |
+| Procurement Orchestrator | A2A agent | Implemented | Coordinates the structured workflow across specialized A2A agents and streams progress events. |
+| Bid Collection Agent | A2A agent | Implemented | Discovers eligible suppliers through MCP and collects normalized simulated supplier bids. |
+| Offer Evaluation Agent | A2A agent | Implemented | Applies procurement policy, selects the winning offer, and returns an explainable structured decision. |
+| Purchase Order Agent | A2A agent | Implemented | Registers purchase orders with MySQL persistence and returns technical confirmation. |
+| Agent Telemetry Layer | Cross-cutting observability | Implemented, opt-in | Exports Locus/OpenTelemetry metrics to Collector, Prometheus, and Grafana. |
+| Compliance Agent | A2A agent | Planned | Future compliance checks for supplier and procurement decisions. |
 
-| Component | Type | Description |
-| --- | --- | --- |
-| Procurement Intake Web UI | Next.js web application | Lets users converse with the intake layer, review structured procurement requests, launch workflows, and monitor progress in real time. |
-| Conversational Procurement Intake Layer | HTTP application layer | Serves the UI over HTTP, converts natural-language requests into validated orchestration JSON, uses read-only MCP lookup for grounding, and calls the Procurement Orchestrator through an A2A client. |
-| Procurement Orchestrator | A2A agent | Coordinates the end-to-end structured procurement workflow across specialized A2A agents. |
-| Bid Collection Agent | A2A agent | Identifies suppliers through MCP, requests offers, collects bids, and prepares them for evaluation. |
-| Offer Evaluation Agent | A2A agent | Evaluates supplier offers, applies procurement policy, selects the winning offer, and returns an explanation. |
-| Compliance Agent | A2A agent | Checks procurement decisions and supplier data against compliance rules. |
-| Purchase Order Agent | A2A agent | Registers purchase orders in the company purchase order system and returns a technical confirmation. |
+Detailed component descriptions are maintained in
+[AGENT_CATALOG.md](AGENT_CATALOG.md).
 
-Detailed component descriptions are maintained in [AGENT_CATALOG.md](AGENT_CATALOG.md).
+## Demo Data And Scenario
+
+The demo uses a synthetic automotive procurement data set stored under
+[`specs/examples/data`](specs/examples/data) and loaded into MySQL by the Docker
+Compose stack.
+
+The data model covers plants, parts, suppliers, supplier-part relationships, and
+reference prices. The bid collection path uses this master data to discover
+eligible suppliers, while simulated supplier offers derive pricing from the
+reference part cost with deterministic variance and separate shipping cost.
+
+Example scenario:
+
+```text
+Start an urgent tender for 16 units of EV-DC-DC-009, High Voltage DC DC Converter,
+for the Turin plant IT-TOR. Required delivery date is 2026-07-25.
+Bid response deadline is 2026-06-15 at 17:00 UTC. Ask up to 3 European suppliers
+and create the final purchase order automatically.
+```
+
+Expected result:
+
+- the intake layer resolves the part and plant
+- the orchestrator launches the A2A workflow
+- the bid collection agent discovers suppliers and collects offers
+- the offer evaluation agent selects the winning eligible offer
+- the purchase order agent persists a purchase order
+- the UI shows terminal status and Grafana updates after workflow traffic
 
 ## Spec-First Development
 
-This repository follows a spec-first development model.
+This repository follows a spec-first development model. Specifications live in
+[`specs`](specs) and define the contracts before implementation.
 
-Specifications define the contract before implementation:
+The specification tree is organized by architectural concern:
 
-- persistent data entities
-- schemas
-- workflows
-- events
-- policies
-- observability contracts
-- agent capabilities
-- task semantics
-- error behavior
+- [`specs/agents`](specs/agents): A2A agent contracts and capabilities
+- [`specs/schemas`](specs/schemas): JSON Schema contracts for A2A inputs,
+  outputs, and events
+- [`specs/data`](specs/data): procurement data model
+- [`specs/discovery`](specs/discovery): schema and discovery conventions
+- [`specs/layers`](specs/layers): application layers around agent interactions
+- [`specs/mcp`](specs/mcp): MCP server contracts
+- [`specs/observability`](specs/observability): telemetry and tracing contracts
+- [`specs/ui`](specs/ui): UI behavior and interaction contracts
+- [`specs/examples`](specs/examples): example datasets and reference material
 
-Implementation must follow the specifications. When behavior changes, the specification changes first or in the same development step.
+Implementation must follow the specifications. When behavior changes, the
+specification changes first or in the same development step.
 
 ## Repository Layout
 
 ```text
 specs/
   agents/
+  data/
+  discovery/
+  examples/
+  layers/
+  mcp/
   observability/
   schemas/
-  events/
-  workflows/
-  policies/
-  examples/
+  ui/
 
 services/
   bid-collection-agent/
   conversational-procurement-intake/
   offer-evaluation-agent/
-  procurement-intake-ui/
   procurement-data-mcp/
+  procurement-intake-ui/
   procurement-orchestrator/
   purchase-order-agent/
 
@@ -172,47 +302,45 @@ deployments/
   docker-compose/
 
 docs/
+images/
 tests/
-deploy/
+  e2e/
 ```
+
+## Useful Links
+
+- [Demo runbook](RUNBOOK.md)
+- [End-to-end demo checklist](docs/e2e-demo.md)
+- [Docker Compose deployment](deployments/docker-compose)
+- [Docker Compose observability guide](deployments/docker-compose/OBSERVABILITY.md)
+- [Agent catalog](AGENT_CATALOG.md)
+- [Changelog](CHANGELOG.md)
+- [Future extensions](FUTURE_EXTENSIONS.md)
+- [Procurement Intake Web UI README](services/procurement-intake-ui/README.md)
+- [Conversational Procurement Intake Layer README](services/conversational-procurement-intake/README.md)
+- [Procurement Data MCP Server README](services/procurement-data-mcp/README.md)
+- [Procurement Orchestrator README](services/procurement-orchestrator/README.md)
+- [Bid Collection Agent README](services/bid-collection-agent/README.md)
+- [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
+- [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
 
 ## Engineering Principles
 
 The project is designed with enterprise-grade concerns in mind:
 
-- auditability
-- deterministic contracts
+- independent black-box agents
+- deterministic external contracts
 - explainable decisions
 - structured validation
-- distributed tracing
-- secure communication
-- resumable workflows
-- checkpointing persistence
-- policy enforcement
+- MCP-backed master-data grounding
+- audit-friendly workflow artifacts
+- streaming progress events
+- distributed tracing and metrics
+- persistence at the purchase-order boundary
+- policy enforcement and deterministic guardrails
 
-The first implementation steps focus on the Offer Evaluation Agent. Security, checkpointing, orchestration, and observability features will be introduced incrementally as the agent network expands.
-
-Operational startup instructions are available in the agent quickstarts:
-
-- [Procurement Intake Web UI README](services/procurement-intake-ui/README.md)
-- [Conversational Procurement Intake Layer README](services/conversational-procurement-intake/README.md)
-- [Bid Collection Agent README](services/bid-collection-agent/README.md)
-- [Offer Evaluation Agent Quickstart](services/offer-evaluation-agent/QUICKSTART.md)
-- [Procurement Data MCP Server README](services/procurement-data-mcp/README.md)
-- [Procurement Orchestrator README](services/procurement-orchestrator/README.md)
-- [Purchase Order Agent Quickstart](services/purchase-order-agent/QUICKSTART.md)
-
-The first cross-agent Docker Compose deployment is available in [deployments/docker-compose](deployments/docker-compose).
-
-The initial persistent data model is specified in [specs/data/procurement-data-model.md](specs/data/procurement-data-model.md).
-
-The read-only procurement data MCP server is specified in [specs/mcp/procurement-data-mcp-server.md](specs/mcp/procurement-data-mcp-server.md).
-
-The draft conversational procurement intake layer is specified in [specs/layers/conversational-procurement-intake.md](specs/layers/conversational-procurement-intake.md).
-
-The draft procurement intake web UI is specified in [specs/ui/procurement-intake-web-ui.md](specs/ui/procurement-intake-web-ui.md).
-
-The draft procurement orchestration workflow is specified in [specs/agents/procurement-orchestrator.md](specs/agents/procurement-orchestrator.md).
+Security, distributed checkpointing, resumable workflow persistence, and
+approval/compliance workflows remain future evolution areas.
 
 ## Development Standards
 
@@ -234,7 +362,10 @@ Run the repository quality gate before considering a development step complete:
 ./check.sh
 ```
 
-The script runs `black --check`, `pylint`, `pytest`, and the Procurement Intake Web UI TypeScript typecheck. Python checks run through the `a2a-procurement-agents` conda environment. If UI dependencies are missing, install them first:
+The script runs `black --check`, `pylint`, `pytest`, and the Procurement Intake
+Web UI TypeScript typecheck. Python checks run through the
+`a2a-procurement-agents` conda environment. If UI dependencies are missing,
+install them first:
 
 ```bash
 cd services/procurement-intake-ui
