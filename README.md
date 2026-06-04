@@ -9,18 +9,18 @@
 
 ![A2A Procurement Agents overview](images/image01.png)
 
-This repository is a working enterprise procurement demo built as a network of
-independent AI agents.
+This repository is a working **enterprise procurement demo** built as a **network** of
+**independent AI agents**, communicating using **A2A** protocol.
 
-The demo starts with a natural-language request such as "start an urgent tender
+The demo starts with a natural-language request such as "start a tender
 for this part and create the final purchase order automatically." From there the
 system extracts and validates the request, grounds plants and parts against
 procurement master data, launches an A2A orchestration, collects simulated
 supplier bids, evaluates the offers against policy, persists a purchase order,
 and exposes telemetry in Grafana.
 
-The important point: this is no longer a single-agent prototype. It is an
-end-to-end, containerized multi-agent workflow with UI, MCP-backed data lookup,
+The important point: this is not a single-agent prototype. It is an
+end-to-end, containerized **multi-agent** workflow with UI, MCP-backed data lookup,
 A2A Agent Cards, JSON Schema discovery, persistence, streaming progress events,
 OpenTelemetry metrics, tests, and a root-level quality gate.
 
