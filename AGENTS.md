@@ -69,6 +69,39 @@ Specs are the source of truth.
 
 ---
 
+## Specification Layout
+
+All project specifications are maintained under the root-level
+[`specs`](specs) directory.
+
+The `specs` directory is organized by architectural concern:
+
+- [`specs/agents`](specs/agents): agent contracts, capabilities, task semantics,
+  Agent Card expectations, and A2A interaction boundaries for each agent.
+- [`specs/schemas`](specs/schemas): JSON Schema definitions for A2A task inputs,
+  outputs, and domain events.
+- [`specs/data`](specs/data): procurement domain data model specifications.
+- [`specs/discovery`](specs/discovery): agent and schema discovery behavior.
+- [`specs/layers`](specs/layers): cross-cutting application layers that sit above
+  or around agent interactions.
+- [`specs/mcp`](specs/mcp): MCP server contracts and tool-facing integration
+  specifications.
+- [`specs/observability`](specs/observability): telemetry, tracing, and
+  observability specifications.
+- [`specs/ui`](specs/ui): user interface specifications.
+- [`specs/examples`](specs/examples): example inputs, datasets, and reference
+  material used to validate specifications and implementations.
+
+When implementing or changing behavior, first locate the relevant specification
+in `specs`, update it if the desired behavior is not already defined, and then
+align the implementation and tests with that specification.
+
+Schemas in `specs/schemas` define the external contracts used across agent
+boundaries. Agent implementations must consume and produce data that conforms to
+those schemas instead of relying on internal implementation assumptions.
+
+---
+
 ## 4. Oracle 'Locus' Runtime
 
 Agents are implemented using the Oracle Locus framework.
@@ -281,11 +314,14 @@ Every meaningful change must be documented.
 
 /specs
     /agents
-    /schemas
-    /events
-    /workflows
-    /policies
+    /data
+    /discovery
     /examples
+    /layers
+    /mcp
+    /observability
+    /schemas
+    /ui
 
 /services
     /offer-evaluation-agent

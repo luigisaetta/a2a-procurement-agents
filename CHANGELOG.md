@@ -2,6 +2,10 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-06-04
+
+- Clarified the `AGENTS.md` spec-first guidance with the current `specs` directory layout and repository structure.
+
 ## 2026-06-03
 
 - Added Procurement Orchestrator business telemetry metrics for purchase order count, purchase order amount by plant, selected offer price deviation by plant, and shipping cost percentage, with Grafana dashboard panels and observability documentation.
