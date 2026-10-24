@@ -16,6 +16,7 @@ from conversational_procurement_intake.extraction import (
     CandidateIntakeFields,
     DeterministicIntakeExtractor,
     build_extraction_result,
+    enforce_candidate_evidence,
 )
 from conversational_procurement_intake.master_data import (
     McpMasterDataResolver,
@@ -111,6 +112,31 @@ async def test_extractor_builds_orchestration_request_with_defaults() -> None:
         "currency",
         "evaluation_policy_id",
     }
+
+
+@pytest.mark.parametrize(
+    ("conversation", "is_evidence"),
+    [
+        ("quantity is 10", True),
+        ("qty: 10", True),
+        ("We need 10 battery modules.", True),
+        ("I need urgently 10 battery cooling plates.", True),
+        ("Please order 10 units.", True),
+        ("Battery cooling plates for Turin.\n10", True),
+        ("Battery cooling plates for Turin.\n10 units", True),
+        ("Invite 10 eu suppliers.", False),
+        ("The bid must end before 10 of november.", False),
+        ("We need 10 V converters.", False),
+    ],
+)
+def test_quantity_evidence_forms(conversation: str, is_evidence: bool) -> None:
+    """Only the forms listed in the spec keep an LLM quantity of 10."""
+
+    candidate = enforce_candidate_evidence(
+        CandidateIntakeFields(quantity=10), conversation
+    )
+
+    assert (candidate.quantity == 10) is is_evidence
 
 
 @pytest.mark.anyio

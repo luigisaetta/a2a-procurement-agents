@@ -377,6 +377,21 @@ When more than one mandatory field is missing, the layer must ask for all curren
 
 The layer should avoid asking for information that can be safely resolved through MCP lookup or documented defaults.
 
+## Quantity Evidence
+
+An LLM can take a number that is not a quantity, such as a day, a time, or a supplier count, and return it as the quantity. The layer therefore keeps an LLM quantity only when the same number appears in the conversation in one of these forms:
+
+| Form | Examples |
+| --- | --- |
+| After the word quantity | "quantity is 10", "qty: 10" |
+| After a buying verb, optionally with one adverb in between | "we need 10", "I need urgently 10", "order 12" |
+| Before a unit or a known item noun | "10 units", "10 pieces", "10 battery modules" |
+| Alone on its own line, as a reply to the quantity question | "10", "10 units" |
+
+Numbers in other positions, for example "Invite 10 suppliers" or "15 of November", are not quantity evidence. Without evidence the layer asks for the quantity, and a plain number reply such as "10" then satisfies the question.
+
+Implemented and verified locally with unit tests on 2026-10-24.
+
 ---
 
 # Confirmation Policy

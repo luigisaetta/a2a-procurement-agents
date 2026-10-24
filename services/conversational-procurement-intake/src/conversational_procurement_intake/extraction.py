@@ -26,6 +26,31 @@ from pydantic import BaseModel, ConfigDict, Field
 
 ResolvedRecordT = TypeVar("ResolvedRecordT")
 
+_NUMBER = r"(\d+(?:\.\d+)?)"
+_UNIT = r"(?:units?|items?|pieces?|pcs|ea)"
+# Words allowed between a buying verb and the quantity: "I need urgently 10".
+_QUANTITY_ADVERB = (
+    r"(?:urgently|immediately|asap|about|around|approximately|exactly|"
+    r"only|just|another|at\s+least)"
+)
+QUANTITY_EVIDENCE_PATTERNS = [
+    # "quantity is 10", "qty: 10"
+    re.compile(rf"\b(?:quantity|qty)\s*(?:is|=|:)?\s*{_NUMBER}\b", re.IGNORECASE),
+    # "we need 10", "I need urgently 10", "order 12"; not a voltage like "need 48 V"
+    re.compile(
+        rf"\b(?:need|require|order|buy|procure)\s+(?:{_QUANTITY_ADVERB}\s+)?"
+        rf"{_NUMBER}\b(?!\s*v\b)",
+        re.IGNORECASE,
+    ),
+    # "10 units", "10 pieces", "10 battery modules"
+    re.compile(
+        rf"\b{_NUMBER}\s+(?:{_UNIT}|battery\s+modules?|modules?|inverters?)\b",
+        re.IGNORECASE,
+    ),
+    # A reply that is only a number, such as "10" or "10 units", on its own line
+    re.compile(rf"^\s*{_NUMBER}\s*{_UNIT}?\s*\.?\s*$", re.IGNORECASE | re.MULTILINE),
+]
+
 MONTH_NUMBERS = {
     "january": 1,
     "february": 2,
@@ -400,18 +425,16 @@ def _has_quantity_evidence(text: str, quantity: float) -> bool:
 
 
 def _quantity_evidence_matches(text: str) -> list[str]:
-    """Return explicit quantity-like numeric values from text."""
+    """Return the numbers that the text states as a quantity.
 
-    patterns = [
-        r"\b(?:quantity|qty)\s+(?:is|=|:)?\s*(\d+(?:\.\d+)?)\b",
-        r"\b(?:we\s+)?(?:need|require|order|buy|procure)\s+(\d+(?:\.\d+)?)"
-        r"\b(?!\s*[vV]\b)",
-        r"\b(\d+(?:\.\d+)?)\s+"
-        r"(?:units?|items?|pieces?|ea|battery\s+modules?|modules?|inverters?)\b",
-    ]
+    Each pattern is one form listed in the "Quantity Evidence" section of the
+    intake specification. Numbers in other positions, such as "Invite 10
+    suppliers" or "15 of November", are deliberately not matched.
+    """
+
     matches: list[str] = []
-    for pattern in patterns:
-        matches.extend(re.findall(pattern, text, re.IGNORECASE))
+    for pattern in QUANTITY_EVIDENCE_PATTERNS:
+        matches.extend(pattern.findall(text))
     return matches
 
 

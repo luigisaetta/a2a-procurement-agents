@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-10-24
 
+- Fixed the Conversational Procurement Intake asking "What quantity do you need?" again and again. The check that an LLM quantity really appears in the conversation missed "I need urgently 10 ...", item names outside a short demo list, and a plain "10" reply, so it discarded valid quantities. It now accepts one adverb after the buying verb, a number alone on its own line, and "qty: 10"; supplier counts and dates are still not taken as quantities. The accepted forms are documented in the intake specification.
 - Added a "Recent purchase orders" panel to the Procurement Intake Web UI, below the workflow status. It shows the last 10 purchase orders, newest first, with part, quantity, offer delivery date, delivery plant, and supplier ID, and reloads when a workflow finishes.
 - Added a read-only `list_recent_purchase_orders` A2A skill to the Purchase Order Agent, with request and response JSON Schemas, and a `GET /purchase-orders?limit=N` endpoint to the Conversational Procurement Intake Layer that calls it. It returns the last N purchase orders (default 10, at most 100), newest first, with all stored fields, for a future UI table. The intake layer reads the agent URL from `PURCHASE_ORDER_AGENT_URL`, now set in Docker Compose.
 - Changed the Procurement Intake Web UI workflow timeline to show seconds in step timestamps, so the duration of each phase can be read in the UI.

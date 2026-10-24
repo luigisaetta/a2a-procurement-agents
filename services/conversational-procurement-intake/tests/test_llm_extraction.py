@@ -288,3 +288,65 @@ async def test_llm_extractor_passes_the_clock_date_to_the_llm() -> None:
     await extractor.extract("We need parts.", "operator@example.com", "REQ-TEST-0014")
 
     assert llm_client.received_today == DEMO_NOW.date()
+
+
+def _candidate_with_quantity_ten() -> CandidateIntakeFields:
+    """Return the fields an LLM extracts from the Turin urgent request."""
+
+    return CandidateIntakeFields(
+        material_reference="high density battery module",
+        plant_reference="Turin",
+        quantity=10,
+        required_delivery_date=date(2026, 11, 30),
+        response_deadline=datetime(2026, 11, 15, 12, 0, tzinfo=UTC),
+        max_suppliers_per_part=10,
+        allowed_regions=["EU"],
+    )
+
+
+@pytest.mark.anyio
+async def test_llm_extractor_keeps_quantity_after_an_adverb() -> None:
+    """ "I need urgently 10 ..." is quantity evidence, not a reason to ask again."""
+
+    extractor = LLMIntakeExtractor(
+        FakeLLMClient(_candidate_with_quantity_ten()),
+        StaticMasterDataResolver(),
+        clock=demo_clock,
+    )
+
+    result = await extractor.extract(
+        "I need urgently 10 high density battery modules to be delivered by end "
+        "of november in Turin plant. Invite 10 eu suppliers bid must end before "
+        "15 of november at 12 PM",
+        "operator@example.com",
+        "REQ-TEST-0015",
+    )
+
+    assert result.orchestration_request is not None
+    assert result.orchestration_request.parts[0].quantity == 10
+
+
+@pytest.mark.anyio
+async def test_llm_extractor_accepts_a_plain_number_reply() -> None:
+    """A supplier count is not a quantity, but a plain "10" reply is."""
+
+    extractor = LLMIntakeExtractor(
+        FakeLLMClient(_candidate_with_quantity_ten()),
+        StaticMasterDataResolver(),
+        clock=demo_clock,
+    )
+    first_message = (
+        "Please source high density battery modules for the Turin plant by end "
+        "of november. Invite 10 eu suppliers, bid ends 15 of november at 12 PM"
+    )
+
+    first = await extractor.extract(
+        first_message, "operator@example.com", "REQ-TEST-0016"
+    )
+    after_reply = await extractor.extract(
+        first_message + "\n10", "operator@example.com", "REQ-TEST-0016"
+    )
+
+    assert first.missing_fields == ["parts[0].quantity"]
+    assert after_reply.orchestration_request is not None
+    assert after_reply.orchestration_request.parts[0].quantity == 10
