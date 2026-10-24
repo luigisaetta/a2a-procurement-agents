@@ -2,6 +2,13 @@
 
 All meaningful changes to this project are documented in this file.
 
+## 2026-10-24
+
+- Fixed the Procurement Orchestrator so that a failed downstream call (timeout, A2A or HTTP error, malformed response) ends only the affected part with a `part_failed` event and an error code such as `BID_COLLECTION_TIMEOUT`, instead of failing the whole orchestration. The other parts continue and the final response reports `partial` or `failed`. A Purchase Order Agent failure gives `purchase_order_failed` and is not retried.
+- Fixed the Conversational Procurement Intake relay so that a submitted session always reaches a terminal outcome. A failed, canceled, or rejected orchestrator task, a JSON-RPC error in the stream, or a stream that ends without a final result now sets the session to `failed` and publishes `orchestration_failed`, also to SSE clients that connect later. Connection error details go to the log instead of the UI.
+- Moved the orchestrator part result builders into `part_results.py`.
+- Upgraded `locus-sdk` from `0.2.0b23` to `3.0.1`. The A2A server and client, `Agent`/`AgentConfig`, hook, event, and OCI model APIs used by the agents are unchanged.
+
 ## 2026-06-04
 
 - Reworked the main README to describe the current end-to-end procurement demo, implemented components, demo flow, observability, and remaining planned capabilities.

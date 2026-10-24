@@ -427,6 +427,33 @@ The orchestrator must handle:
 
 When a supplier-level failure is already represented by the Bid Collection Agent inside `supplier_responses[]`, the orchestrator must not treat it as a workflow-level failure unless the part receives no offers after all attempts.
 
+## Downstream Call Failures
+
+A failed downstream call ends only the affected part. The orchestrator records the failure in that part result, emits a `part_failed` event, and continues with the next part. The final response is then built from all part results with the usual status rules, so one failed part next to a successful one gives `partial`.
+
+Each downstream call can fail in three ways, and each has its own error code:
+
+| Failure | Example cause | Error code |
+| --- | --- | --- |
+| Timeout | No answer within the configured timeout | `<AGENT>_TIMEOUT` |
+| Failure | Connection error, HTTP error, A2A JSON-RPC error | `<AGENT>_FAILED` |
+| Malformed response | Missing artifact, invalid JSON, contract validation error | `<AGENT>_INVALID_RESPONSE` |
+
+`<AGENT>` is `BID_COLLECTION`, `OFFER_EVALUATION`, or `PURCHASE_ORDER`.
+
+Part status after a failure:
+
+- Bid Collection or Offer Evaluation failure: `failed`. The part result keeps the bid and evaluation summaries collected before the failure.
+- Purchase Order Agent failure: `purchase_order_failed`, with `purchase_order.status` set to `failed`. The purchase order call is not retried, because the order may have been registered before the failure.
+
+The error `message` in the part result and in the `part_failed` event is safe to show to end users. It names the agent and the kind of failure, never internal URLs or exception text. The technical cause is written to the orchestrator log.
+
+Errors that are not downstream call failures, such as an invalid input payload or a programming error, still fail the A2A task. Clients must treat a failed A2A task, or a stream that ends without a final response, as a failed orchestration.
+
+The total orchestration timeout is not enforced yet.
+
+Implemented and verified locally with unit tests on 2026-10-24 using `locus-sdk==3.0.1`.
+
 ---
 
 # Idempotency

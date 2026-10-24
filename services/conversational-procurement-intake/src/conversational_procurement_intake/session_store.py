@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    In-memory session store and event broker for procurement intake.
 """
@@ -42,6 +42,8 @@ class IntakeSession:
     orchestration_id: str | None = None
     events: list[ProcurementOrchestrationEvent] = field(default_factory=list)
     terminal_result: ProcurementOrchestrationResponse | None = None
+    # User-safe reason recorded when the orchestration relay fails.
+    failure_detail: str = ""
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 

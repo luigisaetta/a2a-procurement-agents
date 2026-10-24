@@ -1,14 +1,17 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Application service for conversational procurement intake.
+                Every submitted session ends with either a terminal
+                orchestration result or a recorded failure.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
@@ -22,12 +25,21 @@ from conversational_procurement_intake.models import (
     StartSessionRequest,
     UserMessageRequest,
 )
-from conversational_procurement_intake.orchestrator_client import OrchestratorClient
+from conversational_procurement_intake.orchestrator_client import (
+    OrchestratorClient,
+    OrchestratorStreamError,
+)
 from conversational_procurement_intake.session_store import (
     IntakeSession,
     SessionEventBroker,
     SessionStore,
 )
+
+LOGGER = logging.getLogger(__name__)
+
+STREAM_FAILED_MESSAGE = "The orchestration stream failed."
+STREAM_ENDED_WITHOUT_RESULT = "The orchestrator stream ended without a final result."
+ORCHESTRATOR_UNREACHABLE = "The Procurement Orchestrator could not be reached."
 
 
 class IntakeApplicationService:
@@ -155,6 +167,10 @@ class IntakeApplicationService:
                 session.terminal_result.model_dump(mode="json"),
             )
             return
+        if session.state == "failed":
+            # The failure was published before this client connected.
+            yield _sse("orchestration_failed", _failure_payload(session))
+            return
 
         queue = await self._event_broker.subscribe(session_id)
         try:
@@ -173,7 +189,11 @@ class IntakeApplicationService:
             await self._event_broker.unsubscribe(session_id, queue)
 
     async def _relay_orchestration(self, session_id: str) -> None:
-        """Consume the A2A stream and relay each event to connected UI clients."""
+        """Consume the A2A stream and relay each event to connected UI clients.
+
+        The session always ends with a terminal result or a recorded failure,
+        so the UI never waits forever for a workflow that already stopped.
+        """
 
         session = await self._session_store.get(session_id)
         request = session.orchestration_request
@@ -185,8 +205,18 @@ class IntakeApplicationService:
                     await self._record_event(session, item.event)
                 elif item.kind == "completed" and item.response is not None:
                     await self._record_terminal_response(session, item.response)
-        except Exception as exc:  # pylint: disable=broad-exception-caught
+        except OrchestratorStreamError as exc:
             await self._record_failure(session, str(exc))
+            return
+        except Exception:  # pylint: disable=broad-exception-caught
+            # Connection errors and timeouts can carry internal URLs, so the
+            # details go to the log and the UI gets a generic message.
+            LOGGER.exception("Orchestration relay failed for %s.", session_id)
+            await self._record_failure(session, ORCHESTRATOR_UNREACHABLE)
+            return
+
+        if session.terminal_result is None:
+            await self._record_failure(session, STREAM_ENDED_WITHOUT_RESULT)
 
     async def _record_event(
         self, session: IntakeSession, event: ProcurementOrchestrationEvent
@@ -222,18 +252,21 @@ class IntakeApplicationService:
             _sse("orchestration_completed", response.model_dump(mode="json")),
         )
 
-    async def _record_failure(self, session: IntakeSession, message: str) -> None:
-        """Store and publish a safe orchestration relay failure."""
+    async def _record_failure(self, session: IntakeSession, detail: str) -> None:
+        """Store and publish a safe orchestration relay failure.
+
+        Args:
+            session: Session whose orchestration failed.
+            detail: User-safe reason for the failure.
+        """
 
         session.state = "failed"
-        session.message = "The orchestration stream failed."
+        session.message = STREAM_FAILED_MESSAGE
+        session.failure_detail = detail
         await self._session_store.update_timestamp(session)
         await self._event_broker.publish(
             session.session_id,
-            _sse(
-                "orchestration_failed",
-                {"message": "The orchestration stream failed.", "detail": message},
-            ),
+            _sse("orchestration_failed", _failure_payload(session)),
         )
 
 
@@ -268,6 +301,12 @@ def _confirmation_summary(request: object) -> dict[str, object]:
         "sourcing_constraints": payload["sourcing_constraints"],
         "parts": payload["parts"],
     }
+
+
+def _failure_payload(session: IntakeSession) -> dict[str, object]:
+    """Build the ``orchestration_failed`` SSE payload for a failed session."""
+
+    return {"message": session.message, "detail": session.failure_detail}
 
 
 def _sse(event_name: str, payload: dict[str, object]) -> str:

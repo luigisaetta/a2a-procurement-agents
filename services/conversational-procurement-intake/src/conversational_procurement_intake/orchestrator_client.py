@@ -1,9 +1,10 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Procurement Orchestrator client boundary used by the intake
-                layer.
+                layer. Failures reported inside the A2A stream are raised
+                as OrchestratorStreamError.
 """
 
 from __future__ import annotations
@@ -22,6 +23,16 @@ from conversational_procurement_intake.models import (
 )
 
 StreamItemKind = Literal["event", "completed"]
+
+# A2A task states that mean the orchestration will not produce a result.
+FAILED_TASK_STATES = frozenset({"failed", "canceled", "rejected"})
+
+
+class OrchestratorStreamError(RuntimeError):
+    """The orchestrator stream reported that the workflow did not complete.
+
+    The message is safe to show to end users.
+    """
 
 
 @dataclass(frozen=True)
@@ -58,7 +69,12 @@ class A2AOrchestratorClient:  # pylint: disable=too-few-public-methods
     async def run_workflow(
         self, request: ProcurementOrchestrationRequest
     ) -> AsyncIterator[OrchestrationStreamItem]:
-        """Submit the request and yield normalized orchestration updates."""
+        """Submit the request and yield normalized orchestration updates.
+
+        Raises:
+            OrchestratorStreamError: If the stream reports a JSON-RPC error or
+                a failed, canceled, or rejected orchestrator task.
+        """
 
         message = Message(
             role="user",
@@ -68,6 +84,7 @@ class A2AOrchestratorClient:  # pylint: disable=too-few-public-methods
         async for raw_event in self._client.send_message_streaming(
             message, timeout=1200
         ):
+            _raise_if_stream_reports_failure(raw_event)
             parsed = _extract_json_object(raw_event)
             if not parsed:
                 continue
@@ -81,6 +98,34 @@ class A2AOrchestratorClient:  # pylint: disable=too-few-public-methods
                     kind="completed",
                     response=ProcurementOrchestrationResponse.model_validate(parsed),
                 )
+
+
+def _raise_if_stream_reports_failure(raw_event: Any) -> None:
+    """Raise when one A2A stream event says that the orchestration failed.
+
+    Locus yields a JSON-RPC error envelope as a normal stream event, and a
+    failed task as a status update without an orchestration result, so both
+    must be detected explicitly.
+
+    Raises:
+        OrchestratorStreamError: If the event is a JSON-RPC error envelope, or
+            a task or status update in a failed, canceled, or rejected state.
+    """
+
+    if not isinstance(raw_event, dict):
+        return
+
+    error = raw_event.get("error")
+    if error:
+        code = error.get("code") if isinstance(error, dict) else None
+        raise OrchestratorStreamError(f"The orchestrator returned A2A error {code}.")
+
+    status = raw_event.get("status")
+    state = status.get("state") if isinstance(status, dict) else None
+    if state in FAILED_TASK_STATES:
+        raise OrchestratorStreamError(
+            f"The orchestrator task ended in the '{state}' state."
+        )
 
 
 def _extract_json_object(value: Any) -> dict[str, Any]:

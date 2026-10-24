@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Tests for the Procurement Orchestrator deterministic workflow.
 """
@@ -14,6 +14,12 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from procurement_orchestrator.a2a_client import (
+    BID_COLLECTION_AGENT,
+    OFFER_EVALUATION_AGENT,
+    PURCHASE_ORDER_AGENT,
+    DownstreamAgentError,
+)
 from procurement_orchestrator.config import Settings
 from procurement_orchestrator.pipeline import ProcurementOrchestratorWorkflowAgent
 
@@ -277,6 +283,189 @@ async def test_orchestrator_runs_locus_hooks_for_validation_error() -> None:
 
     assert hook.after_success == [False]
     assert hook.after_error_counts == [1]
+
+
+class FailingProcurementAgentClient(FakeProcurementAgentClient):
+    """Fake client whose N-th call of one method raises a downstream error."""
+
+    def __init__(
+        self,
+        failing_method: str,
+        error: DownstreamAgentError,
+        failing_call_number: int = 1,
+    ) -> None:
+        """Initialize the failing fake client.
+
+        Args:
+            failing_method: ``collect_bids``, ``evaluate_offers``, or
+                ``create_purchase_order``.
+            error: Error raised by the failing call.
+            failing_call_number: Which call of ``failing_method`` fails, from 1.
+        """
+
+        super().__init__(decisions=["selected_offer", "selected_offer"])
+        self.failing_method = failing_method
+        self.error = error
+        self.failing_call_number = failing_call_number
+        self.calls_by_method: dict[str, int] = {}
+
+    def _fail_if_selected(self, method: str) -> None:
+        """Raise the configured error when this call is the failing one."""
+
+        self.calls_by_method[method] = self.calls_by_method.get(method, 0) + 1
+        is_failing_call = self.calls_by_method[method] == self.failing_call_number
+        if method == self.failing_method and is_failing_call:
+            raise self.error
+
+    async def collect_bids(
+        self, payload: dict[str, Any], timeout: float
+    ) -> dict[str, Any]:
+        """Fail or delegate to the deterministic fake."""
+
+        self._fail_if_selected("collect_bids")
+        return await super().collect_bids(payload, timeout)
+
+    async def evaluate_offers(
+        self, payload: dict[str, Any], timeout: float
+    ) -> dict[str, Any]:
+        """Fail or delegate to the deterministic fake."""
+
+        self._fail_if_selected("evaluate_offers")
+        return await super().evaluate_offers(payload, timeout)
+
+    async def create_purchase_order(
+        self, payload: dict[str, Any], timeout: float
+    ) -> dict[str, Any]:
+        """Fail or delegate to the deterministic fake."""
+
+        self._fail_if_selected("create_purchase_order")
+        return await super().create_purchase_order(payload, timeout)
+
+
+class MalformedBidCollectionClient(FakeProcurementAgentClient):
+    """Fake client whose Bid Collection Agent breaks the response contract."""
+
+    async def collect_bids(
+        self, payload: dict[str, Any], timeout: float
+    ) -> dict[str, Any]:
+        """Return a response that does not match CollectBidsResponse."""
+
+        self.collect_calls.append({"payload": payload, "timeout": timeout})
+        return {"request_id": payload["request_id"], "unexpected": True}
+
+
+@pytest.mark.anyio
+async def test_bid_collection_timeout_fails_the_part_without_raising() -> None:
+    """A downstream timeout ends the part and the workflow still completes."""
+
+    client = FailingProcurementAgentClient(
+        "collect_bids", DownstreamAgentError.timeout(BID_COLLECTION_AGENT, 300)
+    )
+    hook = _RecordingHook()
+    agent = ProcurementOrchestratorWorkflowAgent(
+        _settings(), agent_client=client, hooks=[hook]
+    )
+
+    events = [event async for event in agent.run(_request())]
+
+    streamed = [json.loads(event.reasoning) for event in events[:-1]]
+    final = json.loads(events[-1].final_message)
+    part_result = final["part_results"][0]
+    assert final["status"] == "failed"
+    assert part_result["status"] == "failed"
+    assert part_result["error"]["code"] == "BID_COLLECTION_TIMEOUT"
+    assert part_result["purchase_order"]["status"] == "skipped"
+    assert streamed[-2]["event_type"] == "part_failed"
+    assert streamed[-2]["payload"]["error_code"] == "BID_COLLECTION_TIMEOUT"
+    assert streamed[-1]["event_type"] == "workflow_failed"
+    assert not client.evaluate_calls
+    assert hook.after_success == [True]
+
+
+@pytest.mark.anyio
+async def test_failed_part_does_not_stop_the_next_part() -> None:
+    """One failed part next to a successful one gives a partial result."""
+
+    client = FailingProcurementAgentClient(
+        "evaluate_offers",
+        DownstreamAgentError.failed(OFFER_EVALUATION_AGENT),
+        failing_call_number=2,
+    )
+    agent = ProcurementOrchestratorWorkflowAgent(_settings(), agent_client=client)
+
+    events = [event async for event in agent.run(_two_part_request())]
+
+    final = json.loads(events[-1].final_message)
+    statuses = [result["status"] for result in final["part_results"]]
+    assert final["status"] == "partial"
+    assert statuses == ["purchase_order_created", "failed"]
+    assert final["part_results"][1]["error"]["code"] == "OFFER_EVALUATION_FAILED"
+    assert final["part_results"][1]["bid_collection"]["offers_count"] == 1
+
+
+@pytest.mark.anyio
+async def test_purchase_order_failure_is_not_retried() -> None:
+    """A Purchase Order Agent failure gives purchase_order_failed once."""
+
+    client = FailingProcurementAgentClient(
+        "create_purchase_order",
+        DownstreamAgentError.failed(PURCHASE_ORDER_AGENT),
+    )
+    agent = ProcurementOrchestratorWorkflowAgent(_settings(), agent_client=client)
+
+    events = [event async for event in agent.run(_request())]
+
+    final = json.loads(events[-1].final_message)
+    part_result = final["part_results"][0]
+    assert part_result["status"] == "purchase_order_failed"
+    assert part_result["purchase_order"]["status"] == "failed"
+    assert part_result["error"]["code"] == "PURCHASE_ORDER_FAILED"
+    assert part_result["evaluation"]["status"] == "selected_offer"
+    assert client.calls_by_method["create_purchase_order"] == 1
+
+
+@pytest.mark.anyio
+async def test_malformed_bid_collection_response_fails_the_part() -> None:
+    """A response that breaks the contract is reported as invalid."""
+
+    client = MalformedBidCollectionClient()
+    agent = ProcurementOrchestratorWorkflowAgent(_settings(), agent_client=client)
+
+    events = [event async for event in agent.run(_request())]
+
+    final = json.loads(events[-1].final_message)
+    part_result = final["part_results"][0]
+    assert part_result["status"] == "failed"
+    assert part_result["error"]["code"] == "BID_COLLECTION_INVALID_RESPONSE"
+
+
+@pytest.mark.anyio
+async def test_streamed_event_sequences_are_unique_and_increasing() -> None:
+    """Every streamed event has the next sequence number, also on failures."""
+
+    client = FailingProcurementAgentClient(
+        "evaluate_offers",
+        DownstreamAgentError.failed(OFFER_EVALUATION_AGENT),
+        failing_call_number=2,
+    )
+    agent = ProcurementOrchestratorWorkflowAgent(_settings(), agent_client=client)
+
+    events = [event async for event in agent.run(_two_part_request())]
+
+    sequences = [json.loads(event.reasoning)["sequence"] for event in events[:-1]]
+    assert sequences == list(range(1, len(sequences) + 1))
+
+
+def _two_part_request() -> str:
+    """Build a valid orchestration request with two parts."""
+
+    request = json.loads(_request())
+    second_part = dict(request["parts"][0])
+    second_part["part_id"] = "PART-002"
+    second_part["material_code"] = "EV-INV-002"
+    second_part["material_description"] = "Traction Inverter"
+    request["parts"].append(second_part)
+    return json.dumps(request)
 
 
 def _offer(request_id: str, part: dict[str, Any]) -> dict[str, Any]:

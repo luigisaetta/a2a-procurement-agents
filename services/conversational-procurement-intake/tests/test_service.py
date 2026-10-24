@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Tests for intake session state and orchestration event relay.
 """
@@ -25,6 +25,8 @@ from conversational_procurement_intake.models import (
 )
 from conversational_procurement_intake.orchestrator_client import (
     OrchestrationStreamItem,
+    OrchestratorClient,
+    OrchestratorStreamError,
 )
 from conversational_procurement_intake.service import IntakeApplicationService
 from conversational_procurement_intake.session_store import (
@@ -70,14 +72,16 @@ class FakeOrchestratorClient:  # pylint: disable=too-few-public-methods
         )
 
 
-def _service() -> IntakeApplicationService:
+def _service(
+    orchestrator_client: OrchestratorClient | None = None,
+) -> IntakeApplicationService:
     """Build a test application service."""
 
     return IntakeApplicationService(
         session_store=SessionStore(),
         event_broker=SessionEventBroker(),
         extractor=DeterministicIntakeExtractor(StaticMasterDataResolver()),
-        orchestrator_client=FakeOrchestratorClient(),
+        orchestrator_client=orchestrator_client or FakeOrchestratorClient(),
     )
 
 
@@ -177,6 +181,100 @@ async def test_sse_stream_receives_event_in_real_time() -> None:
 
     assert "event: orchestration_event" in first_message
     assert "accepted" in first_message
+
+
+class FailingOrchestratorClient:  # pylint: disable=too-few-public-methods
+    """Fake orchestrator client that streams one event and then stops early."""
+
+    def __init__(self, error: Exception | None) -> None:
+        """Initialize the fake.
+
+        Args:
+            error: Error raised after the first event, or ``None`` to end the
+                stream without a terminal result.
+        """
+
+        self.error = error
+
+    async def run_workflow(
+        self, request: ProcurementOrchestrationRequest
+    ) -> AsyncIterator[OrchestrationStreamItem]:
+        """Yield one event, then raise or end without a terminal result."""
+
+        yield await anext(FakeOrchestratorClient().run_workflow(request))
+        if self.error is not None:
+            raise self.error
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("error", "expected_detail"),
+    [
+        (None, "The orchestrator stream ended without a final result."),
+        (
+            OrchestratorStreamError(
+                "The orchestrator task ended in the 'failed' state."
+            ),
+            "The orchestrator task ended in the 'failed' state.",
+        ),
+        (
+            ConnectionError("cannot reach http://procurement-orchestrator:8003"),
+            "The Procurement Orchestrator could not be reached.",
+        ),
+    ],
+)
+async def test_relay_records_failure_when_stream_stops_early(
+    error: Exception | None, expected_detail: str
+) -> None:
+    """A stream that stops without a terminal result fails the session."""
+
+    service = _service(FailingOrchestratorClient(error))
+    session_id = await _submit_ready_session(service)
+
+    events_response = await _wait_for_state(service, session_id, "failed")
+    session = await service.get_session(session_id)
+
+    assert events_response.terminal_result is None
+    assert events_response.events[0].event_type == "accepted"
+    assert session.message == "The orchestration stream failed."
+
+    stream = service.stream_sse(session_id)
+    messages = [message async for message in stream]
+    assert messages[-1].startswith("event: orchestration_failed")
+    assert expected_detail in messages[-1]
+    assert "procurement-orchestrator:8003" not in messages[-1]
+
+
+async def _submit_ready_session(service: IntakeApplicationService) -> str:
+    """Prepare a complete request, confirm it, and return the session ID."""
+
+    started = await service.start_session(
+        StartSessionRequest(requested_by="operator@example.com")
+    )
+    await service.add_user_message(
+        started.session_id,
+        UserMessageRequest(
+            message=(
+                "We need 10 high density battery modules for Munich by June 15. "
+                "Bid deadline May 29 at 12."
+            )
+        ),
+    )
+    await service.confirm_session(started.session_id, ConfirmSessionRequest())
+    return started.session_id
+
+
+async def _wait_for_state(
+    service: IntakeApplicationService, session_id: str, state: str
+):
+    """Wait until the relayed session reaches ``state``."""
+
+    for _ in range(20):
+        response = await service.get_orchestration_events(session_id)
+        if response.state == state:
+            return response
+        await asyncio.sleep(0.01)
+    raise AssertionError(f"Timed out waiting for session state {state!r}.")
 
 
 async def _wait_for_events(service: IntakeApplicationService, session_id: str):

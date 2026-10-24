@@ -224,6 +224,17 @@ If the UI disconnects, the orchestrator task must continue. The intake layer sho
 
 If the intake layer process stops during an active orchestration in the first implementation, durable recovery is not required unless persistence has been added. The limitation must be documented operationally.
 
+Every submitted session must reach a terminal outcome: either a terminal orchestration result or a recorded failure. The relay records a failure when:
+
+- the orchestrator A2A task ends in the `failed`, `canceled`, or `rejected` state
+- the A2A stream contains a JSON-RPC error
+- the A2A stream ends without a terminal orchestration result
+- the A2A call raises an error, such as a connection error or a timeout
+
+A recorded failure sets the session state to `failed` and publishes an `orchestration_failed` SSE event. An SSE client that connects after the failure receives the same `orchestration_failed` event immediately instead of waiting.
+
+Implemented and verified locally with unit tests on 2026-10-24.
+
 ---
 
 # Input Conversation
