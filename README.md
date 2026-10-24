@@ -146,7 +146,7 @@ Reference links:
 
 ## Runtime Foundation
 
-Agents are implemented with [Oracle Locus](https://locusagents.oracle.com/),
+Agents are implemented with [Oracle Locus](https://locusagents.ai/),
 used as the runtime layer for agent execution and A2A infrastructure.
 
 Locus provides the mechanics this project needs:
@@ -164,7 +164,7 @@ support, not as a shared business-code dependency between agents.
 
 Reference link:
 
-- [Oracle Locus on GitHub](https://github.com/oracle-samples/locus)
+- [Oracle Locus on GitHub](https://github.com/oracle/locus)
 
 ## Quick Demo Start
 
