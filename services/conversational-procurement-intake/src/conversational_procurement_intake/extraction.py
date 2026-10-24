@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Intake extraction contracts and deterministic implementation.
 """
@@ -62,7 +62,7 @@ class IntakeExtractor(Protocol):  # pylint: disable=too-few-public-methods
         self,
         text: str,
         requested_by: str,
-        session_ordinal: int,
+        request_id: str,
     ) -> ExtractionResult:
         """Extract and validate intake state from conversation text."""
 
@@ -83,14 +83,14 @@ class DeterministicIntakeExtractor:  # pylint: disable=too-few-public-methods
         self,
         text: str,
         requested_by: str,
-        session_ordinal: int,
+        request_id: str,
     ) -> ExtractionResult:
         """Extract a candidate orchestration request from conversation text.
 
         Args:
             text: Full conversation text collected for the session.
             requested_by: User identifier associated with the session.
-            session_ordinal: Monotonic ordinal used to generate stable request IDs.
+            request_id: Idempotency key generated for the session.
 
         Returns:
             Extraction result containing either missing fields or a request.
@@ -101,7 +101,7 @@ class DeterministicIntakeExtractor:  # pylint: disable=too-few-public-methods
             candidate,
             self._master_data_resolver,
             requested_by,
-            session_ordinal,
+            request_id,
             text,
         )
 
@@ -110,7 +110,7 @@ async def build_extraction_result(
     candidate: CandidateIntakeFields,
     master_data_resolver: MasterDataResolver,
     requested_by: str,
-    session_ordinal: int,
+    request_id: str,
     conversation_text: str = "",
 ) -> ExtractionResult:
     """Ground candidate fields and build an orchestration request if possible.
@@ -119,7 +119,7 @@ async def build_extraction_result(
         candidate: Candidate extraction output from deterministic or LLM extraction.
         master_data_resolver: Resolver used to ground plants and parts.
         requested_by: User identifier associated with the session.
-        session_ordinal: Monotonic ordinal used to generate stable request IDs.
+        request_id: Idempotency key generated for the session.
         conversation_text: Full conversation text used as grounding fallback.
 
     Returns:
@@ -200,7 +200,7 @@ async def build_extraction_result(
     part = part_candidates[0]
     plant = plant_candidates[0]
     request = ProcurementOrchestrationRequest(
-        request_id=f"REQ-2026-{session_ordinal:04d}",
+        request_id=request_id,
         requested_by=requested_by,
         currency="EUR",
         evaluation_policy_id="standard-urgent-procurement-v1",

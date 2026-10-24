@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    LLM-backed conversational intake extraction.
 """
@@ -113,7 +113,7 @@ class LLMIntakeExtractor:  # pylint: disable=too-few-public-methods
         self,
         text: str,
         requested_by: str,
-        session_ordinal: int,
+        request_id: str,
     ) -> ExtractionResult:
         """Extract and validate intake state from conversation text."""
 
@@ -123,7 +123,7 @@ class LLMIntakeExtractor:  # pylint: disable=too-few-public-methods
             candidate,
             self._master_data_resolver,
             requested_by,
-            session_ordinal,
+            request_id,
             text,
         )
 

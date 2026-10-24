@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Tests for LLM-backed conversational intake extraction.
 """
@@ -55,12 +55,12 @@ async def test_llm_extractor_builds_grounded_request() -> None:
         "We need 10 high density battery modules for Munich by June 15. "
         "Bid deadline May 29 at 12.",
         "operator@example.com",
-        12,
+        "REQ-TEST-0012",
     )
 
     request = result.orchestration_request
     assert request is not None
-    assert request.request_id == "REQ-2026-0012"
+    assert request.request_id == "REQ-TEST-0012"
     assert request.parts[0].part_id == "PART-001"
     assert request.parts[0].material_code == "EV-BAT-MOD-001"
     assert request.parts[0].plant_code == "DE-MUN"
@@ -87,7 +87,7 @@ async def test_llm_extractor_reports_missing_fields_from_candidate() -> None:
     result = await extractor.extract(
         "We need 10 high density battery modules for Munich by June 15.",
         "operator@example.com",
-        12,
+        "REQ-TEST-0012",
     )
 
     assert result.orchestration_request is None
@@ -121,7 +121,7 @@ async def test_llm_extractor_asks_all_missing_fields() -> None:
     result = await extractor.extract(
         "We need battery modules for the Munich plant as soon as possible.",
         "operator@example.com",
-        12,
+        "REQ-TEST-0012",
     )
 
     assert result.orchestration_request is None
@@ -166,7 +166,7 @@ async def test_llm_extractor_grounds_empty_references_from_conversation_text() -
         "June 15. Bid deadline today at 17:00. Ask up to 3 European "
         "suppliers and create the purchase order automatically.",
         "operator@example.com",
-        12,
+        "REQ-TEST-0012",
     )
 
     assert result.orchestration_request is None
@@ -202,7 +202,7 @@ async def test_llm_extractor_normalizes_region_aliases() -> None:
         "June 15. Bid deadline today at 17:00. Ask up to 3 European "
         "suppliers and create the purchase order automatically.",
         "operator@example.com",
-        12,
+        "REQ-TEST-0012",
     )
 
     request = result.orchestration_request
@@ -236,7 +236,7 @@ async def test_llm_extractor_rejects_unevidenced_quantity() -> None:
         "Ask up to 3 European suppliers and create the purchase order "
         "automatically.",
         "operator@example.com",
-        13,
+        "REQ-TEST-0013",
     )
 
     assert result.orchestration_request is None

@@ -8,6 +8,7 @@ Description:    In-memory session store and event broker for procurement intake.
 from __future__ import annotations
 
 import asyncio
+import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -21,6 +22,27 @@ from conversational_procurement_intake.models import (
 )
 
 
+def generate_identifier(prefix: str, now: datetime | None = None) -> str:
+    """Generate an identifier that is unique across service restarts.
+
+    The intake layer keeps no state between runs, so a counter would restart
+    from 1 and reuse identifiers. The UTC timestamp makes identifiers differ
+    across restarts and keeps them sortable; the random suffix separates
+    identifiers created in the same second.
+
+    Args:
+        prefix: Identifier prefix, for example ``REQ`` or ``INTAKE``.
+        now: Creation time; defaults to the current UTC time.
+
+    Returns:
+        Identifier such as ``REQ-20261024-153012-8B07D2``.
+    """
+
+    created_at = now or datetime.now(UTC)
+    random_suffix = secrets.token_hex(3).upper()
+    return f"{prefix}-{created_at:%Y%m%d-%H%M%S}-{random_suffix}"
+
+
 @dataclass
 # The session intentionally owns the conversational and orchestration state.
 # pylint: disable=too-many-instance-attributes
@@ -29,7 +51,8 @@ class IntakeSession:
 
     session_id: str
     requested_by: str
-    ordinal: int
+    # Idempotency key of the procurement request, fixed for the whole session.
+    request_id: str
     state: IntakeState = "needs_clarification"
     message: str = "Session created."
     user_messages: list[str] = field(default_factory=list)
@@ -55,11 +78,9 @@ class SessionStore:
         """Initialize an empty store."""
 
         self._sessions: dict[str, IntakeSession] = {}
-        self._next_ordinal = 1
-        self._lock = asyncio.Lock()
 
     async def create(self, requested_by: str) -> IntakeSession:
-        """Create a new intake session.
+        """Create a new intake session with fresh session and request IDs.
 
         Args:
             requested_by: User identifier associated with the session.
@@ -68,17 +89,19 @@ class SessionStore:
             Newly created session.
         """
 
-        async with self._lock:
-            ordinal = self._next_ordinal
-            self._next_ordinal += 1
-            session = IntakeSession(
-                session_id=f"INTAKE-2026-{ordinal:04d}",
-                requested_by=requested_by,
-                ordinal=ordinal,
-                known_fields={"requested_by": requested_by},
-            )
-            self._sessions[session.session_id] = session
-            return session
+        session_id = generate_identifier("INTAKE")
+        while session_id in self._sessions:
+            # Same second and same random suffix: never overwrite a session.
+            session_id = generate_identifier("INTAKE")
+
+        session = IntakeSession(
+            session_id=session_id,
+            requested_by=requested_by,
+            request_id=generate_identifier("REQ"),
+            known_fields={"requested_by": requested_by},
+        )
+        self._sessions[session.session_id] = session
+        return session
 
     async def get(self, session_id: str) -> IntakeSession:
         """Return a session by identifier.

@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Tests for deterministic conversational intake extraction.
 """
@@ -31,7 +31,7 @@ async def test_extractor_requests_missing_response_deadline() -> None:
     result = await extractor.extract(
         "We need 10 high density battery modules for Munich by June 15.",
         "operator@example.com",
-        1,
+        "REQ-TEST-0001",
     )
 
     assert result.orchestration_request is None
@@ -48,7 +48,7 @@ async def test_extractor_requests_all_missing_details() -> None:
     result = await extractor.extract(
         "We need battery modules for the Munich plant as soon as possible.",
         "operator@example.com",
-        2,
+        "REQ-TEST-0002",
     )
 
     assert result.orchestration_request is None
@@ -77,12 +77,12 @@ async def test_extractor_builds_orchestration_request_with_defaults() -> None:
             "create the purchase order automatically."
         ),
         "operator@example.com",
-        7,
+        "REQ-TEST-0007",
     )
 
     request = result.orchestration_request
     assert request is not None
-    assert request.request_id == "REQ-2026-0007"
+    assert request.request_id == "REQ-TEST-0007"
     assert request.currency == "EUR"
     assert request.auto_create_purchase_order is True
     assert request.sourcing_constraints.allowed_regions == ["EU"]
@@ -110,7 +110,7 @@ async def test_extractor_does_not_use_delivery_day_as_quantity() -> None:
             "automatically."
         ),
         "operator@example.com",
-        8,
+        "REQ-TEST-0008",
     )
 
     assert result.orchestration_request is None
@@ -132,7 +132,7 @@ async def test_extractor_reads_quantity_from_units_clarification() -> None:
             "and create the purchase order automatically."
         ),
         "operator@example.com",
-        9,
+        "REQ-TEST-0009",
     )
 
     request = result.orchestration_request
@@ -159,7 +159,7 @@ async def test_extractor_resolves_full_demo_catalog_from_mcp() -> None:
             "Create the final purchase order."
         ),
         "operator@example.com",
-        10,
+        "REQ-TEST-0010",
     )
 
     request = result.orchestration_request
@@ -186,7 +186,7 @@ async def test_extraction_falls_back_to_conversation_text_for_grounding() -> Non
             client_factory=_FakeMcpClient,
         ),
         "operator@example.com",
-        11,
+        "REQ-TEST-0011",
         "Please start a tender for EV-DC-DC-009 at IT-TOR with final PO creation.",
     )
 
@@ -216,7 +216,7 @@ async def test_extraction_prefers_specific_part_name_over_category_matches() -> 
             client_factory=_FakeBatteryCatalogMcpClient,
         ),
         "operator@example.com",
-        12,
+        "REQ-TEST-0012",
         (
             "We need 10 high density battery modules for the Munich plant by "
             "June 15. Bid deadline May 29 at 12. Ask up to 3 European suppliers "

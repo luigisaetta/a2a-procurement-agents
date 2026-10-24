@@ -183,6 +183,39 @@ async def test_sse_stream_receives_event_in_real_time() -> None:
     assert "accepted" in first_message
 
 
+@pytest.mark.anyio
+async def test_request_id_is_stable_in_a_session_and_new_per_session() -> None:
+    """Each session keeps one request_id, and no two sessions share it."""
+
+    service = _service()
+    message = UserMessageRequest(
+        message=(
+            "We need 10 high density battery modules for Munich by June 15. "
+            "Bid deadline May 29 at 12."
+        )
+    )
+
+    first = await service.start_session(
+        StartSessionRequest(requested_by="a@example.com")
+    )
+    first_draft = await service.add_user_message(first.session_id, message)
+    first_revised = await service.add_user_message(
+        first.session_id, UserMessageRequest(message="Please ask up to 2 suppliers.")
+    )
+    second = await service.start_session(
+        StartSessionRequest(requested_by="b@example.com")
+    )
+    second_draft = await service.add_user_message(second.session_id, message)
+
+    assert first_draft.orchestration_request is not None
+    assert first_revised.orchestration_request is not None
+    assert second_draft.orchestration_request is not None
+    first_request_id = first_draft.orchestration_request.request_id
+    assert first_request_id.startswith("REQ-")
+    assert first_revised.orchestration_request.request_id == first_request_id
+    assert second_draft.orchestration_request.request_id != first_request_id
+
+
 class FailingOrchestratorClient:  # pylint: disable=too-few-public-methods
     """Fake orchestrator client that streams one event and then stops early."""
 

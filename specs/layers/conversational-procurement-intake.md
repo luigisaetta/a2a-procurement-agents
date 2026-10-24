@@ -99,7 +99,7 @@ Suggested request shape for a user message:
 
 ```json
 {
-  "session_id": "INTAKE-2026-0001",
+  "session_id": "INTAKE-20261024-153012-3F9A1C",
   "message": "We need 10 high density battery modules for Munich by June 15.",
   "requested_by": "operator@example.com"
 }
@@ -109,7 +109,7 @@ Suggested response shape:
 
 ```json
 {
-  "session_id": "INTAKE-2026-0001",
+  "session_id": "INTAKE-20261024-153012-3F9A1C",
   "state": "needs_clarification",
   "message": "Please provide these missing details: What quantity do you need? What required delivery date should I use? Which bid response deadline should I use?",
   "missing_fields": [
@@ -197,8 +197,8 @@ Example polling response:
 
 ```json
 {
-  "session_id": "INTAKE-2026-0001",
-  "orchestration_id": "ORCH-REQ-2026-0001",
+  "session_id": "INTAKE-20261024-153012-3F9A1C",
+  "orchestration_id": "ORCH-REQ-20261024-153012-8B07D2",
   "state": "submitted",
   "events": [
     {
@@ -288,7 +288,7 @@ Initial defaults:
 
 | Field | Default | Rule |
 | --- | --- | --- |
-| `request_id` | Generated value such as `REQ-YYYY-NNNN`. | May be generated automatically. |
+| `request_id` | Generated value such as `REQ-20261024-153012-8B07D2`. | Generated once per session; see "Generated Identifiers". |
 | `currency` | `EUR` | May be applied when the user does not specify currency and the business context is European procurement. |
 | `evaluation_policy_id` | `standard-urgent-procurement-v1` | May be applied for urgent procurement requests. |
 | `auto_create_purchase_order` | `false` | Must remain false unless the user explicitly requests automatic PO creation or confirms it. |
@@ -299,6 +299,23 @@ Initial defaults:
 | `supplier_search_hints.required_certifications` | `[]` | May be applied when no certifications are specified. |
 
 The layer must report which defaults were applied before final confirmation.
+
+## Generated Identifiers
+
+`request_id` is the idempotency key of the whole workflow: the Bid Collection Agent derives offer identifiers from it, and the Purchase Order Agent returns the already registered purchase order when the same `request_id` and offer arrive again. A generated `request_id` must therefore never be reused for a different procurement request, including after a restart of the intake layer, which keeps no state between runs.
+
+The layer generates both identifiers when a session is created, and keeps them for the whole session:
+
+| Identifier | Format | Example |
+| --- | --- | --- |
+| `session_id` | `INTAKE-<UTC date>-<UTC time>-<6 random hex digits>` | `INTAKE-20261024-153012-3F9A1C` |
+| `request_id` | `REQ-<UTC date>-<UTC time>-<6 random hex digits>` | `REQ-20261024-153012-8B07D2` |
+
+The timestamp keeps identifiers readable and sortable and makes them differ across restarts. The random suffix separates sessions created in the same second.
+
+A `request_id` supplied by the caller in a reviewed request at confirmation is preserved, because a caller that reuses its own key intends an idempotent retry.
+
+Implemented and verified locally with unit tests on 2026-10-24.
 
 ---
 
@@ -440,7 +457,7 @@ This shape is an implementation aid, not yet a public A2A contract.
 
 ```json
 {
-  "request_id": "REQ-2026-0001",
+  "request_id": "REQ-20261024-153012-8B07D2",
   "requested_by": "operator@example.com",
   "currency": "EUR",
   "evaluation_policy_id": "standard-urgent-procurement-v1",

@@ -87,7 +87,7 @@ class IntakeApplicationService:
         result = await self._extractor.extract(
             "\n".join(session.user_messages),
             session.requested_by,
-            session.ordinal,
+            session.request_id,
         )
         session.message = result.message
         session.missing_fields = result.missing_fields
