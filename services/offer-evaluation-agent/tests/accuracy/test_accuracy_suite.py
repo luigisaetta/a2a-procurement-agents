@@ -1,9 +1,11 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
-Description:    Runs a deterministic 20-case accuracy suite through the
-                Offer Evaluation Agent workflow.
+Description:    Runs the 20-case accuracy suite for the Offer Evaluation Agent.
+                The offline test checks that the workflow returns the LLM
+                decision unchanged; the opt-in live test measures how often
+                the configured LLM makes the expected decision.
 """
 
 from __future__ import annotations
@@ -32,12 +34,23 @@ from offer_evaluation_agent.models import (
 from offer_evaluation_agent.pipeline import (
     OfferEvaluationWorkflowAgent,
     build_workflow_agent,
-    enforce_policy_consistency,
 )
 
 CASES_FILE = Path(__file__).with_name("offer-evaluation-accuracy-cases.json")
 REPORTS_DIR = Path(__file__).with_name("results")
 RUN_LIVE_LLM_ENV = "OFFER_EVALUATION_RUN_LIVE_LLM"
+
+PLACEHOLDER_OFFER = {
+    "offer_id": "",
+    "supplier_id": "",
+    "supplier_name": "",
+    "price": 0,
+    "currency": "",
+    "delivery_date": "",
+    "quality_score": 0,
+    "reliability_score": 0,
+    "valid_until": "",
+}
 
 
 def _load_cases() -> list[dict[str, Any]]:
@@ -47,7 +60,7 @@ def _load_cases() -> list[dict[str, Any]]:
 
 
 def _settings() -> Settings:
-    """Build local settings for the accuracy workflow test."""
+    """Build local settings for the offline accuracy workflow test."""
 
     root = Path(__file__).resolve().parents[4]
     return Settings(
@@ -71,41 +84,32 @@ def _settings() -> Settings:
 
 
 @pytest.mark.anyio
-async def test_offer_evaluation_accuracy_suite() -> None:
-    """Evaluate all accuracy cases and assert the final guarded winner."""
+async def test_workflow_returns_the_llm_decision_for_every_case() -> None:
+    """Feed each expected decision as the LLM answer; it must come back unchanged.
 
-    results = []
+    This checks, without a live LLM, that the workflow never overrides the LLM
+    decision and that every recorded expected decision passes the technical
+    consistency checks.
+    """
+
+    failures = []
     for case in _load_cases():
         request = EvaluateOffersRequest.model_validate(case["request"])
-        response = await _run_offer_evaluator(request)
-        decision = response["decision"]
-        expected = case["expected"]
-        actual_offer_id = (
-            decision["selected_offer"]["offer_id"]
-            if decision["status"] == "selected_offer"
-            else None
-        )
-        passed = (
-            decision["status"] == expected["status"]
-            and actual_offer_id == expected["offer_id"]
-        )
-        results.append(
-            {
-                "case_id": case["case_id"],
-                "expected_status": expected["status"],
-                "expected_offer_id": expected["offer_id"],
-                "actual_status": decision["status"],
-                "actual_offer_id": actual_offer_id,
-                "passed": passed,
-            }
-        )
+        agent = _offline_agent(_ExpectedDecisionAgent(case, request))
 
-    failures = [result for result in results if not result["passed"]]
+        response = await _run_workflow(agent, request)
+
+        status, offer_id = _outcome(response)
+        expected = case["expected"]
+        if status != expected["status"] or offer_id != expected["offer_id"]:
+            failures.append({"case_id": case["case_id"], "actual": [status, offer_id]})
+
     assert not failures, json.dumps(failures, indent=2)
 
 
-def test_live_llm_accuracy_report() -> None:
-    """Record raw LLM accuracy before deterministic policy guardrails run."""
+@pytest.mark.anyio
+async def test_live_llm_accuracy_report() -> None:
+    """Send every case to the configured LLM and report its accuracy."""
 
     if os.environ.get(RUN_LIVE_LLM_ENV) != "1":
         pytest.skip(f"Set {RUN_LIVE_LLM_ENV}=1 to run live LLM accuracy reporting.")
@@ -116,107 +120,79 @@ def test_live_llm_accuracy_report() -> None:
         pytest.skip(f"Live LLM settings are not available: {exc}")
 
     agent = build_workflow_agent(settings)
-    policy_text = settings.policy_file.read_text(encoding="utf-8")
-    response_schema = settings.response_schema_file.read_text(encoding="utf-8")
-
-    results = []
-    for case in _load_cases():
-        results.append(
-            _evaluate_live_case(
-                case,
-                agent,
-                policy_text,
-                response_schema,
-            )
-        )
+    results = [await _evaluate_live_case(case, agent) for case in _load_cases()]
 
     report = _build_live_llm_report(settings, results)
     REPORTS_DIR.mkdir(exist_ok=True)
     report_path = REPORTS_DIR / "latest-llm-accuracy-report.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
-    assert report["guarded_error_count"] == 0, json.dumps(
-        [result for result in results if not result["guarded_correct"]],
+    assert report["error_count"] == 0, json.dumps(
+        [result for result in results if not result["correct"]],
         indent=2,
     )
 
 
-def _evaluate_live_case(
+async def _evaluate_live_case(
     case: dict[str, Any],
     agent: OfferEvaluationWorkflowAgent,
-    policy_text: str,
-    response_schema: str,
 ) -> dict[str, Any]:
-    """Evaluate one case with the raw LLM and deterministic guardrail."""
+    """Evaluate one case with the live LLM through the full workflow."""
 
     request = EvaluateOffersRequest.model_validate(case["request"])
     expected = case["expected"]
-    llm_response = _run_raw_llm_evaluator(
-        agent,
-        request,
-        policy_text,
-        response_schema,
-    )
-    guarded_response = enforce_policy_consistency(request, llm_response)
+    technical_error = ""
+    try:
+        status, offer_id = _outcome(await _run_workflow(agent, request))
+    # A rejected or failed LLM answer is a wrong case, not a crash of the report.
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        status, offer_id = "error", None
+        technical_error = f"{type(exc).__name__}: {exc}"
 
-    raw_status, raw_offer_id = _outcome_from_model(llm_response)
-    guarded_status, guarded_offer_id = _outcome_from_model(guarded_response)
-    raw_correct = _matches_expected(raw_status, raw_offer_id, expected)
-    guarded_correct = _matches_expected(
-        guarded_status,
-        guarded_offer_id,
-        expected,
-    )
     return {
         "case_id": case["case_id"],
         "expected_status": expected["status"],
-        "expected_offer_id": expected["offer_id"],
-        "raw_llm_status": raw_status,
-        "raw_llm_offer_id": raw_offer_id,
-        "raw_llm_correct": raw_correct,
-        "guarded_status": guarded_status,
-        "guarded_offer_id": guarded_offer_id,
-        "guarded_correct": guarded_correct,
+        "accepted_offer_ids": _accepted_offer_ids(expected),
+        "llm_status": status,
+        "llm_offer_id": offer_id,
+        "technical_error": technical_error,
+        "correct": _matches_expected(status, offer_id, expected),
     }
 
 
-async def _run_offer_evaluator(request: EvaluateOffersRequest) -> dict[str, Any]:
-    """Run a request through the Offer Evaluation Agent workflow."""
+def _offline_agent(decision_agent: Any) -> OfferEvaluationWorkflowAgent:
+    """Build a workflow agent that uses a fake decision agent instead of OCI."""
 
     # pylint: disable=protected-access
     agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
     agent._settings = _settings()
-    agent._decision_agent = _AlwaysNoValidDecisionAgent(request.request_id)
+    agent._decision_agent = decision_agent
     agent._hook_orchestrator = HookOrchestrator([])
+    return agent
+
+
+async def _run_workflow(
+    agent: OfferEvaluationWorkflowAgent, request: EvaluateOffersRequest
+) -> dict[str, Any]:
+    """Run one request through the workflow and return the final response."""
 
     events = [event async for event in agent.run(request.model_dump_json())]
     return json.loads(events[-1].final_message)
 
 
-def _run_raw_llm_evaluator(
-    agent: OfferEvaluationWorkflowAgent,
-    request: EvaluateOffersRequest,
-    policy_text: str,
-    response_schema: str,
-) -> EvaluateOffersResponse:
-    """Run only the LLM evaluator step, before policy guardrails."""
+def _outcome(response: dict[str, Any]) -> tuple[str, str | None]:
+    """Return the decision status and selected offer id of a response."""
 
-    # pylint: disable=protected-access
-    llm_prompt = agent._build_llm_prompt(request, policy_text, response_schema)
-    result = agent._decision_agent.run_sync(llm_prompt)
-    return agent._parse_response(result.parsed, result.message)
+    decision = response["decision"]
+    if decision["status"] != "selected_offer":
+        return decision["status"], None
+    return decision["status"], decision["selected_offer"]["offer_id"]
 
 
-def _outcome_from_model(response: EvaluateOffersResponse) -> tuple[str, str | None]:
-    """Return comparable status and selected offer id from a response model."""
+def _accepted_offer_ids(expected: dict[str, Any]) -> list[str | None]:
+    """Return every offer id the policy accepts as a correct winner."""
 
-    decision = response.decision
-    offer_id = (
-        decision.selected_offer.offer_id
-        if decision.status == "selected_offer"
-        else None
-    )
-    return decision.status, offer_id
+    return expected.get("accepted_offer_ids", [expected["offer_id"]])
 
 
 def _matches_expected(
@@ -224,9 +200,9 @@ def _matches_expected(
     offer_id: str | None,
     expected: dict[str, Any],
 ) -> bool:
-    """Compare a response outcome with the expected fixture outcome."""
+    """Compare a decision with the expected outcome of a case."""
 
-    return status == expected["status"] and offer_id == expected["offer_id"]
+    return status == expected["status"] and offer_id in _accepted_offer_ids(expected)
 
 
 def _build_live_llm_report(
@@ -236,48 +212,48 @@ def _build_live_llm_report(
     """Build the persisted live LLM accuracy report."""
 
     case_count = len(results)
-    raw_error_count = sum(not result["raw_llm_correct"] for result in results)
-    guarded_error_count = sum(not result["guarded_correct"] for result in results)
+    error_count = sum(not result["correct"] for result in results)
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "model_id": settings.oci_model_id,
         "case_count": case_count,
-        "raw_llm_error_count": raw_error_count,
-        "raw_llm_accuracy": (case_count - raw_error_count) / case_count,
-        "guarded_error_count": guarded_error_count,
-        "guarded_accuracy": (case_count - guarded_error_count) / case_count,
+        "error_count": error_count,
+        "accuracy": (case_count - error_count) / case_count,
         "cases": results,
     }
 
 
-class _AlwaysNoValidDecisionAgent:  # pylint: disable=too-few-public-methods
-    """Return a deliberately weak LLM decision for guardrail accuracy testing."""
+class _ExpectedDecisionAgent:  # pylint: disable=too-few-public-methods
+    """Fake LLM that answers with the expected decision recorded for a case."""
 
-    def __init__(self, request_id: str) -> None:
-        """Initialize the fake decision agent for one request."""
+    def __init__(self, case: dict[str, Any], request: EvaluateOffersRequest) -> None:
+        """Prepare the expected decision for one case."""
 
-        self._request_id = request_id
+        expected = case["expected"]
+        if expected["status"] == "selected_offer":
+            offer = next(
+                offer
+                for offer in request.offers
+                if offer.offer_id == expected["offer_id"]
+            )
+            decision = {
+                "status": "selected_offer",
+                "selected_offer": offer.model_dump(mode="json"),
+                "reasons": [],
+            }
+        else:
+            decision = {
+                "status": "no_valid_offers",
+                "selected_offer": PLACEHOLDER_OFFER,
+                "reasons": ["Recorded expected decision: no offer is eligible."],
+            }
+        self._response = EvaluateOffersResponse(
+            request_id=request.request_id,
+            decision=decision,
+            explanation=f"Recorded expected decision for {case['case_id']}.",
+        )
 
     def run_sync(self, _prompt: str):
-        """Return a no-valid-offers response before policy guardrails run."""
+        """Return the expected decision as a Locus AgentResult-like object."""
 
-        response = EvaluateOffersResponse(
-            request_id=self._request_id,
-            decision={
-                "status": "no_valid_offers",
-                "selected_offer": {
-                    "offer_id": "",
-                    "supplier_id": "",
-                    "supplier_name": "",
-                    "price": 0,
-                    "currency": "",
-                    "delivery_date": "",
-                    "quality_score": 0,
-                    "reliability_score": 0,
-                    "valid_until": "",
-                },
-                "reasons": ["The simulated evaluator did not select an offer."],
-            },
-            explanation="The simulated evaluator returned no valid offers.",
-        )
-        return SimpleNamespace(parsed=response, message="")
+        return SimpleNamespace(parsed=self._response, message="")

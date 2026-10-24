@@ -895,11 +895,12 @@
     }
   },
   {
-    "case_id": "ACC-019-equal-final-tie-deterministic",
-    "description": "When final policy criteria are tied, the guardrail deterministically selects the lowest offer_id.",
+    "case_id": "ACC-019-equal-final-tie",
+    "description": "When all policy criteria are tied, the policy accepts any of the tied offers.",
     "expected": {
       "status": "selected_offer",
-      "offer_id": "ACC-019-OFF-001"
+      "offer_id": "ACC-019-OFF-001",
+      "accepted_offer_ids": ["ACC-019-OFF-001", "ACC-019-OFF-002"]
     },
     "request": {
       "request_id": "ACC-REQ-019",

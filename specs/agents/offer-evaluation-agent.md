@@ -150,6 +150,8 @@ Technical consistency checks include:
 - a `no_valid_offers` decision must use placeholder selected-offer values
 - the response `request_id` must match the input `request_id`
 
+The LLM decision is final. The technical checks verify only that the response is consistent with the request; they never re-apply the policy, replace the selected offer, or turn a `no_valid_offers` decision into a selection. A response that fails a technical check fails the evaluation task. The quality of the decision is measured by the accuracy suite, not corrected at runtime.
+
 Changing the procurement policy must be done by updating the Markdown policy file, not by changing the agent code.
 
 The code may change only when protocol handling, schema contracts, validation behavior, runtime integration, or non-policy technical behavior changes.
@@ -244,6 +246,17 @@ standard urgent procurement policy.
 
 The suite must contain representative offer sets with recorded expected
 outcomes and must compare the workflow result against those expected outcomes.
+
+Because the decision is made only by the LLM, the suite has two parts:
+
+- an offline test, run by default, that feeds each recorded expected decision
+  through the workflow as if the LLM had returned it, and checks that the
+  workflow returns it unchanged and that it passes the technical checks
+- an opt-in live test that sends every case to the configured LLM and reports
+  its decision accuracy; it fails if any case is wrong
+
+When the policy allows several equivalent winners (offers still tied after
+all tie-breakers), the case lists all of them in `accepted_offer_ids`.
 
 The baseline suite covers:
 

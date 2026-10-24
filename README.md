@@ -77,8 +77,9 @@ Implemented and wired into the Docker Compose demo:
   progress events, retry handling, and final result aggregation
 - Bid Collection Agent A2A server with MCP-backed supplier discovery and
   simulated supplier offer collection
-- Offer Evaluation Agent A2A server with deterministic policy guardrails,
-  structured decisions, and an accuracy test suite
+- Offer Evaluation Agent A2A server where an LLM applies the Markdown
+  policy, with structured decisions, technical consistency checks, and an
+  accuracy test suite
 - Purchase Order Agent A2A server with MySQL-backed purchase order persistence,
   idempotent registration, and database-generated purchase order numbers
 - JSON Schema discovery endpoints for all A2A agents
@@ -337,7 +338,7 @@ The project is designed with enterprise-grade concerns in mind:
 - streaming progress events
 - distributed tracing and metrics
 - persistence at the purchase-order boundary
-- policy enforcement and deterministic guardrails
+- policy-driven decisions with technical consistency checks
 
 Security, distributed checkpointing, resumable workflow persistence, and
 approval/compliance workflows remain future evolution areas.

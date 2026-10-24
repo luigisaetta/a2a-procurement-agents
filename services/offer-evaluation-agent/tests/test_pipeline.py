@@ -29,7 +29,6 @@ from offer_evaluation_agent.models import (
 from offer_evaluation_agent.pipeline import (
     OfferEvaluationWorkflowAgent,
     _extract_json_object,
-    enforce_policy_consistency,
 )
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
@@ -192,49 +191,14 @@ def test_consistency_rejects_no_valid_without_reasons() -> None:
         agent.validate_consistency(request, response)
 
 
-def test_policy_guardrail_selects_valid_offer_when_llm_says_no_valid() -> None:
-    """Correct false no-valid-offers decisions when eligible offers exist."""
-
-    request = _request()
-    response = EvaluateOffersResponse(
-        request_id=request.request_id,
-        decision=EvaluationDecision(
-            status="no_valid_offers",
-            selected_offer=_empty_selected_offer(),
-            reasons=["No offer matched the policy."],
-        ),
-        explanation="No valid offer.",
-    )
-
-    guarded = enforce_policy_consistency(request, response)
-
-    assert guarded.decision.status == "selected_offer"
-    assert guarded.decision.selected_offer.offer_id == "OFF-001"
-    assert guarded.decision.reasons == []
-
-
-def test_policy_guardrail_selects_lowest_eligible_offer() -> None:
-    """Correct selected offers that are valid but not policy-optimal."""
+@pytest.mark.anyio
+async def test_pipeline_returns_llm_selection_unchanged() -> None:
+    """The LLM decision is final, even when another offer is cheaper."""
 
     request = _request().model_copy(
-        update={
-            "offers": [
-                _request().offers[0],
-                SupplierOffer(
-                    offer_id="OFF-002",
-                    supplier_id="SUP-002",
-                    supplier_name="Supplier B",
-                    price=9000.0,
-                    currency="EUR",
-                    delivery_date="2026-06-12",
-                    quality_score=85,
-                    reliability_score=86,
-                    valid_until="2026-06-01",
-                ),
-            ]
-        }
+        update={"offers": [*_request().offers, _cheaper_offer()]}
     )
-    response = EvaluateOffersResponse(
+    llm_response = EvaluateOffersResponse(
         request_id=request.request_id,
         decision=EvaluationDecision(
             status="selected_offer",
@@ -246,10 +210,60 @@ def test_policy_guardrail_selects_lowest_eligible_offer() -> None:
         explanation="Supplier A was selected.",
     )
 
-    guarded = enforce_policy_consistency(request, response)
+    final = await _run_with_llm_response(request, llm_response)
 
-    assert guarded.decision.status == "selected_offer"
-    assert guarded.decision.selected_offer.offer_id == "OFF-002"
+    assert final == llm_response.model_dump(mode="json")
+
+
+@pytest.mark.anyio
+async def test_pipeline_returns_llm_no_valid_offers_unchanged() -> None:
+    """A no-valid-offers decision is not replaced by a code-selected offer."""
+
+    request = _request()
+    llm_response = EvaluateOffersResponse(
+        request_id=request.request_id,
+        decision=EvaluationDecision(
+            status="no_valid_offers",
+            selected_offer=_empty_selected_offer(),
+            reasons=["No offer matched the policy."],
+        ),
+        explanation="No valid offer.",
+    )
+
+    final = await _run_with_llm_response(request, llm_response)
+
+    assert final == llm_response.model_dump(mode="json")
+
+
+async def _run_with_llm_response(
+    request: EvaluateOffersRequest, llm_response: EvaluateOffersResponse
+) -> dict:
+    """Run the workflow with a fake LLM and return the final response JSON."""
+
+    # pylint: disable=protected-access
+    agent = OfferEvaluationWorkflowAgent.__new__(OfferEvaluationWorkflowAgent)
+    agent._settings = _settings()
+    agent._decision_agent = _FakeDecisionAgent(llm_response)
+    agent._hook_orchestrator = HookOrchestrator([])
+
+    events = [event async for event in agent.run(request.model_dump_json())]
+    return json.loads(events[-1].final_message)
+
+
+def _cheaper_offer() -> SupplierOffer:
+    """Return an eligible offer cheaper than the one in ``_request``."""
+
+    return SupplierOffer(
+        offer_id="OFF-002",
+        supplier_id="SUP-002",
+        supplier_name="Supplier B",
+        price=9000.0,
+        currency="EUR",
+        delivery_date="2026-06-12",
+        quality_score=85,
+        reliability_score=86,
+        valid_until="2026-06-01",
+    )
 
 
 @pytest.mark.anyio

@@ -202,7 +202,7 @@ Server entry point: [services/offer-evaluation-agent/src/offer_evaluation_agent/
 
 The Offer Evaluation Agent receives supplier offers for a procurement request and determines the best offer according to configurable procurement policy.
 
-The current policy is deterministic and intentionally simple:
+The decision is made by an LLM that applies the Markdown policy; the agent code only validates the request and checks that the response is consistent with it. The current policy is intentionally simple:
 
 - exclude offers with a currency different from the request currency
 - exclude offers with delivery dates later than the requested delivery date
