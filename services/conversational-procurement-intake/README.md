@@ -38,6 +38,7 @@ Optional environment variables:
 | `CONVERSATIONAL_INTAKE_PORT` | `8012` | HTTP API port. |
 | `CONVERSATIONAL_INTAKE_EXTRACTOR_MODE` | `llm` | Use `deterministic` only for local tests and demos. |
 | `PROCUREMENT_ORCHESTRATOR_URL` | `http://127.0.0.1:8003` | Procurement Orchestrator A2A base URL. |
+| `PURCHASE_ORDER_AGENT_URL` | `http://127.0.0.1:8002` | Purchase Order Agent A2A base URL, used only to read recent purchase orders. |
 | `AGENT_API_KEY` | empty | Bearer token used for A2A calls. |
 | `OCI_REGION` | none | Required by the default LLM extractor. |
 | `OCI_AUTH` | none | Must be `API_KEY` for LLM extraction. |
@@ -65,6 +66,13 @@ Initial endpoints:
 | `GET` | `/sessions/{session_id}` | Return current session state. |
 | `GET` | `/sessions/{session_id}/events` | Stream orchestration progress through SSE. |
 | `GET` | `/sessions/{session_id}/orchestration-events` | Poll stored orchestration events. |
+| `GET` | `/purchase-orders?limit=N` | Return the last `N` purchase orders (default 10, at most 100), newest first, with all stored fields. Returns HTTP 502 when the Purchase Order Agent cannot be read. |
+
+Example, through the UI proxy:
+
+```bash
+curl -s "http://127.0.0.1:3000/api/intake/purchase-orders?limit=5"
+```
 
 ## Development Notes
 

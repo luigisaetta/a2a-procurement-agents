@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Runtime configuration for the conversational procurement
                 intake HTTP service.
@@ -27,6 +27,8 @@ class Settings:
     Attributes:
         service_port: Local TCP port used by the HTTP API.
         orchestrator_url: Base URL of the Procurement Orchestrator A2A server.
+        purchase_order_agent_url: Base URL of the Purchase Order Agent A2A
+            server, used only to read recent purchase orders.
         procurement_data_mcp_url: Procurement Data MCP streamable HTTP URL.
         procurement_data_mcp_timeout_seconds: Timeout for MCP master-data calls.
         agent_api_key: Bearer token used for A2A calls.
@@ -41,6 +43,7 @@ class Settings:
 
     service_port: int
     orchestrator_url: str
+    purchase_order_agent_url: str
     procurement_data_mcp_url: str
     procurement_data_mcp_timeout_seconds: float
     agent_api_key: str
@@ -126,6 +129,9 @@ def load_settings() -> Settings:
         service_port=service_port,
         orchestrator_url=os.environ.get(
             "PROCUREMENT_ORCHESTRATOR_URL", "http://127.0.0.1:8003"
+        ).strip(),
+        purchase_order_agent_url=os.environ.get(
+            "PURCHASE_ORDER_AGENT_URL", "http://127.0.0.1:8002"
         ).strip(),
         procurement_data_mcp_url=os.environ.get("PROCUREMENT_DATA_MCP_URL", "").strip(),
         procurement_data_mcp_timeout_seconds=procurement_data_mcp_timeout_seconds,

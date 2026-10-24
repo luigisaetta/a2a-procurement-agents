@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/list-recent-purchase-orders-request.schema.json",
+  "title": "ListRecentPurchaseOrdersRequest",
+  "description": "Read-only request to the Purchase Order Agent for the most recently registered purchase orders.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation"],
+  "properties": {
+    "operation": {
+      "type": "string",
+      "const": "list_recent_purchase_orders",
+      "description": "Selects the read operation. Requests without this field are purchase order registrations.",
+      "examples": ["list_recent_purchase_orders"]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 10,
+      "description": "Maximum number of purchase orders to return.",
+      "examples": [10]
+    }
+  },
+  "examples": [
+    {
+      "operation": "list_recent_purchase_orders",
+      "limit": 10
+    }
+  ]
+}

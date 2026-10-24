@@ -95,6 +95,7 @@ services:
       CONVERSATIONAL_INTAKE_PORT: ${CONVERSATIONAL_INTAKE_PORT:-8012}
       CONVERSATIONAL_INTAKE_EXTRACTOR_MODE: ${CONVERSATIONAL_INTAKE_EXTRACTOR_MODE:-llm}
       PROCUREMENT_ORCHESTRATOR_URL: ${PROCUREMENT_ORCHESTRATOR_URL:-http://procurement-orchestrator:8003}
+      PURCHASE_ORDER_AGENT_URL: ${PURCHASE_ORDER_AGENT_URL:-http://purchase-order-agent:8002}
       PROCUREMENT_DATA_MCP_URL: ${PROCUREMENT_DATA_MCP_URL:-http://procurement-data-mcp:8011/mcp}
       PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS: ${PROCUREMENT_DATA_MCP_TIMEOUT_SECONDS:-10}
       AGENT_API_KEY: ${AGENT_API_KEY:-}
@@ -111,6 +112,8 @@ services:
       procurement-data-mcp:
         condition: service_started
       procurement-orchestrator:
+        condition: service_started
+      purchase-order-agent:
         condition: service_started
 
   procurement-intake-ui:

@@ -2,7 +2,7 @@
 Runtime configuration for the Purchase Order Agent.
 
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Loads required environment variables from the process
                 environment first, then from the local .env file.
@@ -27,6 +27,18 @@ REQUEST_SCHEMA_FILE = (
 )
 RESPONSE_SCHEMA_FILE = (
     REPOSITORY_ROOT / "specs" / "schemas" / "create-purchase-order-response.schema.json"
+)
+LIST_REQUEST_SCHEMA_FILE = (
+    REPOSITORY_ROOT
+    / "specs"
+    / "schemas"
+    / "list-recent-purchase-orders-request.schema.json"
+)
+LIST_RESPONSE_SCHEMA_FILE = (
+    REPOSITORY_ROOT
+    / "specs"
+    / "schemas"
+    / "list-recent-purchase-orders-response.schema.json"
 )
 
 REQUIRED_ENV_VARS = (

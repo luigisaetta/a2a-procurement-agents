@@ -1,15 +1,17 @@
 """
-Deterministic workflow for purchase order registration.
+Deterministic workflow for purchase order registration and reads.
 
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
-Description:    Implements validation, fake purchase order system invocation,
-                and output serialization for the Purchase Order Agent.
+Description:    Implements validation, purchase order system invocation, and
+                output serialization for the Purchase Order Agent skills:
+                create_purchase_order and list_recent_purchase_orders.
 """
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,7 +22,11 @@ from locus.core.events import LocusEvent, TerminateEvent, ThinkEvent
 from locus.core.state import AgentState
 
 from purchase_order_agent.config import Settings
-from purchase_order_agent.models import CreatePurchaseOrderRequest
+from purchase_order_agent.models import (
+    LIST_RECENT_PURCHASE_ORDERS,
+    CreatePurchaseOrderRequest,
+    ListRecentPurchaseOrdersRequest,
+)
 from purchase_order_agent.po_system import PurchaseOrderSystemClient
 
 # The lifecycle wrapper intentionally mirrors the other independent agents
@@ -51,10 +57,11 @@ class PurchaseOrderWorkflowAgent:  # pylint: disable=too-few-public-methods
         self._hook_orchestrator = HookOrchestrator(self._hooks)
 
     async def run(self, prompt: str) -> AsyncIterator[LocusEvent]:
-        """Run the purchase order registration workflow.
+        """Run the purchase order workflow selected by the payload.
 
         Args:
-            prompt: JSON text containing a ``CreatePurchaseOrderRequest``.
+            prompt: JSON text containing a ``CreatePurchaseOrderRequest`` or a
+                ``ListRecentPurchaseOrdersRequest``.
 
         Yields:
             Locus events consumed by ``A2AServer``.
@@ -85,7 +92,22 @@ class PurchaseOrderWorkflowAgent:  # pylint: disable=too-few-public-methods
             await self._hook_orchestrator.run_after_invocation(state, success)
 
     async def _run_workflow(self, prompt: str) -> AsyncIterator[LocusEvent]:
-        """Run the deterministic purchase order workflow body."""
+        """Run the operation selected by the request payload.
+
+        The A2A server passes only the JSON payload to the agent, so the
+        ``operation`` field selects the skill: a read when it is
+        ``list_recent_purchase_orders``, a registration otherwise.
+        """
+
+        if _requested_operation(prompt) == LIST_RECENT_PURCHASE_ORDERS:
+            events = self._list_recent_purchase_orders(prompt)
+        else:
+            events = self._register_purchase_order(prompt)
+        async for event in events:
+            yield event
+
+    async def _register_purchase_order(self, prompt: str) -> AsyncIterator[LocusEvent]:
+        """Validate and register one purchase order."""
 
         yield ThinkEvent(
             iteration=1,
@@ -110,6 +132,42 @@ class PurchaseOrderWorkflowAgent:  # pylint: disable=too-few-public-methods
             total_tool_calls=0,
             final_message=response.model_dump_json(),
         )
+
+    async def _list_recent_purchase_orders(
+        self, prompt: str
+    ) -> AsyncIterator[LocusEvent]:
+        """Return the most recent purchase orders, newest first."""
+
+        yield ThinkEvent(
+            iteration=1,
+            reasoning="Validating ListRecentPurchaseOrdersRequest.",
+        )
+        request = ListRecentPurchaseOrdersRequest.model_validate_json(prompt)
+
+        yield ThinkEvent(
+            iteration=2,
+            reasoning="Reading recent purchase orders.",
+        )
+        response = self._po_system_client.list_recent_purchase_orders(request.limit)
+
+        yield TerminateEvent(
+            reason="complete",
+            iterations_used=2,
+            final_confidence=1.0,
+            total_tool_calls=0,
+            final_message=response.model_dump_json(),
+        )
+
+
+def _requested_operation(prompt: str) -> str | None:
+    """Return the ``operation`` field of a JSON payload, if there is one."""
+
+    try:
+        payload = json.loads(prompt)
+    except json.JSONDecodeError:
+        # Invalid JSON is reported by the registration request validation.
+        return None
+    return payload.get("operation") if isinstance(payload, dict) else None
 
 
 def build_workflow_agent(

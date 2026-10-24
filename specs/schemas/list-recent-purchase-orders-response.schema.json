@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/luigisaetta/a2a-procurement-agents/specs/schemas/list-recent-purchase-orders-response.schema.json",
+  "title": "ListRecentPurchaseOrdersResponse",
+  "description": "Most recently registered purchase orders, newest first, returned by the Purchase Order Agent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "limit", "purchase_orders", "message", "error"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["completed", "failed"],
+      "description": "Read result. A failed read returns an empty purchase order list.",
+      "examples": ["completed"]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Maximum number of purchase orders that was requested.",
+      "examples": [10]
+    },
+    "purchase_orders": {
+      "type": "array",
+      "description": "Purchase orders in reverse chronological order of registration.",
+      "items": {
+        "$ref": "#/$defs/PurchaseOrderRecord"
+      }
+    },
+    "message": {
+      "type": "string",
+      "description": "Concise technical message.",
+      "examples": ["Returned 2 purchase orders."]
+    },
+    "error": {
+      "$ref": "#/$defs/PurchaseOrderError"
+    }
+  },
+  "$defs": {
+    "PurchaseOrderRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One persisted purchase order with all stored fields.",
+      "required": [
+        "purchase_order_id",
+        "request_id",
+        "offer_id",
+        "supplier_id",
+        "supplier_name",
+        "plant_code",
+        "material_code",
+        "material_description",
+        "quantity",
+        "unit_of_measure",
+        "unit_price",
+        "total_amount",
+        "currency",
+        "requested_delivery_date",
+        "confirmed_delivery_date",
+        "status",
+        "external_reference",
+        "registered_at",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "purchase_order_id": { "type": "string", "examples": ["PO-2026-000042"] },
+        "request_id": { "type": "string", "examples": ["REQ-20261024-153012-8B07D2"] },
+        "offer_id": { "type": "string", "examples": ["OFF-REQ-20261024-153012-8B07D2-PART-009-SUP-004"] },
+        "supplier_id": { "type": "string", "examples": ["SUP-004"] },
+        "supplier_name": { "type": "string", "examples": ["VoltEdge Components"] },
+        "plant_code": { "type": "string", "examples": ["IT-TOR"] },
+        "material_code": { "type": "string", "examples": ["EV-DC-DC-009"] },
+        "material_description": { "type": "string", "examples": ["High Voltage DC DC Converter"] },
+        "quantity": { "type": "number", "examples": [16] },
+        "unit_of_measure": { "type": "string", "examples": ["EA"] },
+        "unit_price": {
+          "type": "number",
+          "description": "Material price per unit, excluding shipping.",
+          "examples": [77.16]
+        },
+        "total_amount": {
+          "type": "number",
+          "description": "Total selected offer price, including shipping.",
+          "examples": [1296.3]
+        },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "examples": ["EUR"] },
+        "requested_delivery_date": { "type": "string", "format": "date", "examples": ["2027-07-25"] },
+        "confirmed_delivery_date": { "type": "string", "format": "date", "examples": ["2027-07-22"] },
+        "status": {
+          "type": "string",
+          "enum": ["registered", "failed", "cancelled"],
+          "examples": ["registered"]
+        },
+        "external_reference": { "type": "string", "examples": ["ERP-PO-2026-000042"] },
+        "registered_at": {
+          "type": "string",
+          "description": "Registration timestamp in ISO 8601 UTC format. Empty when not registered.",
+          "examples": ["2026-10-24T13:03:51Z"]
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Row creation timestamp in ISO 8601 UTC format.",
+          "examples": ["2026-10-24T13:03:51Z"]
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Row update timestamp in ISO 8601 UTC format.",
+          "examples": ["2026-10-24T13:03:51Z"]
+        }
+      }
+    },
+    "PurchaseOrderError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code. Empty when the read succeeds.",
+          "examples": ["", "STORAGE_UNAVAILABLE"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Safe error message. Empty when the read succeeds.",
+          "examples": ["", "Purchase orders could not be read from storage."]
+        }
+      }
+    }
+  }
+}

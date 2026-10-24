@@ -11,7 +11,8 @@ Description:    Encapsulates the future external purchase order system API.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import logging
+from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Protocol
 
@@ -19,9 +20,13 @@ from purchase_order_agent.config import Settings
 from purchase_order_agent.models import (
     CreatePurchaseOrderRequest,
     CreatePurchaseOrderResponse,
+    ListRecentPurchaseOrdersResponse,
     PurchaseOrderError,
+    PurchaseOrderRecord,
     PurchaseOrderRegistration,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 _EXPECTED_PURCHASE_ORDER_COLUMNS = {
     "purchase_order_id",
@@ -60,7 +65,8 @@ class ConnectionFactory(Protocol):  # pylint: disable=too-few-public-methods
         """Return a database connection."""
 
 
-class PurchaseOrderSystemClient:  # pylint: disable=too-few-public-methods,too-many-arguments
+# The connection settings are kept as separate attributes on purpose.
+class PurchaseOrderSystemClient:  # pylint: disable=too-many-arguments,too-many-instance-attributes
     """Client wrapper for the company purchase order system."""
 
     def __init__(
@@ -93,6 +99,9 @@ class PurchaseOrderSystemClient:  # pylint: disable=too-few-public-methods,too-m
         self._db_user = db_user
         self._db_password = db_password
         self._connection_factory = connection_factory
+        # The fake backend stores nothing; this list lets reads return the
+        # orders registered by the running process. It is lost on restart.
+        self._fake_purchase_orders: list[PurchaseOrderRecord] = []
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "PurchaseOrderSystemClient":
@@ -136,6 +145,24 @@ class PurchaseOrderSystemClient:  # pylint: disable=too-few-public-methods,too-m
             return self._register_purchase_order_mysql(request)
         return self._register_purchase_order_fake(request)
 
+    def list_recent_purchase_orders(
+        self, limit: int
+    ) -> ListRecentPurchaseOrdersResponse:
+        """Return the most recently registered purchase orders, newest first.
+
+        Args:
+            limit: Maximum number of purchase orders to return.
+
+        Returns:
+            Structured read response. A storage failure gives ``failed`` with
+            an empty list; the technical cause is logged, not returned.
+        """
+
+        if self._storage_backend == "mysql":
+            return self._list_recent_purchase_orders_mysql(limit)
+        newest_first = list(reversed(self._fake_purchase_orders))
+        return _list_response(limit, newest_first[:limit])
+
     def _register_purchase_order_fake(
         self,
         request: CreatePurchaseOrderRequest,
@@ -153,6 +180,11 @@ class PurchaseOrderSystemClient:  # pylint: disable=too-few-public-methods,too-m
         registered_at = timestamp.replace("+00:00", "Z")
         purchase_order_id = request.purchase_order_id or _generated_purchase_order_id(1)
         external_reference = f"ERP-{purchase_order_id}"
+        self._fake_purchase_orders.append(
+            _record_from_request(
+                request, purchase_order_id, external_reference, registered_at
+            )
+        )
 
         return CreatePurchaseOrderResponse(
             request_id=request.request_id,
@@ -232,6 +264,41 @@ class PurchaseOrderSystemClient:  # pylint: disable=too-few-public-methods,too-m
             if connection:
                 connection.close()
 
+    def _list_recent_purchase_orders_mysql(
+        self, limit: int
+    ) -> ListRecentPurchaseOrdersResponse:
+        """Read the most recent purchase orders from MySQL.
+
+        Args:
+            limit: Maximum number of purchase orders to return.
+
+        Returns:
+            Structured read response.
+        """
+
+        connection = None
+        try:
+            connection = self._connect()
+            _ensure_schema(connection)
+            rows = _fetch_recent_purchase_orders(connection, limit)
+            return _list_response(limit, [_record_from_row(row) for row in rows])
+        except Exception:  # pylint: disable=broad-except
+            # Database errors can include host and user names: log them only.
+            LOGGER.exception("Reading recent purchase orders failed.")
+            return ListRecentPurchaseOrdersResponse(
+                status="failed",
+                limit=limit,
+                purchase_orders=[],
+                message="Purchase orders could not be read.",
+                error=PurchaseOrderError(
+                    code="STORAGE_UNAVAILABLE",
+                    message="Purchase orders could not be read from storage.",
+                ),
+            )
+        finally:
+            if connection:
+                connection.close()
+
     def _connect(self) -> Any:
         """Create a MySQL connection.
 
@@ -251,6 +318,121 @@ class PurchaseOrderSystemClient:  # pylint: disable=too-few-public-methods,too-m
             user=self._db_user,
             password=self._db_password,
         )
+
+
+def _fetch_recent_purchase_orders(connection: Any, limit: int) -> list[dict[str, Any]]:
+    """Return the newest purchase order rows, with every stored column.
+
+    Ties on the timestamps are broken by ``purchase_order_id`` so the order
+    is stable between reads.
+    """
+
+    with connection.cursor(dictionary=True) as cursor:
+        cursor.execute(
+            """
+            SELECT purchase_order_id, request_id, offer_id, supplier_id,
+                   supplier_name, plant_code, material_code,
+                   material_description, quantity, unit_of_measure, unit_price,
+                   total_amount, currency, requested_delivery_date,
+                   confirmed_delivery_date, status, external_reference,
+                   registered_at, created_at, updated_at
+            FROM purchase_orders
+            ORDER BY registered_at DESC, created_at DESC, purchase_order_id DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        return cursor.fetchall()
+
+
+def _record_from_row(row: dict[str, Any]) -> PurchaseOrderRecord:
+    """Convert a MySQL row into the JSON-friendly purchase order record."""
+
+    return PurchaseOrderRecord(
+        purchase_order_id=str(row["purchase_order_id"]),
+        request_id=str(row["request_id"]),
+        offer_id=str(row["offer_id"]),
+        supplier_id=str(row["supplier_id"]),
+        supplier_name=str(row["supplier_name"]),
+        plant_code=str(row["plant_code"]),
+        material_code=str(row["material_code"]),
+        material_description=str(row["material_description"]),
+        quantity=float(row["quantity"]),
+        unit_of_measure=str(row["unit_of_measure"]),
+        unit_price=float(row["unit_price"]),
+        total_amount=float(row["total_amount"]),
+        currency=str(row["currency"]),
+        requested_delivery_date=_as_date(row["requested_delivery_date"]),
+        confirmed_delivery_date=_as_date(row["confirmed_delivery_date"]),
+        status=str(row["status"]),
+        external_reference=str(row["external_reference"]),
+        registered_at=_format_optional_timestamp(row["registered_at"]),
+        created_at=_format_optional_timestamp(row["created_at"]),
+        updated_at=_format_optional_timestamp(row["updated_at"]),
+    )
+
+
+def _record_from_request(
+    request: CreatePurchaseOrderRequest,
+    purchase_order_id: str,
+    external_reference: str,
+    registered_at: str,
+) -> PurchaseOrderRecord:
+    """Build the record kept in memory by the fake backend."""
+
+    line_item = request.line_items[0]
+    return PurchaseOrderRecord(
+        purchase_order_id=purchase_order_id,
+        request_id=request.request_id,
+        offer_id=request.source_offer.offer_id,
+        supplier_id=request.supplier.supplier_id,
+        supplier_name=request.supplier.supplier_name,
+        plant_code=request.plant_code,
+        material_code=line_item.material_code,
+        material_description=line_item.material_description,
+        quantity=float(_to_scale(line_item.quantity, QUANTITY_SCALE)),
+        unit_of_measure=line_item.unit_of_measure,
+        unit_price=float(_to_scale(line_item.unit_price, AMOUNT_SCALE)),
+        total_amount=float(_to_scale(request.source_offer.price, AMOUNT_SCALE)),
+        currency=request.source_offer.currency,
+        requested_delivery_date=line_item.requested_delivery_date,
+        confirmed_delivery_date=line_item.confirmed_delivery_date,
+        status="registered",
+        external_reference=external_reference,
+        registered_at=registered_at,
+        created_at=registered_at,
+        updated_at=registered_at,
+    )
+
+
+def _list_response(
+    limit: int, purchase_orders: list[PurchaseOrderRecord]
+) -> ListRecentPurchaseOrdersResponse:
+    """Build a successful read response."""
+
+    return ListRecentPurchaseOrdersResponse(
+        status="completed",
+        limit=limit,
+        purchase_orders=purchase_orders,
+        message=f"Returned {len(purchase_orders)} purchase orders.",
+        error=PurchaseOrderError(code="", message=""),
+    )
+
+
+def _as_date(value: Any) -> date:
+    """Return a date from a MySQL DATE value or an ISO string."""
+
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(str(value))
+
+
+def _format_optional_timestamp(value: Any) -> str:
+    """Format a nullable timestamp column; ``NULL`` becomes an empty string."""
+
+    if value is None:
+        return ""
+    return _format_timestamp(value)
 
 
 def _ensure_schema(connection: Any) -> None:

@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    FastAPI entry point for the conversational procurement intake
                 HTTP service.
@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from conversational_procurement_intake.config import Settings, load_settings
@@ -29,10 +29,16 @@ from conversational_procurement_intake.models import (
     ConfirmSessionRequest,
     IntakeSessionResponse,
     OrchestrationEventsResponse,
+    RecentPurchaseOrdersResponse,
     StartSessionRequest,
     UserMessageRequest,
 )
 from conversational_procurement_intake.orchestrator_client import A2AOrchestratorClient
+from conversational_procurement_intake.purchase_order_client import (
+    A2APurchaseOrderReader,
+    PurchaseOrderReader,
+    PurchaseOrderReadError,
+)
 from conversational_procurement_intake.service import IntakeApplicationService
 from conversational_procurement_intake.session_store import (
     SessionEventBroker,
@@ -40,11 +46,16 @@ from conversational_procurement_intake.session_store import (
 )
 
 
-def build_app(service: IntakeApplicationService | None = None) -> FastAPI:
+def build_app(
+    service: IntakeApplicationService | None = None,
+    purchase_order_reader: PurchaseOrderReader | None = None,
+) -> FastAPI:
     """Build the FastAPI application.
 
     Args:
         service: Optional application service, primarily used by tests.
+        purchase_order_reader: Optional purchase order reader, primarily used
+            by tests.
 
     Returns:
         Configured FastAPI app.
@@ -58,7 +69,13 @@ def build_app(service: IntakeApplicationService | None = None) -> FastAPI:
             "confirmation, orchestrator submission, and SSE event relay."
         ),
     )
-    app.state.service = service or _build_default_service(load_settings())
+    settings = None
+    if service is None or purchase_order_reader is None:
+        settings = load_settings()
+    app.state.service = service or _build_default_service(settings)
+    app.state.purchase_order_reader = purchase_order_reader or A2APurchaseOrderReader(
+        settings.purchase_order_agent_url, settings.agent_api_key
+    )
 
     @app.post("/sessions", response_model=IntakeSessionResponse)
     async def start_session(request: StartSessionRequest) -> IntakeSessionResponse:
@@ -123,6 +140,19 @@ def build_app(service: IntakeApplicationService | None = None) -> FastAPI:
             app.state.service.stream_sse(session_id),
             media_type="text/event-stream",
         )
+
+    @app.get("/purchase-orders", response_model=RecentPurchaseOrdersResponse)
+    async def list_recent_purchase_orders(
+        limit: int = Query(default=10, ge=1, le=100),
+    ) -> RecentPurchaseOrdersResponse:
+        """Return the last ``limit`` purchase orders, newest first."""
+
+        try:
+            return await app.state.purchase_order_reader.list_recent_purchase_orders(
+                limit
+            )
+        except PurchaseOrderReadError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return app
 

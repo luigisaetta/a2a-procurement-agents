@@ -100,6 +100,19 @@ from purchase_order_agent.server import build_server as build_purchase_order_ser
                 "output_schema": "/schemas/create-purchase-order-response.schema.json",
             },
         ),
+        (
+            lambda: TestClient(build_purchase_order_server(_purchase_settings()).app),
+            "purchase-order-agent",
+            "list_recent_purchase_orders",
+            {
+                "input_schema": (
+                    "/schemas/list-recent-purchase-orders-request.schema.json"
+                ),
+                "output_schema": (
+                    "/schemas/list-recent-purchase-orders-response.schema.json"
+                ),
+            },
+        ),
     ],
 )
 def test_a2a_agents_publish_schema_discovery(

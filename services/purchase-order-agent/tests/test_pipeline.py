@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
@@ -21,7 +21,10 @@ from locus.agent.hook_orchestrator import HookOrchestrator
 from locus.core.events import TerminateEvent
 from pydantic import ValidationError
 
-from purchase_order_agent.models import CreatePurchaseOrderRequest
+from purchase_order_agent.models import (
+    CreatePurchaseOrderRequest,
+    ListRecentPurchaseOrdersRequest,
+)
 from purchase_order_agent.pipeline import PurchaseOrderWorkflowAgent
 from purchase_order_agent.po_system import (
     _EXPECTED_PURCHASE_ORDER_COLUMNS,
@@ -315,6 +318,103 @@ def test_pipeline_runs_locus_hooks_for_validation_error() -> None:
     assert hook.after_error_counts == [1]
 
 
+def test_pipeline_lists_recent_purchase_orders_newest_first() -> None:
+    """The read skill returns registered orders newest first, up to the limit."""
+
+    client = PurchaseOrderSystemClient()
+    for purchase_order_id in ("PO-1", "PO-2", "PO-3"):
+        payload = _payload()
+        payload["purchase_order_id"] = purchase_order_id
+        client.register_purchase_order(
+            CreatePurchaseOrderRequest.model_validate(payload)
+        )
+    # pylint: disable=protected-access
+    agent = PurchaseOrderWorkflowAgent.__new__(PurchaseOrderWorkflowAgent)
+    agent._po_system_client = client
+    agent._hook_orchestrator = HookOrchestrator([])
+    read_request = {"operation": "list_recent_purchase_orders", "limit": 2}
+
+    events = asyncio.run(_collect_events(agent.run(json.dumps(read_request))))
+
+    response = json.loads(events[-1].final_message)
+    assert response["status"] == "completed"
+    assert response["limit"] == 2
+    assert [order["purchase_order_id"] for order in response["purchase_orders"]] == [
+        "PO-3",
+        "PO-2",
+    ]
+    assert response["purchase_orders"][0]["total_amount"] == 11800.0
+
+
+def test_list_request_limit_defaults_to_ten_and_is_bounded() -> None:
+    """The limit defaults to 10 and must be between 1 and 100."""
+
+    default = ListRecentPurchaseOrdersRequest.model_validate(
+        {"operation": "list_recent_purchase_orders"}
+    )
+
+    assert default.limit == 10
+    for invalid_limit in (0, 101):
+        with pytest.raises(ValidationError):
+            ListRecentPurchaseOrdersRequest.model_validate(
+                {"operation": "list_recent_purchase_orders", "limit": invalid_limit}
+            )
+
+
+def test_mysql_lists_recent_purchase_orders_with_all_fields() -> None:
+    """MySQL rows become JSON-friendly records, and the limit reaches SQL."""
+
+    row = _existing_purchase_order_row(_payload())
+    row.update(
+        {
+            "quantity": Decimal("10.0000"),
+            "unit_price": Decimal("1180.00"),
+            "total_amount": Decimal("11800.00"),
+            "requested_delivery_date": date(2026, 6, 15),
+            "confirmed_delivery_date": date(2026, 6, 12),
+            "status": "registered",
+            "created_at": datetime(2026, 6, 1, 12, 0, 1),
+            "updated_at": datetime(2026, 6, 1, 12, 0, 2),
+        }
+    )
+    connection = _FakeConnection(recent_purchase_orders=[row])
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=lambda: connection,
+    )
+
+    response = client.list_recent_purchase_orders(5)
+
+    record = response.purchase_orders[0].model_dump(mode="json")
+    assert response.status == "completed"
+    assert connection.recent_query_params == (5,)
+    assert record["quantity"] == 10.0
+    assert record["unit_price"] == 1180.0
+    assert record["requested_delivery_date"] == "2026-06-15"
+    assert record["registered_at"] == "2026-06-01T12:00:00Z"
+    assert record["updated_at"] == "2026-06-01T12:00:02Z"
+    assert connection.closed
+
+
+def test_mysql_read_failure_returns_a_safe_error() -> None:
+    """A storage failure gives an empty failed response without DB details."""
+
+    def unreachable_database():
+        raise ConnectionError("Access denied for user 'demo'@'10.0.0.5'")
+
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=unreachable_database,
+    )
+
+    response = client.list_recent_purchase_orders(10)
+
+    assert response.status == "failed"
+    assert response.purchase_orders == []
+    assert response.error.code == "STORAGE_UNAVAILABLE"
+    assert "Access denied" not in response.model_dump_json()
+
+
 async def _collect_events(async_events):
     """Collect async workflow events into a list."""
 
@@ -380,11 +480,14 @@ class _FakeConnection:  # pylint: disable=too-many-instance-attributes
         sequence_value: int = 1,
         existing_purchase_order: dict[str, Any] | None = None,
         purchase_order_columns: set[str] | None = None,
+        recent_purchase_orders: list[dict[str, Any]] | None = None,
     ) -> None:
         """Initialize fake connection state."""
 
         self.sequence_value = sequence_value
         self.existing_purchase_order = existing_purchase_order
+        self.recent_purchase_orders = recent_purchase_orders or []
+        self.recent_query_params: tuple[Any, ...] | None = None
         self.purchase_order_columns = purchase_order_columns or set(
             _EXPECTED_PURCHASE_ORDER_COLUMNS
         )
@@ -444,6 +547,13 @@ class _FakeCursor:
             self._connection.identifier_lengths_altered = True
         if self._last_query.startswith("insert into purchase_orders"):
             self._connection.inserted_purchase_order = params
+        if self._is_recent_purchase_orders_query():
+            self._connection.recent_query_params = params
+
+    def _is_recent_purchase_orders_query(self) -> bool:
+        """Return whether the last query reads the newest purchase orders."""
+
+        return "order by registered_at desc" in self._last_query
 
     def fetchone(self):
         """Return fake rows based on the previous query."""
@@ -459,4 +569,6 @@ class _FakeCursor:
 
         if "information_schema.columns" in self._last_query:
             return [(column,) for column in self._connection.purchase_order_columns]
+        if self._is_recent_purchase_orders_query():
+            return self._connection.recent_purchase_orders
         return []

@@ -75,6 +75,15 @@ The agent does NOT:
 
 Registers a purchase order in the company purchase order system.
 
+### list_recent_purchase_orders
+
+Returns the most recently registered purchase orders, newest first, with all stored fields. It is read-only and is used by the Conversational Procurement Intake Layer to show recent orders in the UI.
+
+- input: [ListRecentPurchaseOrdersRequest](../schemas/list-recent-purchase-orders-request.schema.json)
+- output: [ListRecentPurchaseOrdersResponse](../schemas/list-recent-purchase-orders-response.schema.json)
+
+Both skills are served by the same A2A agent, which receives only the JSON payload. The agent selects the operation from the payload: a request with `"operation": "list_recent_purchase_orders"` is a read; any other request is a `CreatePurchaseOrderRequest`.
+
 ---
 
 # Input Schema
@@ -320,9 +329,19 @@ Implemented and verified locally with unit tests on 2026-10-24.
 
 ## Read Behavior
 
-The initial A2A capability only creates purchase orders. Internal read operations used by tests or future diagnostics must also ensure the schema exists before reading.
+Read operations must also ensure the schema exists before reading.
 
-No new public A2A read skill is introduced in this version.
+The `list_recent_purchase_orders` skill:
+
+- returns at most `limit` purchase orders; `limit` defaults to 10 and must be between 1 and 100
+- orders them by `registered_at` descending, then `created_at` descending, then `purchase_order_id` descending, so the order is stable when timestamps are equal
+- returns numbers as JSON numbers, dates as `YYYY-MM-DD`, and timestamps as ISO 8601 UTC strings
+- returns `status: completed` with an empty list when no purchase order exists
+- returns `status: failed`, an empty list, and error code `STORAGE_UNAVAILABLE` when storage cannot be read; the technical cause is logged, not returned
+
+With the `fake` backend, which stores nothing, the agent keeps the purchase orders registered by the running process in memory, so the read works in local development. They are lost on restart.
+
+Implemented and verified locally with unit tests on 2026-10-24.
 
 ---
 

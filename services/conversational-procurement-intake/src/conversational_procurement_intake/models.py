@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-05-29
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Pydantic models for the conversational procurement intake layer.
 """
@@ -172,3 +172,51 @@ class OrchestrationEventsResponse(BaseModel):
     events: list[ProcurementOrchestrationEvent]
     next_cursor: int
     terminal_result: ProcurementOrchestrationResponse | None = None
+
+
+class PurchaseOrderRecord(BaseModel):
+    """One purchase order returned by the Purchase Order Agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    purchase_order_id: str
+    request_id: str
+    offer_id: str
+    supplier_id: str
+    supplier_name: str
+    plant_code: str
+    material_code: str
+    material_description: str
+    quantity: float
+    unit_of_measure: str
+    unit_price: float
+    total_amount: float
+    currency: str
+    requested_delivery_date: date
+    confirmed_delivery_date: date
+    status: Literal["registered", "failed", "cancelled"]
+    external_reference: str
+    registered_at: str
+    created_at: str
+    updated_at: str
+
+
+class PurchaseOrderError(BaseModel):
+    """Structured error returned by the Purchase Order Agent."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+
+
+class RecentPurchaseOrdersResponse(BaseModel):
+    """Most recent purchase orders, newest first (ListRecentPurchaseOrdersResponse)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["completed", "failed"]
+    limit: int = Field(ge=1, le=100)
+    purchase_orders: list[PurchaseOrderRecord]
+    message: str
+    error: PurchaseOrderError

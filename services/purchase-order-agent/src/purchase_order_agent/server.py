@@ -2,10 +2,11 @@
 A2A server entry point for the Purchase Order Agent.
 
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Builds the deterministic purchase order workflow and exposes
-                it through a Locus A2AServer.
+                it through a Locus A2AServer, with the create_purchase_order
+                and list_recent_purchase_orders skills.
 """
 
 from __future__ import annotations
@@ -18,7 +19,13 @@ import os
 from locus.a2a import A2AServer, AgentProvider, AgentSkill
 from locus.hooks.builtin.telemetry import create_telemetry_hook
 
-from purchase_order_agent.config import Settings, load_settings
+from purchase_order_agent.config import (
+    LIST_REQUEST_SCHEMA_FILE,
+    LIST_RESPONSE_SCHEMA_FILE,
+    Settings,
+    load_settings,
+)
+from purchase_order_agent.models import LIST_RECENT_PURCHASE_ORDERS
 from purchase_order_agent.pipeline import build_workflow_agent
 
 TELEMETRY_ENABLED_ENV = "PURCHASE_ORDER_AGENT_TELEMETRY_ENABLED"
@@ -73,7 +80,19 @@ def build_server(settings: Settings) -> A2AServer:
                 examples=[
                     "Register this JSON purchase order request in the PO system."
                 ],
-            )
+            ),
+            AgentSkill(
+                id=LIST_RECENT_PURCHASE_ORDERS,
+                name="List Recent Purchase Orders",
+                description=(
+                    "Return the most recently registered purchase orders, newest "
+                    "first, with all stored fields. Read-only."
+                ),
+                tags=["procurement", "purchase-order", "read-only"],
+                inputModes=["application/json"],
+                outputModes=["application/json"],
+                examples=['{"operation": "list_recent_purchase_orders", "limit": 10}'],
+            ),
         ],
         api_key=settings.agent_api_key,
     )
@@ -87,6 +106,8 @@ def _add_schema_routes(server: A2AServer, settings: Settings) -> None:
     schema_files = {
         "create-purchase-order-request.schema.json": settings.request_schema_file,
         "create-purchase-order-response.schema.json": settings.response_schema_file,
+        "list-recent-purchase-orders-request.schema.json": LIST_REQUEST_SCHEMA_FILE,
+        "list-recent-purchase-orders-response.schema.json": LIST_RESPONSE_SCHEMA_FILE,
     }
 
     @server.app.get("/.well-known/a2a-schemas")
@@ -102,7 +123,15 @@ def _add_schema_routes(server: A2AServer, settings: Settings) -> None:
                     "output_schema": (
                         "/schemas/create-purchase-order-response.schema.json"
                     ),
-                }
+                },
+                LIST_RECENT_PURCHASE_ORDERS: {
+                    "input_schema": (
+                        "/schemas/list-recent-purchase-orders-request.schema.json"
+                    ),
+                    "output_schema": (
+                        "/schemas/list-recent-purchase-orders-response.schema.json"
+                    ),
+                },
             },
         }
 

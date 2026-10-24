@@ -66,15 +66,16 @@ The layer must not publish an Agent Card in the initial implementation. If a fut
 
 # Communication Boundaries
 
-The layer has three different communication boundaries:
+The layer has four different communication boundaries:
 
 | Boundary | Direction | Protocol | Purpose |
 | --- | --- | --- | --- |
 | User Interface | inbound and outbound | HTTP JSON API plus optional Server-Sent Events | Receive user messages and return clarification, confirmation, submission, and orchestration status updates. |
 | Procurement Data MCP Server | outbound | MCP streamable HTTP | Resolve and validate procurement master-data references through read-only tools. |
 | Procurement Orchestrator | outbound | A2A v1 over HTTP streaming | Submit a validated `ProcurementOrchestrationRequest` and consume orchestration events and final result. |
+| Purchase Order Agent | outbound | A2A v1 over HTTP | Read the most recent purchase orders through the read-only `list_recent_purchase_orders` skill. |
 
-The layer is not itself an A2A server in the initial implementation. It is an HTTP application service that also acts as an A2A client when calling the Procurement Orchestrator.
+The layer is not itself an A2A server in the initial implementation. It is an HTTP application service that also acts as an A2A client when calling the Procurement Orchestrator and the Purchase Order Agent.
 
 ---
 
@@ -92,6 +93,19 @@ The initial API should be JSON-based and session-oriented. Exact endpoint names 
 | Cancel intake session | Cancel an in-progress intake session. |
 | Get session status | Retrieve current session state, known fields, missing fields, and latest response. |
 | Get orchestration status | Retrieve orchestration events and final result after submission. |
+| List recent purchase orders | Return the most recent purchase orders, newest first, for a UI table. |
+
+## Recent Purchase Orders
+
+`GET /purchase-orders?limit=N` returns the last `N` purchase orders, newest first, with all stored fields. `N` defaults to 10 and must be between 1 and 100; other values give HTTP 422.
+
+The layer reads them from the Purchase Order Agent through the A2A skill `list_recent_purchase_orders` and returns the agent's `ListRecentPurchaseOrdersResponse` unchanged:
+
+- [list-recent-purchase-orders-response.schema.json](../schemas/list-recent-purchase-orders-response.schema.json)
+
+When the Purchase Order Agent cannot be reached, or answers with `status: failed`, the layer returns HTTP 502 with a safe message and logs the technical cause. The URL of the Purchase Order Agent is configured with `PURCHASE_ORDER_AGENT_URL`.
+
+Implemented and verified locally with unit tests on 2026-10-24.
 
 The HTTP API must never require the UI to construct a `ProcurementOrchestrationRequest` directly from scratch. The UI sends natural-language messages, user confirmations, session commands, and may send a reviewed version of the layer-generated candidate payload when the operator edits explicitly reviewable fields before confirmation. The layer owns extraction, grounding, validation, and final orchestration payload assembly.
 
@@ -152,7 +166,7 @@ After calling the orchestrator, the layer must:
 - expose the terminal orchestration result to the UI
 - surface submission or protocol failures as user-facing HTTP responses with safe error messages
 
-The layer must not call Bid Collection, Offer Evaluation, or Purchase Order agents directly. All workflow execution must go through the Procurement Orchestrator.
+The layer must not call Bid Collection, Offer Evaluation, or Purchase Order agents directly to execute the workflow. All workflow execution must go through the Procurement Orchestrator. The only direct call to another agent is the read-only `list_recent_purchase_orders` skill of the Purchase Order Agent, which changes no state.
 
 ---
 

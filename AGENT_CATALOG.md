@@ -267,6 +267,8 @@ The initial design is deterministic and does not use an LLM.
 
 The current implementation exposes an A2A server with the `create_purchase_order` skill. It validates JSON input, calls an isolated purchase order system wrapper, and returns a structured JSON confirmation.
 
+It also exposes the read-only `list_recent_purchase_orders` skill, which returns the last N purchase orders (default 10), newest first, with all stored fields. The Conversational Procurement Intake Layer uses it to serve `GET /purchase-orders` to the UI.
+
 The wrapper keeps deterministic fake behavior for local development and supports MySQL persistence in the Docker Compose deployment.
 
 The enterprise system integration is isolated behind a local wrapper module so the A2A contract can remain stable while the backend integration evolves.
