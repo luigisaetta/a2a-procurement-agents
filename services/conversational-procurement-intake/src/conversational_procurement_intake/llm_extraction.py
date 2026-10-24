@@ -11,10 +11,16 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import date
 from typing import Protocol
 
 from locus.agent import Agent, AgentConfig
 
+from conversational_procurement_intake.business_clock import (
+    BUSINESS_TIMEZONE,
+    Clock,
+    business_now,
+)
 from conversational_procurement_intake.extraction import (
     CandidateIntakeFields,
     ExtractionResult,
@@ -55,8 +61,13 @@ Do not wrap the JSON in Markdown fences.
 class IntakeLLMClient(Protocol):  # pylint: disable=too-few-public-methods
     """LLM client contract for structured intake extraction."""
 
-    async def extract_candidate(self, text: str) -> CandidateIntakeFields:
-        """Extract candidate fields from conversation text."""
+    async def extract_candidate(self, text: str, today: date) -> CandidateIntakeFields:
+        """Extract candidate fields from conversation text.
+
+        Args:
+            text: Full conversation text collected for the session.
+            today: Current business date, used to resolve relative dates.
+        """
 
 
 class LocusIntakeLLMClient:  # pylint: disable=too-few-public-methods
@@ -80,10 +91,11 @@ class LocusIntakeLLMClient:  # pylint: disable=too-few-public-methods
             )
         )
 
-    async def extract_candidate(self, text: str) -> CandidateIntakeFields:
+    async def extract_candidate(self, text: str, today: date) -> CandidateIntakeFields:
         """Extract candidate intake fields with the configured LLM."""
 
-        result = await asyncio.to_thread(self._agent.run_sync, _build_prompt(text))
+        prompt = _build_prompt(text, today)
+        result = await asyncio.to_thread(self._agent.run_sync, prompt)
         if isinstance(result.parsed, CandidateIntakeFields):
             return result.parsed
         return CandidateIntakeFields.model_validate_json(
@@ -98,16 +110,19 @@ class LLMIntakeExtractor:  # pylint: disable=too-few-public-methods
         self,
         llm_client: IntakeLLMClient,
         master_data_resolver: MasterDataResolver,
+        clock: Clock = business_now,
     ) -> None:
         """Initialize the extractor.
 
         Args:
             llm_client: Structured LLM extraction client.
             master_data_resolver: Resolver used for deterministic grounding.
+            clock: Source of the current time used for relative dates.
         """
 
         self._llm_client = llm_client
         self._master_data_resolver = master_data_resolver
+        self._clock = clock
 
     async def extract(
         self,
@@ -117,25 +132,35 @@ class LLMIntakeExtractor:  # pylint: disable=too-few-public-methods
     ) -> ExtractionResult:
         """Extract and validate intake state from conversation text."""
 
-        candidate = await self._llm_client.extract_candidate(text)
+        now = self._clock()
+        candidate = await self._llm_client.extract_candidate(text, now.date())
         candidate = enforce_candidate_evidence(candidate, text)
         return await build_extraction_result(
             candidate,
             self._master_data_resolver,
             requested_by,
             request_id,
+            now,
             text,
         )
 
 
-def _build_prompt(text: str) -> str:
-    """Build the prompt sent to the LLM extractor."""
+def _build_prompt(text: str, today: date) -> str:
+    """Build the prompt sent to the LLM extractor.
+
+    Args:
+        text: Full conversation text collected for the session.
+        today: Current business date stated to the LLM.
+    """
 
     schema = CandidateIntakeFields.model_json_schema()
     return (
         "Extract candidate procurement intake fields from this conversation.\n\n"
-        "Current date: 2026-05-29.\n"
-        "Timezone for relative business interpretation: Europe/Rome.\n"
+        f"Current date: {today.isoformat()}.\n"
+        f"Timezone for relative business interpretation: {BUSINESS_TIMEZONE.key}.\n"
+        "A date without a year means its next occurrence on or after the "
+        "current date; for the delivery date, on or after the bid deadline.\n"
+        "A time without a timezone is in UTC.\n"
         "Use ISO 8601 date values for dates and timestamps.\n\n"
         "Canonical missing field names:\n"
         "- parts[0].material_code\n"

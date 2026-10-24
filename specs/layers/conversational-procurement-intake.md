@@ -497,12 +497,31 @@ Before the layer reaches `ready_for_confirmation`, it must validate:
 - dates are valid ISO 8601 values
 - `response_deadline` is a timestamp
 - `required_delivery_date` is a date
+- `response_deadline` is later than the current time
+- `required_delivery_date` is not earlier than the current business date
+- `required_delivery_date` is not earlier than the date of `response_deadline`
 - quantities are positive
 - plant and part identifiers are grounded in active MCP records
 - supplier preferences, when present, are known and active
 - the payload conforms to the canonical `ProcurementOrchestrationRequest` JSON Schema
 
 Before submission, the layer must validate the same payload again after user confirmation.
+
+## Business Date And Time
+
+Relative dates in the conversation ("today", "June 15") are interpreted against the current date in the business timezone, `Europe/Rome`. The current date is read from the system clock at every extraction, never from a fixed value. The LLM prompt states this current date.
+
+Rules:
+
+- "today" means the current business date.
+- A month and day without a year, such as "June 15", means the next occurrence of that day on or after the current business date. On 2026-10-24, "June 15" means 2027-06-15.
+- For the required delivery date, the next occurrence is counted from the bid response deadline instead, because delivery follows the bidding. On 2026-06-20, "deadline June 15, delivery July 25" means 2027-06-15 and 2027-07-25.
+- A deadline time without a timezone is interpreted as UTC. A timestamp from the LLM without a timezone is also treated as UTC.
+- An impossible date, such as "June 31", or an unknown month name is treated as a missing value, so the layer asks for it again.
+
+A date that breaks the validation rules above is removed from the candidate request. The layer asks for it again, and the clarification message says why the previous value was rejected, for example "The bid response deadline 2026-06-15 17:00 UTC is in the past."
+
+Implemented and verified locally with unit tests on 2026-10-24.
 
 ---
 

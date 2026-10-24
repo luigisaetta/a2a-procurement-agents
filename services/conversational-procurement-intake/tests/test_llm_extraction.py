@@ -11,9 +11,23 @@ from datetime import UTC, date, datetime
 
 import pytest
 
+from conversational_procurement_intake.business_clock import BUSINESS_TIMEZONE
 from conversational_procurement_intake.extraction import CandidateIntakeFields
-from conversational_procurement_intake.llm_extraction import LLMIntakeExtractor
+from conversational_procurement_intake.llm_extraction import (
+    LLMIntakeExtractor,
+    _build_prompt,
+)
 from conversational_procurement_intake.master_data import StaticMasterDataResolver
+
+# The tests were written for this business date; a fixed clock keeps
+# relative dates such as "June 15" or "today" stable over time.
+DEMO_NOW = datetime(2026, 5, 29, 8, 0, tzinfo=BUSINESS_TIMEZONE)
+
+
+def demo_clock() -> datetime:
+    """Return the fixed business time used by these tests."""
+
+    return DEMO_NOW
 
 
 class FakeLLMClient:  # pylint: disable=too-few-public-methods
@@ -23,11 +37,13 @@ class FakeLLMClient:  # pylint: disable=too-few-public-methods
         """Initialize the fake client."""
 
         self.candidate = candidate
+        self.received_today: date | None = None
 
-    async def extract_candidate(self, text: str) -> CandidateIntakeFields:
-        """Return the configured candidate."""
+    async def extract_candidate(self, text: str, today: date) -> CandidateIntakeFields:
+        """Return the configured candidate and record the business date."""
 
         _ = text
+        self.received_today = today
         return self.candidate
 
 
@@ -49,6 +65,7 @@ async def test_llm_extractor_builds_grounded_request() -> None:
             )
         ),
         StaticMasterDataResolver(),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -82,6 +99,7 @@ async def test_llm_extractor_reports_missing_fields_from_candidate() -> None:
             )
         ),
         StaticMasterDataResolver(),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -116,6 +134,7 @@ async def test_llm_extractor_asks_all_missing_fields() -> None:
             )
         ),
         StaticMasterDataResolver(),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -159,6 +178,7 @@ async def test_llm_extractor_grounds_empty_references_from_conversation_text() -
             )
         ),
         StaticMasterDataResolver(),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -195,6 +215,7 @@ async def test_llm_extractor_normalizes_region_aliases() -> None:
             )
         ),
         StaticMasterDataResolver(),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -228,6 +249,7 @@ async def test_llm_extractor_rejects_unevidenced_quantity() -> None:
             )
         ),
         StaticMasterDataResolver(),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -242,3 +264,27 @@ async def test_llm_extractor_rejects_unevidenced_quantity() -> None:
     assert result.orchestration_request is None
     assert result.missing_fields == ["parts[0].quantity"]
     assert result.message == "What quantity do you need?"
+
+
+def test_prompt_states_the_current_business_date() -> None:
+    """The LLM prompt carries the real current date, not a fixed demo date."""
+
+    prompt = _build_prompt("Bid deadline tomorrow.", date(2026, 10, 24))
+
+    assert "Current date: 2026-10-24." in prompt
+    assert "Timezone for relative business interpretation: Europe/Rome." in prompt
+    assert "2026-05-29" not in prompt
+
+
+@pytest.mark.anyio
+async def test_llm_extractor_passes_the_clock_date_to_the_llm() -> None:
+    """The extractor reads the clock once and gives its date to the LLM client."""
+
+    llm_client = FakeLLMClient(CandidateIntakeFields())
+    extractor = LLMIntakeExtractor(
+        llm_client, StaticMasterDataResolver(), clock=demo_clock
+    )
+
+    await extractor.extract("We need parts.", "operator@example.com", "REQ-TEST-0014")
+
+    assert llm_client.received_today == DEMO_NOW.date()

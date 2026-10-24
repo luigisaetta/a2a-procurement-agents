@@ -11,6 +11,7 @@ from datetime import UTC, date, datetime
 
 import pytest
 
+from conversational_procurement_intake.business_clock import BUSINESS_TIMEZONE
 from conversational_procurement_intake.extraction import (
     CandidateIntakeFields,
     DeterministicIntakeExtractor,
@@ -21,12 +22,24 @@ from conversational_procurement_intake.master_data import (
     StaticMasterDataResolver,
 )
 
+# The tests were written for this business date; a fixed clock keeps
+# relative dates such as "June 15" or "today" stable over time.
+DEMO_NOW = datetime(2026, 5, 29, 8, 0, tzinfo=BUSINESS_TIMEZONE)
+
+
+def demo_clock() -> datetime:
+    """Return the fixed business time used by these tests."""
+
+    return DEMO_NOW
+
 
 @pytest.mark.anyio
 async def test_extractor_requests_missing_response_deadline() -> None:
     """Ask for clarification when a mandatory deadline is missing."""
 
-    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+    extractor = DeterministicIntakeExtractor(
+        StaticMasterDataResolver(), clock=demo_clock
+    )
 
     result = await extractor.extract(
         "We need 10 high density battery modules for Munich by June 15.",
@@ -43,7 +56,9 @@ async def test_extractor_requests_missing_response_deadline() -> None:
 async def test_extractor_requests_all_missing_details() -> None:
     """Ask for all missing mandatory values in one clarification."""
 
-    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+    extractor = DeterministicIntakeExtractor(
+        StaticMasterDataResolver(), clock=demo_clock
+    )
 
     result = await extractor.extract(
         "We need battery modules for the Munich plant as soon as possible.",
@@ -68,7 +83,9 @@ async def test_extractor_requests_all_missing_details() -> None:
 async def test_extractor_builds_orchestration_request_with_defaults() -> None:
     """Build a valid orchestration request after all mandatory fields exist."""
 
-    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+    extractor = DeterministicIntakeExtractor(
+        StaticMasterDataResolver(), clock=demo_clock
+    )
 
     result = await extractor.extract(
         (
@@ -100,7 +117,9 @@ async def test_extractor_builds_orchestration_request_with_defaults() -> None:
 async def test_extractor_does_not_use_delivery_day_as_quantity() -> None:
     """Do not infer quantity from dates in a clarification message."""
 
-    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+    extractor = DeterministicIntakeExtractor(
+        StaticMasterDataResolver(), clock=demo_clock
+    )
 
     result = await extractor.extract(
         (
@@ -122,7 +141,9 @@ async def test_extractor_does_not_use_delivery_day_as_quantity() -> None:
 async def test_extractor_reads_quantity_from_units_clarification() -> None:
     """Accept quantity when the user provides it with units."""
 
-    extractor = DeterministicIntakeExtractor(StaticMasterDataResolver())
+    extractor = DeterministicIntakeExtractor(
+        StaticMasterDataResolver(), clock=demo_clock
+    )
 
     result = await extractor.extract(
         (
@@ -148,7 +169,8 @@ async def test_extractor_resolves_full_demo_catalog_from_mcp() -> None:
         McpMasterDataResolver(
             "http://mcp.example/mcp",
             client_factory=_FakeMcpClient,
-        )
+        ),
+        clock=demo_clock,
     )
 
     result = await extractor.extract(
@@ -187,6 +209,7 @@ async def test_extraction_falls_back_to_conversation_text_for_grounding() -> Non
         ),
         "operator@example.com",
         "REQ-TEST-0011",
+        DEMO_NOW,
         "Please start a tender for EV-DC-DC-009 at IT-TOR with final PO creation.",
     )
 
@@ -217,6 +240,7 @@ async def test_extraction_prefers_specific_part_name_over_category_matches() -> 
         ),
         "operator@example.com",
         "REQ-TEST-0012",
+        DEMO_NOW,
         (
             "We need 10 high density battery modules for the Munich plant by "
             "June 15. Bid deadline May 29 at 12. Ask up to 3 European suppliers "

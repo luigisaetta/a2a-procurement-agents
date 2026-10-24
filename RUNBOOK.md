@@ -129,7 +129,7 @@ Use one request at a time. Confirm the structured request in the UI when prompte
 ### Request 1
 
 ```text
-Start an urgent tender for 16 units of EV-DC-DC-009, High Voltage DC DC Converter, for the Turin plant IT-TOR. Required delivery date is 2026-07-25. Bid response deadline is 2026-06-15 at 17:00 UTC. Ask up to 3 European suppliers and create the final purchase order automatically.
+Start an urgent tender for 16 units of EV-DC-DC-009, High Voltage DC DC Converter, for the Turin plant IT-TOR. Required delivery date is July 25. Bid response deadline is June 15 at 17:00 UTC. Ask up to 3 European suppliers and create the final purchase order automatically.
 ```
 
 Expected highlights:
@@ -143,7 +143,7 @@ Expected highlights:
 ### Request 2
 
 ```text
-Start an urgent tender for 8 units of EV-BRAKE-CAL-018, Lightweight Brake Caliper, for the Barcelona plant ES-BCN. Required delivery date is 2026-08-12. Bid response deadline is 2026-06-19 at 15:30 UTC. Ask up to 3 European suppliers and create the final purchase order automatically.
+Start an urgent tender for 8 units of EV-BRAKE-CAL-018, Lightweight Brake Caliper, for the Barcelona plant ES-BCN. Required delivery date is August 12. Bid response deadline is June 19 at 15:30 UTC. Ask up to 3 European suppliers and create the final purchase order automatically.
 ```
 
 Expected highlights:
@@ -155,7 +155,7 @@ Expected highlights:
 ### Request 3
 
 ```text
-Start an urgent tender for 6 units of Low Temperature Radiator for the Graz plant AT-GRA. Required delivery date is 2026-08-28. Bid response deadline is 2026-06-21 at 16:00 UTC. Ask up to 3 European suppliers and create the final purchase order automatically.
+Start an urgent tender for 6 units of Low Temperature Radiator for the Graz plant AT-GRA. Required delivery date is August 28. Bid response deadline is June 21 at 16:00 UTC. Ask up to 3 European suppliers and create the final purchase order automatically.
 ```
 
 Expected highlights:

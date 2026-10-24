@@ -13,6 +13,7 @@ from datetime import UTC, date, datetime
 
 import pytest
 
+from conversational_procurement_intake.business_clock import BUSINESS_TIMEZONE
 from conversational_procurement_intake.extraction import DeterministicIntakeExtractor
 from conversational_procurement_intake.master_data import StaticMasterDataResolver
 from conversational_procurement_intake.models import (
@@ -33,6 +34,16 @@ from conversational_procurement_intake.session_store import (
     SessionEventBroker,
     SessionStore,
 )
+
+# The tests were written for this business date; a fixed clock keeps
+# relative dates such as "June 15" or "today" stable over time.
+DEMO_NOW = datetime(2026, 5, 29, 8, 0, tzinfo=BUSINESS_TIMEZONE)
+
+
+def demo_clock() -> datetime:
+    """Return the fixed business time used by these tests."""
+
+    return DEMO_NOW
 
 
 class FakeOrchestratorClient:  # pylint: disable=too-few-public-methods
@@ -80,7 +91,9 @@ def _service(
     return IntakeApplicationService(
         session_store=SessionStore(),
         event_broker=SessionEventBroker(),
-        extractor=DeterministicIntakeExtractor(StaticMasterDataResolver()),
+        extractor=DeterministicIntakeExtractor(
+            StaticMasterDataResolver(), clock=demo_clock
+        ),
         orchestrator_client=orchestrator_client or FakeOrchestratorClient(),
     )
 

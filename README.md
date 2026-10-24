@@ -240,8 +240,8 @@ Example scenario:
 
 ```text
 Start an urgent tender for 16 units of EV-DC-DC-009, High Voltage DC DC Converter,
-for the Turin plant IT-TOR. Required delivery date is 2026-07-25.
-Bid response deadline is 2026-06-15 at 17:00 UTC. Ask up to 3 European suppliers
+for the Turin plant IT-TOR. Required delivery date is July 25.
+Bid response deadline is June 15 at 17:00 UTC. Ask up to 3 European suppliers
 and create the final purchase order automatically.
 ```
 

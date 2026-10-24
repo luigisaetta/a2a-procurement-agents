@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Awaitable, Callable, Protocol, TypeVar
 
+from conversational_procurement_intake.business_clock import Clock, business_now
 from conversational_procurement_intake.master_data import MasterDataResolver
 from conversational_procurement_intake.models import (
     ClarificationAmbiguity,
@@ -23,8 +24,22 @@ from conversational_procurement_intake.models import (
 )
 from pydantic import BaseModel, ConfigDict, Field
 
-CURRENT_YEAR = 2026
 ResolvedRecordT = TypeVar("ResolvedRecordT")
+
+MONTH_NUMBERS = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
+}
 
 
 @dataclass(frozen=True)
@@ -70,14 +85,20 @@ class IntakeExtractor(Protocol):  # pylint: disable=too-few-public-methods
 class DeterministicIntakeExtractor:  # pylint: disable=too-few-public-methods
     """Small rule-based extractor used as a local fallback."""
 
-    def __init__(self, master_data_resolver: MasterDataResolver) -> None:
+    def __init__(
+        self,
+        master_data_resolver: MasterDataResolver,
+        clock: Clock = business_now,
+    ) -> None:
         """Initialize the extractor.
 
         Args:
             master_data_resolver: Resolver used to ground parts and plants.
+            clock: Source of the current time used for relative dates.
         """
 
         self._master_data_resolver = master_data_resolver
+        self._clock = clock
 
     async def extract(
         self,
@@ -96,21 +117,26 @@ class DeterministicIntakeExtractor:  # pylint: disable=too-few-public-methods
             Extraction result containing either missing fields or a request.
         """
 
-        candidate = build_deterministic_candidate(text)
+        now = self._clock()
+        candidate = build_deterministic_candidate(text, now.date())
         return await build_extraction_result(
             candidate,
             self._master_data_resolver,
             requested_by,
             request_id,
+            now,
             text,
         )
 
 
+# Each argument is a distinct input of the extraction step.
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 async def build_extraction_result(
     candidate: CandidateIntakeFields,
     master_data_resolver: MasterDataResolver,
     requested_by: str,
     request_id: str,
+    now: datetime,
     conversation_text: str = "",
 ) -> ExtractionResult:
     """Ground candidate fields and build an orchestration request if possible.
@@ -120,12 +146,14 @@ async def build_extraction_result(
         master_data_resolver: Resolver used to ground plants and parts.
         requested_by: User identifier associated with the session.
         request_id: Idempotency key generated for the session.
+        now: Current time, used to reject dates in the past.
         conversation_text: Full conversation text used as grounding fallback.
 
     Returns:
         Valid extraction result for the current conversation state.
     """
 
+    candidate, date_problems = _reject_invalid_dates(candidate, now)
     defaults = _default_values(candidate)
     missing = list(candidate.missing_fields)
     ambiguities: list[ClarificationAmbiguity] = []
@@ -187,10 +215,17 @@ async def build_extraction_result(
         missing, candidate, part_candidates, plant_candidates
     )
     if missing or ambiguities:
-        return ExtractionResult(
-            message=_clarification_message_for_candidate(
+        if date_problems:
+            # Say why the dates were rejected, then ask for what is missing.
+            message = " ".join(
+                [*date_problems, _clarification_message(missing, ambiguities)]
+            )
+        else:
+            message = _clarification_message_for_candidate(
                 candidate, missing, ambiguities
-            ),
+            )
+        return ExtractionResult(
+            message=message,
             missing_fields=missing,
             ambiguities=ambiguities,
             defaults_applied=defaults,
@@ -237,22 +272,27 @@ async def build_extraction_result(
     )
 
 
-def build_deterministic_candidate(text: str) -> CandidateIntakeFields:
+def build_deterministic_candidate(text: str, today: date) -> CandidateIntakeFields:
     """Build candidate fields from simple deterministic text rules.
 
     Args:
         text: Full conversation text collected for the session.
+        today: Current business date, used for "today" and dates without a year.
 
     Returns:
         Candidate fields extracted without an LLM.
     """
 
+    response_deadline = _extract_response_deadline(text, today)
+    # Delivery follows the bidding, so a delivery date without a year is the
+    # next occurrence on or after the deadline, not only after today.
+    delivery_reference = response_deadline.date() if response_deadline else today
     return CandidateIntakeFields(
         material_reference=text,
         plant_reference=text,
         quantity=_extract_quantity(text),
-        required_delivery_date=_extract_delivery_date(text),
-        response_deadline=_extract_response_deadline(text),
+        required_delivery_date=_extract_delivery_date(text, delivery_reference),
+        response_deadline=response_deadline,
         auto_create_purchase_order=_extract_auto_create_purchase_order(text),
         max_suppliers_per_part=_extract_max_suppliers(text),
         allowed_regions=_extract_allowed_regions(text),
@@ -375,8 +415,13 @@ def _quantity_evidence_matches(text: str) -> list[str]:
     return matches
 
 
-def _extract_delivery_date(text: str) -> date | None:
-    """Extract the required delivery date from text."""
+def _extract_delivery_date(text: str, earliest: date) -> date | None:
+    """Extract the required delivery date from text.
+
+    Args:
+        text: Full conversation text.
+        earliest: Date from which a month and day without a year is resolved.
+    """
 
     iso_match = re.search(
         r"\b(?:required\s+)?delivery\s+(?:by|date)\s+(?:is\s+)?"
@@ -385,7 +430,7 @@ def _extract_delivery_date(text: str) -> date | None:
         re.IGNORECASE,
     )
     if iso_match:
-        return date.fromisoformat(iso_match.group(1))
+        return _parse_iso_date(iso_match.group(1))
 
     match = re.search(r"\bby\s+([A-Za-z]+)\s+(\d{1,2})\b", text, re.IGNORECASE)
     if not match:
@@ -397,11 +442,14 @@ def _extract_delivery_date(text: str) -> date | None:
         )
     if not match:
         return None
-    return _month_day_to_date(match.group(1), int(match.group(2)))
+    return _next_month_day(match.group(1), int(match.group(2)), earliest)
 
 
-def _extract_response_deadline(text: str) -> datetime | None:
-    """Extract a bid response deadline from text."""
+def _extract_response_deadline(text: str, today: date) -> datetime | None:
+    """Extract a bid response deadline from text.
+
+    The deadline time defaults to 17:00 and is interpreted as UTC.
+    """
 
     iso_match = re.search(
         r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?(\d{4}-\d{2}-\d{2})"
@@ -410,10 +458,8 @@ def _extract_response_deadline(text: str) -> datetime | None:
         re.IGNORECASE,
     )
     if iso_match:
-        deadline_date = date.fromisoformat(iso_match.group(1))
-        hour = int(iso_match.group(2) or "17")
-        minute = int(iso_match.group(3) or "0")
-        return datetime.combine(deadline_date, time(hour, minute), tzinfo=UTC)
+        deadline_date = _parse_iso_date(iso_match.group(1))
+        return _deadline_at(deadline_date, iso_match.group(2), iso_match.group(3))
 
     today_match = re.search(
         r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?today"
@@ -422,11 +468,7 @@ def _extract_response_deadline(text: str) -> datetime | None:
         re.IGNORECASE,
     )
     if today_match:
-        hour = int(today_match.group(1) or "17")
-        minute = int(today_match.group(2) or "0")
-        return datetime.combine(
-            date(CURRENT_YEAR, 5, 29), time(hour, minute), tzinfo=UTC
-        )
+        return _deadline_at(today, today_match.group(1), today_match.group(2))
 
     match = re.search(
         r"\b(?:bid|response)\s+deadline\s+(?:is\s+)?([A-Za-z]+)\s+(\d{1,2})"
@@ -436,10 +478,35 @@ def _extract_response_deadline(text: str) -> datetime | None:
     )
     if not match:
         return None
-    deadline_date = _month_day_to_date(match.group(1), int(match.group(2)))
-    hour = int(match.group(3) or "17")
-    minute = int(match.group(4) or "0")
-    return datetime.combine(deadline_date, time(hour, minute), tzinfo=UTC)
+    deadline_date = _next_month_day(match.group(1), int(match.group(2)), today)
+    return _deadline_at(deadline_date, match.group(3), match.group(4))
+
+
+def _deadline_at(
+    deadline_date: date | None, hour_text: str | None, minute_text: str | None
+) -> datetime | None:
+    """Combine a deadline date with an optional time, as UTC.
+
+    Returns:
+        The deadline timestamp, or ``None`` when the date or time is invalid.
+    """
+
+    if deadline_date is None:
+        return None
+    try:
+        deadline_time = time(int(hour_text or "17"), int(minute_text or "0"))
+    except ValueError:
+        return None
+    return datetime.combine(deadline_date, deadline_time, tzinfo=UTC)
+
+
+def _parse_iso_date(value: str) -> date | None:
+    """Parse an ISO 8601 date, returning ``None`` for impossible dates."""
+
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _extract_auto_create_purchase_order(text: str) -> bool:
@@ -490,25 +557,89 @@ def _normalize_allowed_regions(values: list[str]) -> list[str]:
     return regions
 
 
-def _month_day_to_date(month_name: str, day: int) -> date:
-    """Convert a month name and day into a date in the current demo year."""
+def _next_month_day(month_name: str, day: int, earliest: date) -> date | None:
+    """Return the next occurrence of a month and day on or after ``earliest``.
 
-    month_names = {
-        "january": 1,
-        "february": 2,
-        "march": 3,
-        "april": 4,
-        "may": 5,
-        "june": 6,
-        "july": 7,
-        "august": 8,
-        "september": 9,
-        "october": 10,
-        "november": 11,
-        "december": 12,
-    }
-    month = month_names[month_name.casefold()]
-    return date(CURRENT_YEAR, month, day)
+    A date without a year, such as "June 15", means the coming June 15: the
+    year of ``earliest`` if that day has not passed yet, otherwise next year.
+
+    Returns:
+        The resolved date, or ``None`` for an unknown month or impossible day.
+    """
+
+    month = MONTH_NUMBERS.get(month_name.casefold())
+    if month is None:
+        return None
+    for year in (earliest.year, earliest.year + 1):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            # The day does not exist in this year, such as June 31 or a
+            # February 29 outside a leap year.
+            continue
+        if candidate >= earliest:
+            return candidate
+    return None
+
+
+def _reject_invalid_dates(
+    candidate: CandidateIntakeFields, now: datetime
+) -> tuple[CandidateIntakeFields, list[str]]:
+    """Remove dates that are in the past or in the wrong order.
+
+    A removed date becomes a missing field, so the user is asked for it
+    again. Each problem is described in a user-facing sentence.
+
+    Args:
+        candidate: Candidate fields from deterministic or LLM extraction.
+        now: Current time.
+
+    Returns:
+        The candidate without the rejected dates, and the problem sentences.
+    """
+
+    deadline = candidate.response_deadline
+    delivery_date = candidate.required_delivery_date
+    problems: list[str] = []
+
+    if deadline is not None and _as_utc(deadline) <= now:
+        problems.append(
+            f"The bid response deadline {_format_deadline(deadline)} is in the past."
+        )
+        deadline = None
+
+    if delivery_date is not None and delivery_date < now.date():
+        problems.append(f"The required delivery date {delivery_date} is in the past.")
+        delivery_date = None
+    elif (
+        delivery_date is not None
+        and deadline is not None
+        and delivery_date < _as_utc(deadline).date()
+    ):
+        problems.append(
+            f"The required delivery date {delivery_date} is before the bid "
+            f"response deadline {_format_deadline(deadline)}."
+        )
+        delivery_date = None
+
+    valid_candidate = candidate.model_copy(
+        update={"response_deadline": deadline, "required_delivery_date": delivery_date}
+    )
+    return valid_candidate, problems
+
+
+def _as_utc(value: datetime) -> datetime:
+    """Return a timestamp in UTC, treating a timestamp without timezone as UTC."""
+
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def _format_deadline(value: datetime) -> str:
+    """Format a deadline for user-facing messages."""
+
+    return f"{_as_utc(value):%Y-%m-%d %H:%M} UTC"
 
 
 def _clarification_message_for_candidate(
