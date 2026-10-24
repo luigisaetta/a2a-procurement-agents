@@ -2,22 +2,21 @@
 Tests for Offer Evaluation Agent pipeline checks.
 
 Author: L. Saetta
-Date Last Modified: 2026-05-31
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Verifies response parsing and technical consistency checks.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import pytest
 from locus.agent.hook_orchestrator import HookOrchestrator
 from pydantic import ValidationError
-
-from test_client import load_jsonc
 
 from offer_evaluation_agent.config import Settings
 from offer_evaluation_agent.models import (
@@ -32,6 +31,24 @@ from offer_evaluation_agent.pipeline import (
     _extract_json_object,
     enforce_policy_consistency,
 )
+
+EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
+
+
+def _load_example_client() -> ModuleType:
+    """Load the example A2A client, which provides the JSONC loader.
+
+    The example is a script, not a package: other services have examples
+    with the same file name, so it is loaded from its path, not imported.
+    """
+
+    spec = importlib.util.spec_from_file_location(
+        "offer_evaluation_example_client", EXAMPLES_DIR / "test_client.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _request() -> EvaluateOffersRequest:
@@ -103,12 +120,10 @@ def test_extract_json_object_from_text() -> None:
 def test_sample_payload_has_expected_winner() -> None:
     """Load the sample JSONC payload and verify its expected structure."""
 
-    sample_path = (
-        Path(__file__).resolve().parents[1]
-        / "examples"
-        / "sample-evaluate-offers-request.jsonc"
+    example_client = _load_example_client()
+    payload = example_client.load_jsonc(
+        EXAMPLES_DIR / "sample-evaluate-offers-request.jsonc"
     )
-    payload = load_jsonc(sample_path)
 
     assert payload["request_id"] == "REQ-2026-0001"
     assert len(payload["offers"]) == 3

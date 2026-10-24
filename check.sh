@@ -25,6 +25,7 @@ PYTHON_PACKAGES=(
 
 PYTHON_CHECK_PATHS=(
   "${PYTHON_PACKAGES[@]}"
+  "conftest.py"
   "tests"
   "services/bid-collection-agent/tests"
   "services/conversational-procurement-intake/tests"

@@ -266,6 +266,8 @@ Integration tests should be added incrementally.
 
 Every development step must include tests.
 
+Test folders must not contain `__init__.py`. Several services have test files with the same name, such as `test_pipeline.py`; as packages they would get the same module name, and pytest would silently run only one of them. The root `conftest.py` stops the run if this happens. Tests must not import example scripts by module name; load them from their path instead.
+
 ---
 
 ## Repository Quality Gate
