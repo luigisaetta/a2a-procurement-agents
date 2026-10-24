@@ -38,9 +38,10 @@ export function formatDateTime(value: string): string {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
+  // Seconds are shown so operators can read how long each workflow phase took.
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
-    timeStyle: "short",
+    timeStyle: "medium",
   }).format(date);
 }
 

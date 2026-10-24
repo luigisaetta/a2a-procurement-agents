@@ -237,7 +237,7 @@ The progress view should include:
 - current overall status
 - ordered timeline of completed and active steps
 - concise per-step messages
-- timestamps in local browser time
+- timestamps in local browser time, including seconds, so the duration of each workflow phase can be read from the timeline
 - final outcome summary
 
 The UI should suppress or simplify low-value technical payload details. For example, it may show counts, selected supplier, delivery date, and purchase order ID, but should not show full nested event payloads in the main timeline.
