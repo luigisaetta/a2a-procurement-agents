@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ProgressTimeline } from "../components/ProgressTimeline";
+import { RecentPurchaseOrders } from "../components/RecentPurchaseOrders";
 import { RequestSummary } from "../components/RequestSummary";
 import { confirmSession, pollEvents, sendMessage, startSession } from "../lib/api";
 import type {
@@ -248,6 +249,7 @@ export default function Home() {
             events={events}
             terminalResult={terminalResult}
           />
+          <RecentPurchaseOrders refreshToken={terminalResult?.completed_at ?? ""} />
         </aside>
       </section>
     </main>

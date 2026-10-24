@@ -476,6 +476,45 @@ textarea:disabled {
   padding: 12px 14px;
 }
 
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.ordersTable {
+  border-collapse: collapse;
+  font-size: 14px;
+  width: 100%;
+}
+
+.ordersTable th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.ordersTable th,
+.ordersTable td {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 6px;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.ordersTable td small {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ordersTable .numeric {
+  text-align: right;
+}
+
 @media (max-width: 960px) {
   .workspace {
     padding: 14px;

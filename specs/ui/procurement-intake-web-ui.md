@@ -95,13 +95,14 @@ Desktop layout:
 | Area | Purpose |
 | --- | --- |
 | Left pane | Conversation between the operator and the system. |
-| Right pane | Procurement request summary, validation state, confirmation action, workflow progress, and final result. |
+| Right pane | Procurement request summary, validation state, confirmation action, workflow progress, final result, and recent purchase orders. |
 
 Mobile layout:
 
 - conversation first
 - request summary below the active input
 - progress timeline below the summary after submission
+- recent purchase orders last
 
 The UI should remain usable on common laptop widths and mobile screens. Text must not overflow buttons, cards, or timeline entries.
 
@@ -269,6 +270,26 @@ The UI should keep the final conversation and progress timeline visible after co
 
 ---
 
+# Recent Purchase Orders
+
+The right pane ends with a "Recent purchase orders" panel that shows the last 10 purchase orders, newest first. Each row shows only:
+
+| Column | Source field |
+| --- | --- |
+| Part | `material_code`, with `material_description` below in smaller text |
+| Quantity | `quantity` and `unit_of_measure` |
+| Delivery | `confirmed_delivery_date`, the delivery date of the selected offer |
+| Plant | `plant_code`, the delivery plant |
+| Supplier | `supplier_id` |
+
+The API returns more fields; the UI does not show them.
+
+The panel loads when the page opens, reloads when a workflow reaches its terminal result, and has a Refresh button. When the list cannot be loaded, the panel shows "Recent purchase orders could not be loaded." and the rest of the page keeps working. When there are no orders, it shows "No purchase orders yet."
+
+Implemented on 2026-10-24.
+
+---
+
 # Error Handling
 
 The UI must handle:
@@ -362,6 +383,12 @@ GET /sessions/{session_id}/events
 
 ```text
 GET /sessions/{session_id}/orchestration-events?cursor=0
+```
+
+## Recent Purchase Orders
+
+```text
+GET /purchase-orders?limit=10
 ```
 
 ---

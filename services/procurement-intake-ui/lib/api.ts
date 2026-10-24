@@ -2,6 +2,7 @@ import type {
   IntakeSessionResponse,
   OrchestrationRequest,
   PollEventsResponse,
+  RecentPurchaseOrdersResponse,
 } from "./types";
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -57,4 +58,10 @@ export function pollEvents(
   return requestJson<PollEventsResponse>(
     `/sessions/${sessionId}/orchestration-events?cursor=${cursor}`,
   );
+}
+
+export function fetchRecentPurchaseOrders(
+  limit = 10,
+): Promise<RecentPurchaseOrdersResponse> {
+  return requestJson<RecentPurchaseOrdersResponse>(`/purchase-orders?limit=${limit}`);
 }

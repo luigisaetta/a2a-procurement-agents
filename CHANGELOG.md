@@ -4,6 +4,7 @@ All meaningful changes to this project are documented in this file.
 
 ## 2026-10-24
 
+- Added a "Recent purchase orders" panel to the Procurement Intake Web UI, below the workflow status. It shows the last 10 purchase orders, newest first, with part, quantity, offer delivery date, delivery plant, and supplier ID, and reloads when a workflow finishes.
 - Added a read-only `list_recent_purchase_orders` A2A skill to the Purchase Order Agent, with request and response JSON Schemas, and a `GET /purchase-orders?limit=N` endpoint to the Conversational Procurement Intake Layer that calls it. It returns the last N purchase orders (default 10, at most 100), newest first, with all stored fields, for a future UI table. The intake layer reads the agent URL from `PURCHASE_ORDER_AGENT_URL`, now set in Docker Compose.
 - Changed the Procurement Intake Web UI workflow timeline to show seconds in step timestamps, so the duration of each phase can be read in the UI.
 - Changed the Offer Evaluation Agent so that the LLM decision is final. The deterministic guardrail that re-applied the policy in code and replaced the LLM choice is removed, as required by the spec rule that selection rules live only in the Markdown policy. The technical consistency checks are unchanged. The offline accuracy test now checks that the workflow returns the LLM decision unchanged; decision accuracy is measured by the opt-in live LLM test, which accepts any of the tied offers in case `ACC-019`.

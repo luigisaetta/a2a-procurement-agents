@@ -97,3 +97,23 @@ export interface PollEventsResponse {
   next_cursor: number;
   terminal_result: OrchestrationResponse | null;
 }
+
+// The API returns every stored purchase order field; the UI declares only
+// the fields it shows in the recent purchase orders table.
+export interface PurchaseOrderRecord {
+  purchase_order_id: string;
+  material_code: string;
+  material_description: string;
+  quantity: number;
+  unit_of_measure: string;
+  confirmed_delivery_date: string;
+  plant_code: string;
+  supplier_id: string;
+}
+
+export interface RecentPurchaseOrdersResponse {
+  status: "completed" | "failed";
+  limit: number;
+  purchase_orders: PurchaseOrderRecord[];
+  message: string;
+}
