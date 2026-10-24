@@ -310,11 +310,15 @@ Mapping rules:
 - `supplier` comes from the selected offer
 - `line_items[0].material_code` comes from the requested part
 - `line_items[0].quantity` comes from the requested part
-- `line_items[0].unit_price` is `selected_offer.price / quantity`
+- `line_items[0].unit_price` is `selected_offer.parts_cost / quantity`, rounded half up to 2 decimals. It is the material price per unit and excludes shipping. When an offer has no cost breakdown (`parts_cost` is 0), the goods cost is `price - shipping_cost`.
 - `line_items[0].currency` comes from the selected offer
 - `line_items[0].requested_delivery_date` comes from the requested part
 - `line_items[0].confirmed_delivery_date` comes from the selected offer delivery date
-- `source_offer` comes from the selected offer
+- `source_offer` comes from the selected offer; `source_offer.price` is the total offer price, including shipping
+
+The line amount (`quantity * unit_price`) can therefore differ from `source_offer.price` by the shipping cost and by rounding. The purchase order contract has no separate shipping field yet.
+
+Implemented and verified locally with unit tests on 2026-10-24.
 
 When `auto_create_purchase_order` is `false`, purchase order creation is skipped and the part status is `winner_selected`.
 

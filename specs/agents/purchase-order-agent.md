@@ -306,6 +306,18 @@ If a persisted purchase order already exists for the same key, the wrapper must 
 
 If the same key is submitted with materially different supplier, plant, material, quantity, currency, or amount fields, the wrapper must return a `failed` response with error code `IDEMPOTENCY_CONFLICT`.
 
+Numbers are compared as they are stored, so a retry of the same request is never reported as a conflict because of rounding. Before inserting and before comparing, the wrapper rounds half up to the scale of the database column:
+
+| Field | Column | Scale |
+| --- | --- | --- |
+| `quantity` | `DECIMAL(18,4)` | 4 decimals |
+| `unit_price` | `DECIMAL(18,2)` | 2 decimals |
+| `total_amount` (`source_offer.price`) | `DECIMAL(18,2)` | 2 decimals |
+
+For example, a stored `unit_price` of `129.62` matches a retried `129.6225`, while `129.63` is a conflict.
+
+Implemented and verified locally with unit tests on 2026-10-24.
+
 ## Read Behavior
 
 The initial A2A capability only creates purchase orders. Internal read operations used by tests or future diagnostics must also ensure the schema exists before reading.

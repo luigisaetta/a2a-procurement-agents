@@ -13,6 +13,7 @@ import logging
 from contextlib import suppress
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -731,11 +732,15 @@ def _build_purchase_order_request(
     part: PartOrchestrationRequest,
     evaluation: EvaluateOffersResponse,
 ) -> CreatePurchaseOrderRequest:
-    """Build a Purchase Order Agent request from the selected offer."""
+    """Build a Purchase Order Agent request from the selected offer.
+
+    The line item carries the material price per unit, without shipping;
+    ``source_offer.price`` carries the total offer price, with shipping.
+    """
 
     selected = evaluation.decision.selected_offer
     price = float(selected["price"])
-    unit_price = round(price / part.quantity, 6)
+    unit_price = _unit_price_without_shipping(selected, part.quantity)
     return CreatePurchaseOrderRequest(
         request_id=request.request_id,
         plant_code=part.plant_code,
@@ -761,6 +766,32 @@ def _build_purchase_order_request(
             "currency": selected["currency"],
         },
     )
+
+
+def _unit_price_without_shipping(
+    selected_offer: dict[str, Any], quantity: float
+) -> float:
+    """Return the material price per unit, rounded half up to 2 decimals.
+
+    The Purchase Order Agent stores unit prices with 2 decimals, so sending
+    more decimals would only be rounded away by the database. Offers without
+    a cost breakdown (``parts_cost`` of 0) use ``price - shipping_cost``.
+
+    Args:
+        selected_offer: Selected offer returned by the Offer Evaluation Agent.
+        quantity: Ordered quantity of the part.
+
+    Returns:
+        Unit price excluding shipping.
+    """
+
+    goods_cost = Decimal(str(selected_offer.get("parts_cost") or 0))
+    if goods_cost == 0:
+        price = Decimal(str(selected_offer["price"]))
+        shipping_cost = Decimal(str(selected_offer.get("shipping_cost") or 0))
+        goods_cost = price - shipping_cost
+    unit_price = goods_cost / Decimal(str(quantity))
+    return float(unit_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 def _selected_offer_deviation_percent(

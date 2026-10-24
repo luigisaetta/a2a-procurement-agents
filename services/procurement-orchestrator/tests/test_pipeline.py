@@ -21,7 +21,10 @@ from procurement_orchestrator.a2a_client import (
     DownstreamAgentError,
 )
 from procurement_orchestrator.config import Settings
-from procurement_orchestrator.pipeline import ProcurementOrchestratorWorkflowAgent
+from procurement_orchestrator.pipeline import (
+    ProcurementOrchestratorWorkflowAgent,
+    _unit_price_without_shipping,
+)
 
 
 class FakeProcurementAgentClient:  # pylint: disable=too-few-public-methods
@@ -454,6 +457,40 @@ async def test_streamed_event_sequences_are_unique_and_increasing() -> None:
 
     sequences = [json.loads(event.reasoning)["sequence"] for event in events[:-1]]
     assert sequences == list(range(1, len(sequences) + 1))
+
+
+@pytest.mark.anyio
+async def test_purchase_order_unit_price_excludes_shipping() -> None:
+    """The line item has the material unit price; the offer has the total."""
+
+    client = FakeProcurementAgentClient()
+    agent = ProcurementOrchestratorWorkflowAgent(_settings(), agent_client=client)
+
+    _ = [event async for event in agent.run(_request())]
+
+    payload = client.purchase_order_calls[0]["payload"]
+    # The fake offer: parts 1300 + shipping 100 = price 1400, quantity 10.
+    assert payload["line_items"][0]["unit_price"] == 130.0
+    assert payload["source_offer"]["price"] == 1400.0
+
+
+@pytest.mark.parametrize(
+    ("offer", "quantity", "expected_unit_price"),
+    [
+        # 1234.57 / 16 = 77.160625, stored with 2 decimals.
+        ({"parts_cost": 1234.57, "shipping_cost": 61.73, "price": 1296.30}, 16, 77.16),
+        # Half up, not to even: 1.25 / 2 = 0.625 becomes 0.63.
+        ({"parts_cost": 1.25, "shipping_cost": 0, "price": 1.25}, 2, 0.63),
+        # No cost breakdown: the goods cost is price minus shipping.
+        ({"parts_cost": 0, "shipping_cost": 100, "price": 1400}, 10, 130.0),
+    ],
+)
+def test_unit_price_is_rounded_to_two_decimals_without_shipping(
+    offer: dict[str, float], quantity: int, expected_unit_price: float
+) -> None:
+    """Unit prices match the 2-decimal scale used by the Purchase Order Agent."""
+
+    assert _unit_price_without_shipping(offer, quantity) == expected_unit_price
 
 
 def _two_part_request() -> str:

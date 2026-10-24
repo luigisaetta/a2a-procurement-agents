@@ -2,7 +2,7 @@
 Purchase order system integration wrapper.
 
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Encapsulates the future external purchase order system API.
                 Supports deterministic fake data and Docker Compose MySQL
@@ -12,7 +12,7 @@ Description:    Encapsulates the future external purchase order system API.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Protocol
 
 from purchase_order_agent.config import Settings
@@ -45,6 +45,12 @@ _EXPECTED_PURCHASE_ORDER_COLUMNS = {
     "created_at",
     "updated_at",
 }
+
+# Decimal places of the numeric purchase_orders columns. Values are rounded
+# to these scales before they are stored or compared, so a retried request
+# matches the stored row exactly.
+QUANTITY_SCALE = Decimal("0.0001")  # DECIMAL(18,4)
+AMOUNT_SCALE = Decimal("0.01")  # DECIMAL(18,2)
 
 
 class ConnectionFactory(Protocol):  # pylint: disable=too-few-public-methods
@@ -435,10 +441,10 @@ def _insert_purchase_order(
                 request.plant_code,
                 line_item.material_code,
                 line_item.material_description,
-                line_item.quantity,
+                _to_scale(line_item.quantity, QUANTITY_SCALE),
                 line_item.unit_of_measure,
-                line_item.unit_price,
-                request.source_offer.price,
+                _to_scale(line_item.unit_price, AMOUNT_SCALE),
+                _to_scale(request.source_offer.price, AMOUNT_SCALE),
                 request.source_offer.currency,
                 line_item.requested_delivery_date,
                 line_item.confirmed_delivery_date,
@@ -476,16 +482,31 @@ def _has_idempotency_conflict(
     )
     if any(str(left) != str(right) for left, right in comparisons):
         return True
+    # Compare numbers at the column scale: the stored row was rounded to it,
+    # so comparing more decimals would flag a plain retry as a conflict.
     numeric_comparisons = (
-        (existing["quantity"], line_item.quantity),
-        (existing["unit_price"], line_item.unit_price),
-        (existing["total_amount"], request.source_offer.price),
+        (existing["quantity"], line_item.quantity, QUANTITY_SCALE),
+        (existing["unit_price"], line_item.unit_price, AMOUNT_SCALE),
+        (existing["total_amount"], request.source_offer.price, AMOUNT_SCALE),
     )
     return any(
-        Decimal(str(left)).quantize(Decimal("0.0001"))
-        != Decimal(str(right)).quantize(Decimal("0.0001"))
-        for left, right in numeric_comparisons
+        _to_scale(stored, scale) != _to_scale(requested, scale)
+        for stored, requested, scale in numeric_comparisons
     )
+
+
+def _to_scale(value: Any, scale: Decimal) -> Decimal:
+    """Round a number half up to a column scale, as MySQL does on insert.
+
+    Args:
+        value: Number from a request (float) or from the database (Decimal).
+        scale: Smallest step of the column, for example ``Decimal("0.01")``.
+
+    Returns:
+        The rounded value.
+    """
+
+    return Decimal(str(value)).quantize(scale, rounding=ROUND_HALF_UP)
 
 
 def _registered_response(

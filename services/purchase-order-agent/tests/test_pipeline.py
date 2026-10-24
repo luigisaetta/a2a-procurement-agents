@@ -2,7 +2,7 @@
 Tests for Purchase Order Agent workflow.
 
 Author: L. Saetta
-Date Last Modified: 2026-06-01
+Date Last Modified: 2026-10-24
 License: MIT
 Description:    Verifies request validation and deterministic registration output.
 """
@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
 
@@ -155,6 +156,64 @@ def test_mysql_po_system_rejects_idempotency_conflict() -> None:
     assert response.error.code == "IDEMPOTENCY_CONFLICT"
     assert connection.rollbacks == 1
     assert connection.inserted_purchase_order is None
+
+
+@pytest.mark.parametrize(
+    ("stored_unit_price", "expected_status"),
+    [
+        # MySQL stored the retried 129.6225 as 129.62: same request.
+        (Decimal("129.62"), "registered"),
+        # One cent apart at the column scale: a different request.
+        (Decimal("129.63"), "failed"),
+    ],
+)
+def test_mysql_idempotency_compares_amounts_at_column_scale(
+    stored_unit_price: Decimal, expected_status: str
+) -> None:
+    """A retry is not a conflict because of decimals the column cannot store."""
+
+    payload = _payload()
+    payload["line_items"][0]["unit_price"] = 129.6225
+    existing = _existing_purchase_order_row(payload)
+    existing["unit_price"] = stored_unit_price
+    connection = _FakeConnection(existing_purchase_order=existing)
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=lambda: connection,
+    )
+
+    response = client.register_purchase_order(
+        CreatePurchaseOrderRequest.model_validate(payload)
+    )
+
+    assert response.status == expected_status
+    assert connection.inserted_purchase_order is None
+
+
+def test_mysql_po_system_rounds_amounts_before_insert() -> None:
+    """Inserted numbers are already at the column scale, rounded half up."""
+
+    payload = _payload()
+    payload["line_items"][0]["quantity"] = 16.00005
+    payload["line_items"][0]["unit_price"] = 129.625
+    payload["source_offer"]["price"] = 2073.964
+    connection = _FakeConnection()
+    client = PurchaseOrderSystemClient(
+        storage_backend="mysql",
+        connection_factory=lambda: connection,
+    )
+
+    client.register_purchase_order(CreatePurchaseOrderRequest.model_validate(payload))
+
+    inserted = cast(tuple[Any, ...], connection.inserted_purchase_order)
+    # Positions follow the INSERT column list: quantity, uom, unit_price, total.
+    # pylint: disable-next=unsubscriptable-object
+    assert inserted[8:12] == (
+        Decimal("16.0001"),
+        "EA",
+        Decimal("129.63"),
+        Decimal("2073.96"),
+    )
 
 
 def test_mysql_po_system_rejects_legacy_purchase_order_table() -> None:
